@@ -27,3 +27,5 @@ class SpaceTimeLord:
 
     current_locations = property(fget=get_current_locations)
 
+
+#%%
