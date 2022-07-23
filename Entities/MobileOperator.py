@@ -1,9 +1,14 @@
-class MobileOperator: # TODO ga communication code
+from Entities.User import User
+
+
+class MobileOperator:  # TODO ga communication code
 
     def __init__(self, ga, mo_id):
         self._GA = ga
         self._users = []
         self._id = mo_id
+        self._curr_locations = []
+        self._scores = []
 
     def get_ga(self):
         return self._GA
@@ -22,7 +27,14 @@ class MobileOperator: # TODO ga communication code
 
     def add_user(self, user):
         self._users.append(user)
+        self._curr_locations.append((user.x, user.y))
+        self._scores.append(0)
 
-    #def to_ga_comm # we dont know yet
+    def tick(self):
+        for user in self._users:
+            user.upd_to_mo()
 
-    #def from_ga_comm
+    def upd_user_data(self, user, ):
+# def to_ga_comm # we dont know yet
+
+# def from_ga_comm
