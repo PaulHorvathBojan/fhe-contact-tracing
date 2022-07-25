@@ -17,10 +17,12 @@ class SpaceTimeLord:
         self._curr_time = 0
 
         while self._mo_count <= mo_count:
-            self._mos.append(MobileOperator(ga=self._ga,
-                                            mo_id=self._mo_count
-                                            )
-                             )
+            new_mo = MobileOperator(ga=self._ga,
+                                    mo_id=self._mo_count
+                                    )
+            for prev_mo in self._mos:
+                new_mo.register_other_mo(prev_mo)
+            self._mos.append(new_mo)
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
@@ -44,7 +46,7 @@ class SpaceTimeLord:
                                    )
 
         for i in range(self._mo_count):
-            self._mos[i].tick() # TODO: Implement periodic signalling in MO class
+            self._mos[i].tick()  # TODO: Implement periodic signalling in MO class
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()  # TODO: Implement daily signalling in GA class
