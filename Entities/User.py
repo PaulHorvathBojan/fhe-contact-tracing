@@ -1,13 +1,12 @@
-from Entities.MobileOperator import MobileOperator
-
-
 class User:
     # Initialize user at a certain location with a certain MO, user ID and GA.
+    # After initializing class fields to the parameter and default values respectively, call add_user in the
+    #   user's MO.
     # By default:
     #    - the user's last update is at tick 0
     #    - the user is not infected
     #    - the user's infection time is 0
-    def __init__(self, init_x, init_y, mo, uid, ga):  # TODO: decide where and how to set infection status
+    def __init__(self, init_x, init_y, mo, uid, ga):
         self._x = init_x
         self._y = init_y
         self._MO = mo
@@ -16,6 +15,8 @@ class User:
         self._last_update = 0
         self._status = 0  # intuitively going for a Susceptible(0)-Infected(1)-Recovered(2) model
         self._infection_time = 0
+
+        self._MO.add_user(self)
 
     # Defined properties from getters for x, y, MO, GA, last update time and infection status.
     # No setters, as the respective fields are either immutable or implicitly changed by other methods.
@@ -84,10 +85,12 @@ class User:
     # it essentially calls a function in the MO that performs the updating
     def upd_to_mo(self):
         self._MO.upd_user_data(user=self,
+                               new_x=self.x,
+                               new_y=self.y
                                )
-        # --- essentially in a setting that puts users in a database, this would be needed to
-        #  update user locations in the db
-
+        # --- essentially in a setting that puts users in a database, this would be needed to:
+        #   - update user locations in the db
+        #   - trigger any eventual events inside the MO class
     # TODO:
     # def score_from_mo(self, encr_score):
     #   self._encr_score = encr_score

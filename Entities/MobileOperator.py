@@ -1,4 +1,17 @@
 class MobileOperator:  # TODO ga communication code
+    # Dictionary for edge case adjacency.
+    # Used in det_adj_area_ranges.
+    edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
+                            1: ([0, 1], [-1, 0, 1]),
+                            2: ([-1, 0, 1], [0, 1]),
+                            3: ([0, 1], [0, 1]),
+                            4: ([-1, 0], [-1, 0, 1]),
+                            6: ([-1, 0], [0, 1]),
+                            7: ([-1, 0, 1], [-1, 0]),
+                            8: ([0, 1], [-1, 0]),
+                            11: ([-1, 0], [-1, 0])
+                            }
+
     # Initialize MobileOperator as having given GovAgent, ID, and area sides
     # By default:
     #   - _usr_count tracks number of users (init 0)
@@ -7,6 +20,9 @@ class MobileOperator:  # TODO ga communication code
     #           respectively --- same order as _users (init empty)
     #   - _scores keeps a list of user risk scores respectively --- same order as _users (init empty)
     #   - _area_sides keep the sizes of the considered tesselation area
+    #   - _curr_time is 0
+    #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
+    #       divided into 50 x 50 m squares
     def __init__(self, ga, mo_id, area_side_x, area_side_y):
         self._GA = ga
         self._id = mo_id
@@ -21,6 +37,7 @@ class MobileOperator:  # TODO ga communication code
         self._curr_areas_by_user = []
         self._area_array = []
         self._status = []
+        self._curr_time = 0
 
         self._other_mos = []
 
@@ -66,6 +83,11 @@ class MobileOperator:  # TODO ga communication code
 
     area_side_y = property(fget=get_area_side_y)
 
+    def get_curr_time(self):
+        return self._curr_time
+
+    curr_time = property(fget=get_curr_time)
+
     # register_other_mo creates reference to another MobileOperators for joint contact tracing purposes
     def register_other_mo(self, new_mo):
         self._other_mos.append(new_mo)
@@ -74,6 +96,7 @@ class MobileOperator:  # TODO ga communication code
     # inside the list of users internally
     # The first tiny assertion is that the users are added to the internal db in order of IDs.
     # The second tiny assertion is that no one will ever try ever to search for things that are not there.
+    # In any case, an error is thrown if the user is not in the db.
     def search_user_db(self, user):
         stop_bool = 0
         left = 0
@@ -102,17 +125,58 @@ class MobileOperator:  # TODO ga communication code
     #   - _status gets 0 appended
     def add_user(self, user):
         self._users.append(user)
+
         self._curr_locations.append((user.x, user.y))
+
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
         self._area_array[area_aux[0]][area_aux[1]].add({self.usr_count})
         self._curr_areas_by_user.append(area_aux)
+
         self._scores.append(0)
+
         self._status.append(0)
+
         self._usr_count += 1
 
     # assign_area assigns to a location an area code for running contact tracing in neighbouring areas only
     def assign_area(self, loc_tuple):
         return loc_tuple[0] // self.area_side_x, loc_tuple[1] // self.area_side_y
+
+    # det_adj_area_ranges determines adjacency area ranges
+    # Essentially, the ranges are [-1, 0, 1] on both x and y axes by default.
+    # In edge cases, some numbers are excluded from the ranges:
+    #   - -1 in the case of left-x, upper-y
+    #   - 1 in the case of right-x, lower-y
+    def det_adj_area_ranges(self, area_tuple):
+        edge_area_aux = 0
+
+        if area_tuple[0] == 0:
+            edge_area_aux += 1
+        elif area_tuple[0] == len(self._area_array):
+            edge_area_aux += 4
+
+        if area_tuple[1] == 0:
+            edge_area_aux += 2
+        elif area_tuple[1] == len(self._area_array[0]):
+            edge_area_aux += 7
+
+        return self.edge_case_range_dict[edge_area_aux]
+
+    # upd_user_data records changes in new user locations
+    # It changes self._current_locations to fit the location in the respective user class
+    # It changes area assignment:
+    #   - pops the user from the prior self._area_array bucket
+    #   - updates the user's value in self._curr_areas_by_user
+    #   - pushes the user's index in the appropriate self._area_array bucket
+    def upd_user_data(self, user, new_x, new_y):
+        user_index = self.search_user_db(user)
+        prior_area = self._curr_areas_by_user[user_index]
+
+        self._area_array[prior_area[0]][prior_area[1]].remove(user_index)
+
+        post_area = self.assign_area(loc_tuple=(new_x, new_y))
+
+        self._area_array[post_area[0]][post_area[1]].add(user_index)
 
     # location_pair_contacts generates contact approx score between 2 locations
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
@@ -120,18 +184,80 @@ class MobileOperator:  # TODO ga communication code
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
                 / self._L_max ** 2) ** 1024
 
-    #
-    def inside_scoring(self):
-        for user in self.users:
+    # search_mo_db is an aux function for binarily searching for MOs in the MO list
+    # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
+    # The second tiny assertion is that no one will ever try ever to search for things that are not there.
+    # In any case, an error is thrown if the MO is not in the db.
+    def search_mo_db(self, mo):
+        stop_bool = 0
+        left = 0
+        right = len(self._other_mos) - 1
 
+        while stop_bool == 0:
+            mid = (left + right) // 2
+            if self._other_mos[mid].id <= mo.id:
+                right = mid
+            else:
+                left = mid
+            if left == right:
+                stop_bool = 1
+
+        if self._other_mos[mid] is mo:
+            return mid
+        else:
+            AssertionError("MO does not exist")
+
+    # rcv_data_from_mo models data transfer from the other mobile operators
+    # The other_mo MO is searched for in the self._other_mos local MO list and its index is returned
+    # The loc_list location list, area_list area list, and sts_list status list are iterated over in order.
+    #   ---assumption--- All the said lists are of the same length and every respective entry is related
+    #            to the same respective user (i.e. if loc_list[i] has the location of user_johnathan, then
+    #            area_list[i] has its area and sts_list[i] its infection status).
+    # The score of the users is updated as contacts are registered:
+    #   - extract incoming user location from loc_list
+    #   - iterate over adjacent location areas
+    #   - extract own user buckets from all adjacent areas
+    #   - calculate contact score with all users in buckets
+    #   - multiply contact scores with infection status and add to each own user score respectively
+    def rcv_data_from_mo(self, loc_list, area_list, sts_list):
+        for i in range(len(loc_list)):
+            adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
+
+            for j in adj_indices[0]:
+                for k in adj_indices[1]:
+                    curr_bucket = area_list[area_list[0] + j][area_list[1] + k]
+                    for user_index in curr_bucket:
+                        self._scores[user_index] += sts_list[i] * self.location_pair_contact_score(
+                            location1=loc_list[i],
+                            location2=self._curr_locations[user_index]
+                        )
+
+    # inside_scoring registers scores of the MO's own users
+    # It iterates through all users
+    # fetches their area from the list of areas
+    # determines possible adjacent areas
+    # fetches all other users from the adjacent areas
+    # adds other user status * contact score to the current user's score
+    def inside_scoring(self):
+        for i in range(len(self.users)):
+            area = self._curr_areas_by_user[i]
+            adj_indices = self.det_adj_area_ranges(area_tuple=area)
+
+            for j in adj_indices[0]:
+                for k in adj_indices[1]:
+                    curr_bucket = self._area_array[area[0] + j][area[1] + k]
+
+                    for user_index in curr_bucket:
+                        if not user_index == i:
+                            self._scores[i] += self._status[i] * self.location_pair_contact_score(
+                                location1=self._curr_locations[i],
+                                location2=self._curr_locations[user_index])
 
     # tick models the passage of time inside the MO, much like the homonymous function does in SpaceTimeLord
     # TODO
     def tick(self):
         for user in self.users:
             user.upd_to_mo()
-
-    def upd_user_data(self, user, new_x, new_y):
 
 # def to_ga_comm # we dont know yet
 
