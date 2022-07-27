@@ -26,3 +26,5 @@ class GovAgent:
 
     infected = property(fget=get_infected)
 
+
+

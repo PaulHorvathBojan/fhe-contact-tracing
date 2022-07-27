@@ -46,7 +46,7 @@ class SpaceTimeLord:
                                    )
 
         for i in range(self._mo_count):
-            self._mos[i].tick()  # TODO: Implement periodic signalling in MO class
+            self._mos[i].tick()
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()  # TODO: Implement daily signalling in GA class

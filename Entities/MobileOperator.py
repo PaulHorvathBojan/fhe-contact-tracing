@@ -232,6 +232,13 @@ class MobileOperator:  # TODO ga communication code
                             location2=self._curr_locations[user_index]
                         )
 
+    # send_data_to_mo is a mask for calling rcv_data_from_mo in the argument MO
+    def send_data_to_mo(self, other_mo):
+        other_mo, rcv_data_from_mo(loc_list=self._curr_locations,
+                                   area_list=self._curr_areas_by_user,
+                                   sts_list=self._status
+                                   )
+
     # inside_scoring registers scores of the MO's own users
     # It iterates through all users
     # fetches their area from the list of areas
@@ -254,11 +261,44 @@ class MobileOperator:  # TODO ga communication code
                                 location2=self._curr_locations[user_index])
 
     # tick models the passage of time inside the MO, much like the homonymous function does in SpaceTimeLord
-    # TODO
+    # It triggers receipt of location data from self users and the sending of self user data to the other
+    #   MOs.
     def tick(self):
         for user in self.users:
             user.upd_to_mo()
+        self.inside_scoring()
 
-# def to_ga_comm # we dont know yet
+        for other_mo in self._other_mos:
+            self.send_data_to_mo(other_mo)
 
-# def from_ga_comm
+    # to_ga_comm models communications to the GA
+    # It builds a list to_ga_package that contains tuples of (uID, score)-type, where uID is the global uID.
+    # It then calls the receipt function inside the GA.
+    def to_ga_comm(self):
+        to_ga_package = []
+        for i in range(len(self.users)):
+            to_ga_package.append((self.users[i].uID, self._scores[i]))
+        self._GA.rcv_scores(to_ga_package)
+
+    # from_ga_comm models incoming communications from the GA
+    # The new_status argument replaces the _status field inside the MO class.
+    # Then, to_ga_comm is triggered to send data to the GA from the current MO.
+    def from_ga_comm(self, new_status):
+        self._status = new_status
+
+        self.to_ga_comm()
+
+    # rcv_user_ping models receipt of user request for score
+    # As soon as the user's request is received, the procedure of transmitting the score stored MO-side to
+    #   the respective user is started.
+    # That is, the method calls the to_user_comm method.
+    def rcv_user_ping(self, user):
+        self.to_user_comm(user=user)
+
+    # to_user_comm models the MO-user score transmission phase
+    # It fetches the index of the user from the local _users list.
+    # It sends the self._scores[index] score to the user via the user's score_from_mo method.
+    def to_user_comm(self, user):
+        index = self.search_user_db(user=user)
+
+        user.score_from_mo(score=self._scores[index])
