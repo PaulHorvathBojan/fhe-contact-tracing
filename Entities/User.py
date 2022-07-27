@@ -1,3 +1,5 @@
+import random
+
 from scipy.stats import bernoulli
 
 
@@ -19,6 +21,8 @@ class User:
         self._status = 0  # intuitively going for a Susceptible(0)-Infected(1)-Recovered(2) model
         self._infection_time = 0
         self._score = 0
+
+        self._nonce = 0
 
         self._MO.add_user(self)
 
@@ -104,9 +108,30 @@ class User:
         #   - update user locations in the db
         #   - trigger any eventual events inside the MO class
 
-    # score_from_mo models receipt of score from MO during the
+    # score_from_mo models receipt of score from MO during the MO to user comm phase
+    # It sets the score field of the user to the score argument
     def score_from_mo(self, score):
         self._score = score
 
+    # ping_mo_for_score models the request for score value from the user to the MO
+    # It calls the rcv_user_ping method inside the MO object that the user is affiliated with
     def ping_mo_for_score(self):
         self._MO.rcv_user_ping(self)
+
+    # decr_score_from_ga models the user to GA comm phase
+    # It multiplies the score with a random integer between 2 and 2 ** 60 and sends it as argument for the
+    #   appropriate method inside the GA class.
+    def decr_score_from_ga(self):
+        self._nonce = random.randint(2, 2 ** 60)
+        self._GA.rcv_score_req_from_user(self._nonce * self._score)
+
+    # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
+    # It calls the appropriate method inside the GA class with the user's infection status as argument
+    def send_sts_to_ga(self):
+        self._GA.infection_sts_from_user(self.status)
+
+    # rcv_score_from_ga models receipt of score from the affiliated GA
+    # The received value is the score masked multiplicatively with self._nonce.
+    # The nonce is removed and the score is updated.
+    def rcv_score_from_ga(self, nonced_score):
+        self._score = nonced_score / self._nonce
