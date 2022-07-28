@@ -1,4 +1,8 @@
-class MobileOperator:  # TODO ga communication code
+from Entities.User import User
+from Entities.GovAgent import GovAgent
+
+
+class MobileOperator:  # TODO ga communication code inside GA class
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
     edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
@@ -140,7 +144,7 @@ class MobileOperator:  # TODO ga communication code
 
     # assign_area assigns to a location an area code for running contact tracing in neighbouring areas only
     def assign_area(self, loc_tuple):
-        return loc_tuple[0] // self.area_side_x, loc_tuple[1] // self.area_side_y
+        return loc_tuple[0] // self._area_side_x, loc_tuple[1] // self._area_side_y
 
     # det_adj_area_ranges determines adjacency area ranges
     # Essentially, the ranges are [-1, 0, 1] on both x and y axes by default.
@@ -234,10 +238,10 @@ class MobileOperator:  # TODO ga communication code
 
     # send_data_to_mo is a mask for calling rcv_data_from_mo in the argument MO
     def send_data_to_mo(self, other_mo):
-        other_mo, rcv_data_from_mo(loc_list=self._curr_locations,
-                                   area_list=self._curr_areas_by_user,
-                                   sts_list=self._status
-                                   )
+        other_mo.rcv_data_from_mo(loc_list=self._curr_locations,
+                                  area_list=self._curr_areas_by_user,
+                                  sts_list=self._status
+                                  )
 
     # inside_scoring registers scores of the MO's own users
     # It iterates through all users
@@ -246,7 +250,7 @@ class MobileOperator:  # TODO ga communication code
     # fetches all other users from the adjacent areas
     # adds other user status * contact score to the current user's score
     def inside_scoring(self):
-        for i in range(len(self.users)):
+        for i in range(len(self._users)):
             area = self._curr_areas_by_user[i]
             adj_indices = self.det_adj_area_ranges(area_tuple=area)
 
@@ -264,7 +268,7 @@ class MobileOperator:  # TODO ga communication code
     # It triggers receipt of location data from self users and the sending of self user data to the other
     #   MOs.
     def tick(self):
-        for user in self.users:
+        for user in self._users:
             user.upd_to_mo()
         self.inside_scoring()
 
@@ -276,8 +280,8 @@ class MobileOperator:  # TODO ga communication code
     # It then calls the receipt function inside the GA.
     def to_ga_comm(self):
         to_ga_package = []
-        for i in range(len(self.users)):
-            to_ga_package.append((self.users[i].uID, self._scores[i]))
+        for i in range(len(self._users)):
+            to_ga_package.append((self._users[i].uID, self._scores[i]))
         self._GA.rcv_scores(to_ga_package)
 
     # from_ga_comm models incoming communications from the GA

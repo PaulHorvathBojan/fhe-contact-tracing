@@ -1,30 +1,35 @@
 import random
-
 from scipy.stats import bernoulli
+from Entities.MobileOperator import MobileOperator
+from Entities.GovAgent import GovAgent
 
 
 class User:
     # Initialize user at a certain location with a certain MO, user ID and GA.
     # After initializing class fields to the parameter and default values respectively, call add_user in the
-    #   user's MO.
+    #   user's MO and the GA.
     # By default:
     #    - the user's last update is at tick 0
     #    - the user is not infected
     #    - the user's infection time is 0
     def __init__(self, init_x, init_y, mo, uid, ga):
-        self._x = init_x
-        self._y = init_y
         self._MO = mo
         self._uID = uid
         self._GA = ga
+        self._threshold = self._GA.risk_threshold
+
+        self._x = init_x
+        self._y = init_y
         self._last_update = 0
         self._status = 0  # intuitively going for a Susceptible(0)-Infected(1)-Recovered(2) model
         self._infection_time = 0
         self._score = 0
+        self._infection_aware = 0
 
         self._nonce = 0
 
         self._MO.add_user(self)
+        self._GA.add_user(self)
 
     # Defined properties from getters for x, y, MO, GA, last update time and infection status.
     # No setters, as the respective fields are either immutable or implicitly changed by other methods.
@@ -76,25 +81,25 @@ class User:
         self.recover_from_covid()
         self.lose_antibodies()
 
-        ask_score = bernoulli.rvs(0.00034722222)
+        ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
         if ask_score == 1:
-            self.ping_mo_for_score()
+            self.score_receipt_proc()
 
     # infect infects a user and sets the time of infection to the current user time
     def infect(self):
-        if self.status == 0:
+        if self._status == 0:
             self._status = 1
             self._infection_time = self.last_update
 
     # recover_from_covid simulates recovery from covid (after 10080 ticks, which is 2 weeks for minutely
     #   ticks)
     def recover_from_covid(self):
-        if self.status == 1 and self.last_update - self._infection_time >= 20160:
+        if self._status == 1 and self._last_update - self._infection_time >= 20160:
             self._status = 2
 
     # lose_antibodies simulates loss of antibodies after 262800 ticks (6 months worth of minutes)
     def lose_antibodies(self):
-        if self.status == 2 and self.last_update - self._infection_time >= 262800:
+        if self._status == 2 and self._last_update - self._infection_time >= 262800:
             self._status = 0
 
     # upd_to_mo updates the data that the MO has regarding the self
@@ -128,10 +133,36 @@ class User:
     # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
     # It calls the appropriate method inside the GA class with the user's infection status as argument
     def send_sts_to_ga(self):
-        self._GA.infection_sts_from_user(self.status)
+        self._GA.infection_sts_from_user(self._status)
 
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.
     # The nonce is removed and the score is updated.
     def rcv_score_from_ga(self, nonced_score):
         self._score = nonced_score / self._nonce
+        if self._score >= self._threshold:
+            self.test_me()
+
+    # test_me models requesting an infection test to the GA
+    # It calls the test_user method in the _GA.
+    def test_me(self):
+        self._GA.test_user(self)
+
+    #
+    def at_risk(self):
+        self.test_me()
+
+    # score_receipt_proc models the score receipt procedure
+    # There are a number of methods in various classes that call each other once certain criteria are met.
+    # User.score_receipt_proc ->
+    # User.ping_mo_for_score ->
+    # MobileOperator.rcv_ping_from_user ->
+    # MobileOperator.to_user_comm ->
+    # User.score_from_mo
+    # Then, the GA-related side of comms is initiated:
+    # call User.decr_score_from_ga ->
+    # GA.rcv_score_req_from_user ->
+    # User.rcv_score_from_GA
+    def score_receipt_proc(self):
+        self.ping_mo_for_score()
+        self.decr_score_from_ga()
