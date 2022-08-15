@@ -21,11 +21,11 @@ class User:
         self._x = init_x
         self._y = init_y
         self._last_update = 0
-        self._status = 0  # intuitively going for a Susceptible(0)-Infected(1)-Recovered(2) model
-        self._infection_time = 0
-        self._score = 0
-        self._infection_aware = 0
 
+        # intuitively going for a Susceptible(0)-Infected(1) model;
+        # recovery is beyond the scope of this project
+        self._status = 0
+        self._score = 0
         self._nonce = 0
 
         self._MO.add_user(self)
@@ -69,38 +69,20 @@ class User:
     status = property(fget=get_status)
 
     # move_to updates the current location of the user and the time of the last update.
-    # A latter part also triggers the user's passive healing from covid after 2 weeks from the initial
-    #   infection.
-    # (might scrap the healing part as it seems out of scope)
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
     def move_to(self, new_x, new_y, update_time):
         self._x = new_x
         self._y = new_y
         self._last_update = update_time
-        self.recover_from_covid()
-        self.lose_antibodies()
 
         ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
         if ask_score == 1:
             self.score_receipt_proc()
 
-    # infect infects a user and sets the time of infection to the current user time
+    # infect infects a user by setting status to 1
     def infect(self):
-        if self._status == 0:
-            self._status = 1
-            self._infection_time = self.last_update
-
-    # recover_from_covid simulates recovery from covid (after 10080 ticks, which is 2 weeks for minutely
-    #   ticks)
-    def recover_from_covid(self):
-        if self._status == 1 and self._last_update - self._infection_time >= 20160:
-            self._status = 2
-
-    # lose_antibodies simulates loss of antibodies after 262800 ticks (6 months worth of minutes)
-    def lose_antibodies(self):
-        if self._status == 2 and self._last_update - self._infection_time >= 262800:
-            self._status = 0
+        self._status = 1
 
     # upd_to_mo updates the data that the MO has regarding the self
     # it essentially calls a function in the MO that performs the updating

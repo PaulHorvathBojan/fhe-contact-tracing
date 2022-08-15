@@ -5,20 +5,27 @@ from Entities.User import User
 
 class SpaceTimeLord:
 
-    def __init__(self, movements_iterable, mo_count):
+    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes):
+        self._movements_iterable = movements_iterable
+        self._risk_threshold = risk_thr
+        self._max_x = area_sizes[0]
+        self._max_y = area_sizes[1]
+
         self._usr_count = 0
         self._mo_count = 0
 
         self._mos = []
         self._users = []
-        self._ga = GovAgent()
-        self._movements_iterable = movements_iterable
         self._current_locations = next(movements_iterable)
         self._curr_time = 0
 
-        while self._mo_count <= mo_count:
+        self._ga = GovAgent(risk_threshold=self._risk_threshold)
+
+        while self._mo_count < mo_count:
             new_mo = MobileOperator(ga=self._ga,
-                                    mo_id=self._mo_count
+                                    mo_id=self._mo_count,
+                                    area_side_x=self._max_x,
+                                    area_side_y=self._max_y
                                     )
             for prev_mo in self._mos:
                 new_mo.register_other_mo(prev_mo)
@@ -49,7 +56,7 @@ class SpaceTimeLord:
             self._mos[i].tick()
 
         if self._curr_time % 1440 == 0:
-            self._ga.daily()  # TODO: Implement daily signalling in GA class
+            self._ga.daily()
 
     def add_user(self, location, uid):
         new_user = User(init_x=location[0],
