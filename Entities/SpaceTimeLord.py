@@ -37,10 +37,56 @@ class SpaceTimeLord:
                           uid=i
                           )
 
+    def add_user(self, location, uid):
+        new_user = User(init_x=location[0],
+                        init_y=location[1],
+                        mo=self._mos[uid % self._mo_count],
+                        uid=uid,
+                        ga=self._ga
+                        )
+
+        self._users.append(new_user)
+        self._mos[uid % self._mo_count].add_user(new_user)
+
     def get_current_locations(self):
         return self._current_locations
 
     current_locations = property(fget=get_current_locations)
+
+    def get_area_sizes(self):
+        return self._max_x, self._max_y
+
+    area_sizes = property(fget=get_area_sizes)
+
+    def get_user_count(self):
+        return self._usr_count
+
+    user_count = property(fget=get_user_count)
+
+    def get_mo_count(self):
+        return self._mo_count
+
+    mo_count = property(fget=get_mo_count)
+
+    def get_mos(self):
+        return self._mos
+
+    mos = property(fget=get_mos)
+
+    def get_users(self):
+        return self._users
+
+    users = property(fget=get_users)
+
+    def get_current_time(self):
+        return self._curr_time
+
+    current_time = property(fget=get_current_time)
+
+    def get_ga(self):
+        return self._ga
+
+    ga = property(fget=get_ga)
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
@@ -57,14 +103,3 @@ class SpaceTimeLord:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
-
-    def add_user(self, location, uid):
-        new_user = User(init_x=location[0],
-                        init_y=location[1],
-                        mo=self._mos[uid % self._mo_count],
-                        uid=uid,
-                        ga=self._ga
-                        )
-
-        self._users.append(new_user)
-        self._mos[uid % self._mo_count].add_user(new_user)
