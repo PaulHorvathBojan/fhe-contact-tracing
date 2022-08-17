@@ -1,6 +1,7 @@
-from mob_operator import MobileOperator
-from user import User
-from gov_agent import GovAgent
+from entities.mob_operator import MobileOperator
+from entities.user import ProtocolUser
+from entities.gov_agent import GovAgent
+from pymobility.models.mobility import gauss_markov
 
 
 class SpaceTimeLord:
@@ -38,12 +39,12 @@ class SpaceTimeLord:
                           )
 
     def add_user(self, location, uid):
-        new_user = User(init_x=location[0],
-                        init_y=location[1],
-                        mo=self._mos[uid % self._mo_count],
-                        uid=uid,
-                        ga=self._ga
-                        )
+        new_user = ProtocolUser(init_x=location[0],
+                                init_y=location[1],
+                                mo=self._mos[uid % self._mo_count],
+                                uid=uid,
+                                ga=self._ga
+                                )
 
         self._users.append(new_user)
         self._mos[uid % self._mo_count].add_user(new_user)
@@ -103,3 +104,19 @@ class SpaceTimeLord:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+
+def quicktest(pop, dims, mo_ct, risk_thr):
+    gm = gauss_markov(nr_nodes=pop,
+                      dimensions=dims,
+                      )
+    stl = SpaceTimeLord(movements_iterable=gm,
+                        mo_count=mo_ct,
+                        risk_thr=risk_thr,
+                        area_sizes=(50, 50)
+                        )
+
+    print(stl.mo_count)
+
+
+quicktest(10, (100, 100), 1, 1)

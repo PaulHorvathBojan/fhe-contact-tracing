@@ -3,7 +3,7 @@ import random
 from scipy.stats import bernoulli
 
 
-class User:
+class ProtocolUser:
     # Initialize user at a certain location with a certain MO, user ID and GA.
     # After initializing class fields to the parameter and default values respectively, call add_user in the
     #   user's MO and the GA.
@@ -135,15 +135,15 @@ class User:
 
     # score_receipt_proc models the score receipt procedure
     # There are a number of methods in various classes that call each other once certain criteria are met.
-    # User.score_receipt_proc ->
-    # User.ping_mo_for_score ->
+    # ProtocolUser.score_receipt_proc ->
+    # ProtocolUser.ping_mo_for_score ->
     # MobileOperator.rcv_ping_from_user ->
     # MobileOperator.to_user_comm ->
-    # User.score_from_mo
+    # ProtocolUser.score_from_mo
     # Then, the GA-related side of comms is initiated:
-    # call User.decr_score_from_ga ->
+    # call ProtocolUser.decr_score_from_ga ->
     # GA.rcv_score_req_from_user ->
-    # User.rcv_score_from_GA
+    # ProtocolUser.rcv_score_from_GA
     def score_receipt_proc(self):
         self.ping_mo_for_score()
         self.decr_score_from_ga()

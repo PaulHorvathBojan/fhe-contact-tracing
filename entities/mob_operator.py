@@ -1,3 +1,9 @@
+from numpy import rint
+
+from entities import ProtocolUser
+from entities import GovAgent
+
+
 class MobileOperator:  # TODO ga communication code inside GA class
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
@@ -114,7 +120,7 @@ class MobileOperator:  # TODO ga communication code inside GA class
         if self._users[mid] is user:
             return mid
         else:
-            AssertionError("User does not exist")
+            AssertionError("ProtocolUser does not exist")
 
     # add_user adds a new user to the _users list
     # It increments _usr_count and updates the _curr_locations, _curr_areas, _scores, and _status
@@ -126,10 +132,10 @@ class MobileOperator:  # TODO ga communication code inside GA class
     def add_user(self, user):
         self._users.append(user)
 
-        self._curr_locations.append((user.x, user.y))
+        self._curr_locations.append((rint(user.x), rint(user.y)))
 
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
-        self._area_array[area_aux[0]][area_aux[1]].add({self.usr_count})
+        self._area_array[area_aux[0]][area_aux[1]].add(self.usr_count)
         self._curr_areas_by_user.append(area_aux)
 
         self._scores.append(0)
@@ -140,7 +146,7 @@ class MobileOperator:  # TODO ga communication code inside GA class
 
     # assign_area assigns to a location an area code for running contact tracing in neighbouring areas only
     def assign_area(self, loc_tuple):
-        return loc_tuple[0] // self._area_side_x, loc_tuple[1] // self._area_side_y
+        return int(loc_tuple[0] / self._area_side_x), int(loc_tuple[1] / self._area_side_y)
 
     # det_adj_area_ranges determines adjacency area ranges
     # Essentially, the ranges are [-1, 0, 1] on both x and y axes by default.
@@ -205,7 +211,7 @@ class MobileOperator:  # TODO ga communication code inside GA class
         if self._other_mos[mid] is mo:
             return mid
         else:
-            AssertionError("MO does not exist")
+            AssertionError("MO does not exist")  # TODO: cut this from final?
 
     # rcv_data_from_mo models data transfer from the other mobile operators
     # The other_mo MO is searched for in the self._other_mos local MO list and its index is returned
@@ -302,3 +308,43 @@ class MobileOperator:  # TODO ga communication code inside GA class
         index = self.search_user_db(user=user)
 
         user.score_from_mo(score=self._scores[index])
+
+
+def quicktest(side_x, side_y):
+    testmo = MobileOperator(ga=69,
+                            mo_id=0,
+                            area_side_x=side_x,
+                            area_side_y=side_y
+                            )
+
+    print(testmo.id)
+    print(testmo.curr_time)
+
+
+quicktest(50, 50)
+
+
+def add_user_test(side_x, side_y, uinit_x, uinit_y):
+    testga = GovAgent(risk_threshold=1)
+
+    testmo = MobileOperator(ga=testga,
+                            mo_id=0,
+                            area_side_x=side_x,
+                            area_side_y=side_y
+                            )
+
+    testuser = ProtocolUser(init_x=uinit_x,
+                            init_y=uinit_y,
+                            mo=testmo,
+                            uid=0,
+                            ga=testmo.GA
+                            )
+
+    print(testmo.users)
+
+
+add_user_test(side_x=50,
+              side_y=50,
+              uinit_x=5,
+              uinit_y=5
+              )
