@@ -1,7 +1,3 @@
-from Entities.MobileOperator import MobileOperator
-from Entities.User import User
-
-
 class GovAgent:
 
     # initialise the class with empty user list, MO list, infected list, status list, score list
@@ -82,13 +78,3 @@ class GovAgent:
 
         for uID in risk_aux:
             self._users[uID].at_risk()
-
-    #
-    def test_user(self, user):
-        uid = user.uID
-        test_rez = user.status
-
-        if test_rez == 1:
-            if self._status[uid] == 0:
-                self._status[uid] = 1
-                user.

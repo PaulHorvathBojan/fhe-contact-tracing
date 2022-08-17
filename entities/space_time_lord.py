@@ -1,6 +1,6 @@
-from Entities.GovAgent import GovAgent
-from Entities.MobileOperator import MobileOperator
-from Entities.User import User
+from mob_operator import MobileOperator
+from user import User
+from gov_agent import GovAgent
 
 
 class SpaceTimeLord:

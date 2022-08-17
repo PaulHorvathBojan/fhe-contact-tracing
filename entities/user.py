@@ -1,7 +1,6 @@
 import random
+
 from scipy.stats import bernoulli
-from Entities.MobileOperator import MobileOperator
-from Entities.GovAgent import GovAgent
 
 
 class User:

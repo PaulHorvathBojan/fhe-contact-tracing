@@ -1,7 +1,3 @@
-from Entities.User import User
-from Entities.GovAgent import GovAgent
-
-
 class MobileOperator:  # TODO ga communication code inside GA class
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
