@@ -1,7 +1,5 @@
-from entities.mob_operator import MobileOperator
-from entities.user import ProtocolUser
-from entities.gov_agent import GovAgent
-from pymobility.models.mobility import gauss_markov
+from pymobility.models import gauss_markov
+from entities import GovAgent, MobileOperator, ProtocolUser
 
 
 class SpaceTimeLord:

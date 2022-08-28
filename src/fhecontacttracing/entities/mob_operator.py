@@ -1,7 +1,5 @@
 from numpy import rint
-
-from entities import ProtocolUser
-from entities import GovAgent
+# from gov_agent import GovAgent
 
 
 class MobileOperator:  # TODO ga communication code inside GA class
@@ -332,7 +330,7 @@ def add_user_test(side_x, side_y, uinit_x, uinit_y):
                             area_side_x=side_x,
                             area_side_y=side_y
                             )
-
+# if you wanna run this it will create a circular dependency
     testuser = ProtocolUser(init_x=uinit_x,
                             init_y=uinit_y,
                             mo=testmo,
@@ -342,9 +340,10 @@ def add_user_test(side_x, side_y, uinit_x, uinit_y):
 
     print(testmo.users)
 
-
-add_user_test(side_x=50,
-              side_y=50,
-              uinit_x=5,
-              uinit_y=5
-              )
+# from user import ProtocolUser for this to not spit errors
+# otherwise running it will need a circular dependency to be created
+# add_user_test(side_x=50,
+#               side_y=50,
+#               uinit_x=5,
+#               uinit_y=5
+#               )

@@ -70,7 +70,7 @@ class ProtocolUser:
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
-    def move_to(self, new_x, new_y, update_time):
+    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update
         self._x = new_x
         self._y = new_y
         self._last_update = update_time
