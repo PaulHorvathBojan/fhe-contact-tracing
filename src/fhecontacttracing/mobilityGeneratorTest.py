@@ -458,9 +458,9 @@ def get_tick_no_from_gz(path, tick_no, pop_size):
 
     rez = []
 
-    header = file.readline()
+    file.readline()
     for i in range(tick_no * pop_size):
-        dump = file.readline()
+        file.readline()
 
     for i in range(pop_size):
         content = file.readline()

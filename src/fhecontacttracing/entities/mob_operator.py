@@ -308,42 +308,42 @@ class MobileOperator:  # TODO ga communication code inside GA class
         user.score_from_mo(score=self._scores[index])
 
 
-def quicktest(side_x, side_y):
-    testmo = MobileOperator(ga=69,
-                            mo_id=0,
-                            area_side_x=side_x,
-                            area_side_y=side_y
-                            )
-
-    print(testmo.id)
-    print(testmo.curr_time)
-
-
-quicktest(50, 50)
-
-
-def add_user_test(side_x, side_y, uinit_x, uinit_y):
-    testga = GovAgent(risk_threshold=1)
-
-    testmo = MobileOperator(ga=testga,
-                            mo_id=0,
-                            area_side_x=side_x,
-                            area_side_y=side_y
-                            )
-# if you wanna run this it will create a circular dependency
-    testuser = ProtocolUser(init_x=uinit_x,
-                            init_y=uinit_y,
-                            mo=testmo,
-                            uid=0,
-                            ga=testmo.GA
-                            )
-
-    print(testmo.users)
-
-# from user import ProtocolUser for this to not spit errors
-# otherwise running it will need a circular dependency to be created
-# add_user_test(side_x=50,
-#               side_y=50,
-#               uinit_x=5,
-#               uinit_y=5
-#               )
+# def quicktest(side_x, side_y):
+#     testmo = MobileOperator(ga=69,
+#                             mo_id=0,
+#                             area_side_x=side_x,
+#                             area_side_y=side_y
+#                             )
+#
+#     print(testmo.id)
+#     print(testmo.curr_time)
+#
+#
+# quicktest(50, 50)
+#
+#
+# def add_user_test(side_x, side_y, uinit_x, uinit_y):
+#     testga = GovAgent(risk_threshold=1)
+#
+#     testmo = MobileOperator(ga=testga,
+#                             mo_id=0,
+#                             area_side_x=side_x,
+#                             area_side_y=side_y
+#                             )
+# # if you wanna run this it will create a circular dependency
+#     testuser = ProtocolUser(init_x=uinit_x,
+#                             init_y=uinit_y,
+#                             mo=testmo,
+#                             uid=0,
+#                             ga=testmo.GA
+#                             )
+#
+#     print(testmo.users)
+#
+# # from user import ProtocolUser for this to not spit errors
+# # otherwise running it will need a circular dependency to be created
+# # add_user_test(side_x=50,
+# #               side_y=50,
+# #               uinit_x=5,
+# #               uinit_y=5
+# #               )
