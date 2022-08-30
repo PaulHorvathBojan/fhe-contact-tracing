@@ -1,5 +1,4 @@
 from pymobility.models import gauss_markov
-from entities import GovAgent, MobileOperator, ProtocolUser
 
 
 class SpaceTimeLord:

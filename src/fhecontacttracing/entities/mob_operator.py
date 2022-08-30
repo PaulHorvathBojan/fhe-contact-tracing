@@ -51,6 +51,8 @@ class MobileOperator:  # TODO ga communication code inside GA class
         for i in range(23000):
             self._area_array.append(ys)
 
+        self._GA.add_mo(self)
+
     # define getters for all potentially public attributes:
     #   - govAuth
     def get_ga(self):
@@ -98,6 +100,12 @@ class MobileOperator:  # TODO ga communication code inside GA class
         return self._curr_time
 
     curr_time = property(fget=get_curr_time)
+
+    #   - list of other MOs
+    def get_other_mos(self):
+        return self._other_mos
+
+    other_MOs = property(fget=get_other_mos)
 
     # register_other_mo creates reference to another MobileOperators for joint contact tracing purposes
     def register_other_mo(self, new_mo):

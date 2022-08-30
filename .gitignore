@@ -1,3 +1,4 @@
 /src/fhecontacttracing/johnathan.py
-/src/fhecontacttracing/entities/xtests.py
 /src/fhecontacttracing/init_dummy.txt
+/src/fhecontacttracing/entities/xtests.py
+.gitignore
