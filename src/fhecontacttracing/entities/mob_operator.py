@@ -87,6 +87,13 @@ class MobileOperator:  # TODO ga communication code inside GA class
 
     area_side_y = property(fget=get_area_side_y)
 
+    #   - max of the two area sides
+    def get_lmax(self):
+        return self._L_max
+
+    L_max = property(fget=get_lmax)
+
+    #   - time of last update
     def get_curr_time(self):
         return self._curr_time
 
@@ -274,6 +281,8 @@ class MobileOperator:  # TODO ga communication code inside GA class
 
         for other_mo in self._other_mos:
             self.send_data_to_mo(other_mo)
+
+        self._curr_time += 1
 
     # to_ga_comm models communications to the GA
     # It builds a list to_ga_package that contains tuples of (uID, score)-type, where uID is the global uID.
