@@ -1,4 +1,6 @@
 from numpy import rint
+
+
 # from gov_agent import GovAgent
 
 
@@ -117,23 +119,19 @@ class MobileOperator:  # TODO ga communication code inside GA class
     # The second tiny assertion is that no one will ever try ever to search for things that are not there.
     # In any case, an error is thrown if the user is not in the db.
     def search_user_db(self, user):
-        stop_bool = 0
         left = 0
         right = self._usr_count - 1
 
-        while stop_bool == 0:
+        while left <= right:
             mid = (left + right) // 2
-            if self._users[mid].uID <= user.uID:
-                right = mid
+            if self._users[mid].uID < user.uID:
+                left = mid + 1
+            elif self._users[mid].uID > user.uID:
+                right = mid - 1
             else:
-                left = mid
-            if left == right:
-                stop_bool = 1
+                return mid
 
-        if self._users[mid] is user:
-            return mid
-        else:
-            AssertionError("ProtocolUser does not exist")
+        return -1
 
     # add_user adds a new user to the _users list
     # It increments _usr_count and updates the _curr_locations, _curr_areas, _scores, and _status
@@ -323,7 +321,6 @@ class MobileOperator:  # TODO ga communication code inside GA class
         index = self.search_user_db(user=user)
 
         user.score_from_mo(score=self._scores[index])
-
 
 # def quicktest(side_x, side_y):
 #     testmo = MobileOperator(ga=69,

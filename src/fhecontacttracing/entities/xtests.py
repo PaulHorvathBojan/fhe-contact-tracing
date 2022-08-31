@@ -140,6 +140,8 @@ class MobileOperator:
         for i in range(23000):
             self._area_array.append(ys)
 
+        self._GA.add_mo(self)
+
     # define getters for all potentially public attributes:
     #   - govAuth
     def get_ga(self):
@@ -201,23 +203,19 @@ class MobileOperator:
     # The second tiny assertion is that no one will ever try ever to search for things that are not there.
     # In any case, an error is thrown if the user is not in the db.
     def search_user_db(self, user):
-        stop_bool = 0
         left = 0
         right = self._usr_count - 1
 
-        while stop_bool == 0:
+        while left <= right:
             mid = (left + right) // 2
-            if self._users[mid].uID <= user.uID:
-                right = mid
+            if self._users[mid].uID < user.uID:
+                left = mid + 1
+            elif self._users[mid].uID > user.uID:
+                right = mid - 1
             else:
-                left = mid
-            if left == right:
-                stop_bool = 1
+                return mid
 
-        if self._users[mid] is user:
-            return mid
-        else:
-            AssertionError("ProtocolUser does not exist")
+        return -1
 
     # add_user adds a new user to the _users list
     # It increments _usr_count and updates the _curr_locations, _curr_areas, _scores, and _status
@@ -821,36 +819,6 @@ class UserTest(unittest.TestCase):
                                  )
 
         self.assertEqual(test_user.get_mo(), dummy_mo, "MO getter not proper")
-
-    def test_mogetter(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
-
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
-
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
-
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50
-                                  )
-
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-
-        self.assertEqual(test_user.MO, dummy_mo, "MO property not proper")
 
     def test_moproperty(self):
         # Baseline movement iterator
@@ -1577,8 +1545,67 @@ class MOTest(unittest.TestCase):
                                  )
 
         other_mos = []
+        self.assertEqual(test_mo.get_other_mos(), other_mos, "other MO getter in MO class not proper")
+        self.assertEqual(test_mo.other_MOs, other_mos, "other MO property in MO class not proper")
         for i in range(5):
+            aux_mo = MobileOperator(ga=dummy_ga,
+                                    mo_id=i + 1,
+                                    area_side_x=50,
+                                    area_side_y=50
+                                    )
+            test_mo.register_other_mo(new_mo=aux_mo)
+            other_mos.append(aux_mo)
 
+        self.assertEqual(test_mo.get_other_mos(), other_mos, "other MO getter in MO class not proper")
+        self.assertEqual(test_mo.other_MOs, other_mos, "other MO property in MO class not proper")
+
+    def test_userdbsearch(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        # Dummy user list creation
+        content = next(dummy_gm)
+        int_content = []
+        for i in content:
+            rot = np.rint(i)
+            int_rot = []
+            for member in rot:
+                member = int(member)
+                int_rot.append(member)
+            int_content.append(list(int_rot))
+
+        usr_list = []
+        for i in range(len(int_content)):
+            usr_list.append(ProtocolUser(init_x=int_content[i][0],
+                                         init_y=int_content[i][1],
+                                         mo=test_mo,
+                                         uid=i,
+                                         ga=dummy_ga
+                                         ))
+
+        for i in range(len(usr_list)):
+            test_mo.users.append(usr_list[i])
+            test_mo._usr_count += 1
+            self.assertEqual(test_mo.search_user_db(usr_list[i]), i, "user db search in MO class not proper")
+
+    def test_
 
 
 unittest.main()
