@@ -1,5 +1,6 @@
 from pymobility.models.mobility import gauss_markov
 from scipy.stats import bernoulli
+from numpy import rint
 
 import numpy as np
 import random
@@ -91,7 +92,7 @@ class GovAgent:
             self._users[uID].at_risk()
 
 
-class MobileOperator:
+class MobileOperator:  # TODO ga communication code inside GA class
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
     edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
@@ -134,10 +135,10 @@ class MobileOperator:
 
         self._other_mos = []
 
-        ys = []
-        for i in range(19000):
-            ys.append(set())
-        for i in range(23000):
+        for _ in range(73):
+            ys = []
+            for _ in range(73):
+                ys.append(set())
             self._area_array.append(ys)
 
         self._GA.add_mo(self)
@@ -178,16 +179,19 @@ class MobileOperator:
 
     area_side_y = property(fget=get_area_side_y)
 
+    #   - max of the two area sides
     def get_lmax(self):
         return self._L_max
 
     L_max = property(fget=get_lmax)
 
+    #   - time of last update
     def get_curr_time(self):
         return self._curr_time
 
     curr_time = property(fget=get_curr_time)
 
+    #   - list of other MOs
     def get_other_mos(self):
         return self._other_mos
 
@@ -227,10 +231,12 @@ class MobileOperator:
     def add_user(self, user):
         self._users.append(user)
 
-        self._curr_locations.append((np.rint(user.x), np.rint(user.y)))
+        self._curr_locations.append((rint(user.x), rint(user.y)))
 
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
-        self._area_array[area_aux[0]][area_aux[1]].add(self.usr_count)
+        loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
+        loc_bucket.add(self.usr_count)
+
         self._curr_areas_by_user.append(area_aux)
 
         self._scores.append(0)
@@ -656,7 +662,7 @@ class SpaceTimeLord:
 
 
 # Class to produce iterators that return every 60th iteration from given iterator
-class MinutelyMovement():
+class MinutelyMovement:
     def __init__(self, movement_iter):
         self._move = movement_iter
 
@@ -1171,6 +1177,39 @@ class UserTest(unittest.TestCase):
 
         self.assertEqual(test_user.status, 1, "infect method not proper")
 
+    # def test_updtomo(self):
+    #     # Baseline movement iterator
+    #     dummy_gm = gauss_markov(nr_nodes=10,
+    #                             dimensions=(3652, 3652),
+    #                             velocity_mean=3.,
+    #                             variance=2.
+    #                             )
+    #
+    #     # Baseline minutely movement iterator
+    #     MinutelyMovement(movement_iter=dummy_gm)
+    #
+    #     # Dummy GA so that methods work with less expected errors
+    #     dummy_ga = GovAgent(risk_threshold=1)
+    #
+    #     # Dummy MO so that methods work with less expected errors
+    #     dummy_mo = MobileOperator(ga=dummy_ga,
+    #                               mo_id=0,
+    #                               area_side_x=50,
+    #                               area_side_y=50
+    #                               )
+    #
+    #     test_user = ProtocolUser(init_x=15,
+    #                              init_y=15,
+    #                              mo=dummy_mo,
+    #                              uid=0,
+    #                              ga=dummy_ga
+    #                              )
+    #
+    #     self.assertEqual(test_user.)
+    #     test_user.move_to(new_x=96,
+    #                       new_y=16)
+    #     test_user.upd_to_mo()
+
 
 # Mobile operator test class
 class MOTest(unittest.TestCase):
@@ -1605,7 +1644,85 @@ class MOTest(unittest.TestCase):
             test_mo._usr_count += 1
             self.assertEqual(test_mo.search_user_db(usr_list[i]), i, "user db search in MO class not proper")
 
-    def test_
+    def test_assignarea(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        self.assertEqual(test_mo.assign_area(loc_tuple=(1234, 1234)), (1234 // 50, 1234 // 50),
+                         "area assignment in MO class not proper")
+
+    def test_adduser(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        self.assertEqual(test_mo._users, [], "initial user list in MO class not empty")
+        self.assertEqual(test_mo._curr_locations, [], "initial current location list in MO class not empty")
+        for i in range(73):
+            for j in range(73):
+                self.assertEqual(test_mo._area_array[i][j], set(), "initial area buckets in MO class not empty")
+        self.assertEqual(test_mo._curr_areas_by_user, [], "initial current area list in MO class not empty")
+        self.assertEqual(test_mo._scores, [], "initial score list in MO class not empty")
+        self.assertEqual(test_mo._status, [], "initial status list in MO class not empty")
+        self.assertEqual(test_mo.usr_count, 0, "initial user count in MO class not 0")
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=test_mo,
+                                  uid=0,
+                                  ga=dummy_ga
+                                  )
+
+        self.assertEqual(test_mo._users, [dummy_user], "add user method in MO class does not append to user list")
+        self.assertEqual(test_mo._curr_locations, [(dummy_user.x, dummy_user.y)],
+                         "add user method in MO class does not append to location list")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(test_mo._area_array[i][j], set([0]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+
+        self.assertEqual(test_mo._curr_areas_by_user, [(0, 0)],
+                         "add user method in MO class does not correctly append to current area list")
+        self.assertEqual(test_mo._scores, [0], "add user method in MO class does not correctly append 0 to score list")
+        self.assertEqual(test_mo._status, [0], "add user method in MO class does not correctly append 0 to status list")
+        self.assertEqual(test_mo.usr_count, 1, "add user method in MO class does not correctly increment user count")
 
 
 unittest.main()

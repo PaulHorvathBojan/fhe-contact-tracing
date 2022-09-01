@@ -4,7 +4,8 @@ from numpy import rint
 # from gov_agent import GovAgent
 
 
-class MobileOperator:  # TODO ga communication code inside GA class
+class MobileOperator:   # TODO: - ga communication code inside GA class
+    #                           - reimplement MO db binary search
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
     edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
@@ -47,10 +48,10 @@ class MobileOperator:  # TODO ga communication code inside GA class
 
         self._other_mos = []
 
-        ys = []
-        for i in range(19000):
-            ys.append(set())
-        for i in range(23000):
+        for _ in range(270):
+            ys = []
+            for _ in range(270):
+                ys.append(set())
             self._area_array.append(ys)
 
         self._GA.add_mo(self)
@@ -146,7 +147,9 @@ class MobileOperator:  # TODO ga communication code inside GA class
         self._curr_locations.append((rint(user.x), rint(user.y)))
 
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
-        self._area_array[area_aux[0]][area_aux[1]].add(self.usr_count)
+        loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
+        loc_bucket.add(self.usr_count)
+
         self._curr_areas_by_user.append(area_aux)
 
         self._scores.append(0)
