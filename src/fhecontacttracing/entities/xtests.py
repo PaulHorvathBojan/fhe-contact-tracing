@@ -276,14 +276,22 @@ class MobileOperator:  # TODO ga communication code inside GA class
     #   - updates the user's value in self._curr_areas_by_user
     #   - pushes the user's index in the appropriate self._area_array bucket
     def upd_user_data(self, user, new_x, new_y):
+        # Find user index in local indexing
         user_index = self.search_user_db(user)
-        prior_area = self._curr_areas_by_user[user_index]
 
+        # Remove user index from prior area bucket
+        prior_area = self._curr_areas_by_user[user_index]
         self._area_array[prior_area[0]][prior_area[1]].remove(user_index)
 
-        post_area = self.assign_area(loc_tuple=(new_x, new_y))
+        # Update current user location
+        self._curr_locations[user_index] = (new_x, new_y)
 
+        # Add user index to current area bucket
+        post_area = self.assign_area(loc_tuple=(new_x, new_y))
         self._area_array[post_area[0]][post_area[1]].add(user_index)
+
+        # Change current user area
+        self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
@@ -1177,38 +1185,86 @@ class UserTest(unittest.TestCase):
 
         self.assertEqual(test_user.status, 1, "infect method not proper")
 
-    # def test_updtomo(self):
-    #     # Baseline movement iterator
-    #     dummy_gm = gauss_markov(nr_nodes=10,
-    #                             dimensions=(3652, 3652),
-    #                             velocity_mean=3.,
-    #                             variance=2.
-    #                             )
-    #
-    #     # Baseline minutely movement iterator
-    #     MinutelyMovement(movement_iter=dummy_gm)
-    #
-    #     # Dummy GA so that methods work with less expected errors
-    #     dummy_ga = GovAgent(risk_threshold=1)
-    #
-    #     # Dummy MO so that methods work with less expected errors
-    #     dummy_mo = MobileOperator(ga=dummy_ga,
-    #                               mo_id=0,
-    #                               area_side_x=50,
-    #                               area_side_y=50
-    #                               )
-    #
-    #     test_user = ProtocolUser(init_x=15,
-    #                              init_y=15,
-    #                              mo=dummy_mo,
-    #                              uid=0,
-    #                              ga=dummy_ga
-    #                              )
-    #
-    #     self.assertEqual(test_user.)
-    #     test_user.move_to(new_x=96,
-    #                       new_y=16)
-    #     test_user.upd_to_mo()
+    def test_updtomo(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=dummy_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        self.assertEqual(dummy_mo._users, [], "initial user list in MO class not empty")
+        self.assertEqual(dummy_mo._curr_locations, [], "initial current location list in MO class not empty")
+        for i in range(73):
+            for j in range(73):
+                self.assertEqual(dummy_mo._area_array[i][j], set(), "initial area buckets in MO class not empty")
+        self.assertEqual(dummy_mo._curr_areas_by_user, [], "initial current area list in MO class not empty")
+        self.assertEqual(dummy_mo._scores, [], "initial score list in MO class not empty")
+        self.assertEqual(dummy_mo._status, [], "initial status list in MO class not empty")
+        self.assertEqual(dummy_mo.usr_count, 0, "initial user count in MO class not 0")
+
+        test_user = ProtocolUser(init_x=15,
+                                 init_y=15,
+                                 mo=dummy_mo,
+                                 uid=0,
+                                 ga=dummy_ga
+                                 )
+
+        self.assertEqual(dummy_mo._users, [test_user], "add user method in MO class does not append to user list")
+        self.assertEqual(dummy_mo._curr_locations, [(test_user.x, test_user.y)],
+                         "add user method in MO class does not append to location list")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(dummy_mo._area_array[i][j], set([0]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(dummy_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+
+        self.assertEqual(dummy_mo._curr_areas_by_user, [(0, 0)],
+                         "add user method in MO class does not correctly append to current area list")
+        self.assertEqual(dummy_mo._scores, [0], "add user method in MO class does not correctly append 0 to score list")
+        self.assertEqual(dummy_mo._status, [0],
+                         "add user method in MO class does not correctly append 0 to status list")
+        self.assertEqual(dummy_mo.usr_count, 1, "add user method in MO class does not correctly increment user count")
+
+        test_user.move_to(new_x=96,
+                          new_y=16,
+                          update_time=1)
+        test_user.upd_to_mo()
+
+        self.assertEqual(dummy_mo._users, [test_user], "add user method in MO class does not append to user list")
+        self.assertEqual(dummy_mo._curr_locations, [(test_user.x, test_user.y)],
+                         "add user method in MO class does not append to location list")
+        for i in range(73):
+            for j in range(73):
+                if i == 1 and j == 0:
+                    self.assertEqual(dummy_mo._area_array[i][j], set([0]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(dummy_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+
+        self.assertEqual(dummy_mo._curr_areas_by_user, [(1, 0)],
+                         "add user method in MO class does not correctly append to current area list")
+        self.assertEqual(dummy_mo._scores, [0], "add user method in MO class does not correctly append 0 to score list")
+        self.assertEqual(dummy_mo._status, [0],
+                         "add user method in MO class does not correctly append 0 to status list")
+        self.assertEqual(dummy_mo.usr_count, 1, "add user method in MO class does not correctly increment user count")
 
 
 # Mobile operator test class
@@ -1723,6 +1779,173 @@ class MOTest(unittest.TestCase):
         self.assertEqual(test_mo._scores, [0], "add user method in MO class does not correctly append 0 to score list")
         self.assertEqual(test_mo._status, [0], "add user method in MO class does not correctly append 0 to status list")
         self.assertEqual(test_mo.usr_count, 1, "add user method in MO class does not correctly increment user count")
+
+    def test_adjarearange(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 0)), ([0, 1], [0, 1]),
+                         "upper left corner not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 73)), ([0, 1], [-1, 0]),
+                         "upper right corner not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 0)), ([-1, 0], [0, 1]),
+                         "lower left corner not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 73)), ([-1, 0], [-1, 0]),
+                         "lower right corner not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 12)), ([0, 1], [-1, 0, 1]),
+                         "left edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 23)), ([0, 1], [-1, 0, 1]),
+                         "left edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 34)), ([0, 1], [-1, 0, 1]),
+                         "left edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 45)), ([0, 1], [-1, 0, 1]),
+                         "left edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 56)), ([0, 1], [-1, 0, 1]),
+                         "left edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 12)), ([-1, 0], [-1, 0, 1]),
+                         "right edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 23)), ([-1, 0], [-1, 0, 1]),
+                         "right edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 34)), ([-1, 0], [-1, 0, 1]),
+                         "right edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 45)), ([-1, 0], [-1, 0, 1]),
+                         "right edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(73, 56)), ([-1, 0], [-1, 0, 1]),
+                         "right edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 0)), ([-1, 0, 1], [0, 1]),
+                         "upper edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(23, 0)), ([-1, 0, 1], [0, 1]),
+                         "upper edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(34, 0)), ([-1, 0, 1], [0, 1]),
+                         "upper edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(45, 0)), ([-1, 0, 1], [0, 1]),
+                         "upper edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(56, 0)), ([-1, 0, 1], [0, 1]),
+                         "upper edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 73)), ([-1, 0, 1], [-1, 0]),
+                         "lower edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(23, 73)), ([-1, 0, 1], [-1, 0]),
+                         "lower edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(34, 73)), ([-1, 0, 1], [-1, 0]),
+                         "lower edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(45, 73)), ([-1, 0, 1], [-1, 0]),
+                         "lower edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(56, 73)), ([-1, 0, 1], [-1, 0]),
+                         "lower edge not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 23)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 34)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 45)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(12, 56)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(23, 23)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(34, 23)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+        self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(45, 23)), ([-1, 0, 1], [-1, 0, 1]),
+                         "inner area not evaluated correctly")
+
+    def test_upduserdata(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        self.assertEqual(test_mo._users, [], "initial user list in MO class not empty")
+        self.assertEqual(test_mo._curr_locations, [], "initial current location list in MO class not empty")
+        for i in range(73):
+            for j in range(73):
+                self.assertEqual(test_mo._area_array[i][j], set(), "initial area buckets in MO class not empty")
+        self.assertEqual(test_mo._curr_areas_by_user, [], "initial current area list in MO class not empty")
+        self.assertEqual(test_mo._scores, [], "initial score list in MO class not empty")
+        self.assertEqual(test_mo._status, [], "initial status list in MO class not empty")
+        self.assertEqual(test_mo.usr_count, 0, "initial user count in MO class not 0")
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=test_mo,
+                                  uid=0,
+                                  ga=dummy_ga
+                                  )
+
+        self.assertEqual(test_mo._users, [dummy_user], "add user method in MO class does not append to user list")
+        self.assertEqual(test_mo._curr_locations, [(dummy_user.x, dummy_user.y)],
+                         "add user method in MO class does not append to location list")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(test_mo._area_array[i][j], set([0]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+
+        self.assertEqual(test_mo._curr_areas_by_user, [(0, 0)],
+                         "add user method in MO class does not correctly append to current area list")
+        self.assertEqual(test_mo._scores, [0], "add user method in MO class does not correctly append 0 to score list")
+        self.assertEqual(test_mo._status, [0], "add user method in MO class does not correctly append 0 to status list")
+        self.assertEqual(test_mo.usr_count, 1, "add user method in MO class does not correctly increment user count")
+
+        dummy_user.move_to(new_x=68,
+                           new_y=12,
+                           update_time=1
+                           )
+
+        test_mo.upd_user_data(user=dummy_user,
+                              new_x=dummy_user.x,
+                              new_y=dummy_user.y)
+
+        self.assertEqual(test_mo._users, [dummy_user], "user upd method in MO class does not append to user list")
+        self.assertEqual(test_mo._curr_locations, [(dummy_user.x, dummy_user.y)],
+                         "user upd method in MO class does not append to location list")
+        for i in range(73):
+            for j in range(73):
+                if i == 1 and j == 0:
+                    self.assertEqual(test_mo._area_array[i][j], set([0]),
+                                     "user upd method in MO class does not add to area bucket")
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "user upd method in MO class fails to remove from prev area bucket")
+
+        self.assertEqual(test_mo._curr_areas_by_user, [(1, 0)],
+                         "user upd method in MO class does not correctly modify current area list")
+        self.assertEqual(test_mo._scores, [0], "user upd method in MO class wrongly modifies score list")
+        self.assertEqual(test_mo._status, [0], "user upd method in MO class wrongly modifies status list")
+        self.assertEqual(test_mo.usr_count, 1, "user upd method in MO class wrongly increments user count")
 
 
 unittest.main()

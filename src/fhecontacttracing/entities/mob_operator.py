@@ -189,14 +189,22 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
     #   - updates the user's value in self._curr_areas_by_user
     #   - pushes the user's index in the appropriate self._area_array bucket
     def upd_user_data(self, user, new_x, new_y):
+        # Find user index in local indexing
         user_index = self.search_user_db(user)
-        prior_area = self._curr_areas_by_user[user_index]
 
+        # Remove user index from prior area bucket
+        prior_area = self._curr_areas_by_user[user_index]
         self._area_array[prior_area[0]][prior_area[1]].remove(user_index)
 
-        post_area = self.assign_area(loc_tuple=(new_x, new_y))
+        # Update current user location
+        self._curr_locations[user_index] = (new_x, new_y)
 
+        # Add user index to current area bucket
+        post_area = self.assign_area(loc_tuple=(new_x, new_y))
         self._area_array[post_area[0]][post_area[1]].add(user_index)
+
+        # Change current user area
+        self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
