@@ -78,3 +78,15 @@ class GovAgent:
 
         for uID in risk_aux:
             self._users[uID].at_risk()
+
+    # Method to be overloaded in a cryptographic implementation
+    # In crypto world, the GA would decrypt the received value from the user
+    # AND THEN
+    # send the result back to the user
+    # It is assumed that the user would send the value masked under a nonce
+    def score_req(self, user, nonced_score):
+        user.score_from_ga(nonced_score)
+
+    # Placeholder method
+    def test_user(self, user):
+        self._scores[0] = self._scores[0]

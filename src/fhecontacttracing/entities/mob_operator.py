@@ -1,9 +1,3 @@
-from numpy import rint
-
-
-# from gov_agent import GovAgent
-
-
 class MobileOperator:   # TODO: - ga communication code inside GA class
     #                           - reimplement MO db binary search
     # Dictionary for edge case adjacency.

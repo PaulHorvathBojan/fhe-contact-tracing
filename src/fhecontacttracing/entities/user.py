@@ -1,8 +1,3 @@
-import random
-
-from scipy.stats import bernoulli
-
-
 class ProtocolUser:
     # Initialize user at a certain location with a certain MO, user ID and GA.
     # After initializing class fields to the parameter and default values respectively, call add_user in the
@@ -109,7 +104,7 @@ class ProtocolUser:
     #   appropriate method inside the GA class.
     def decr_score_from_ga(self):
         self._nonce = random.randint(2, 2 ** 60)
-        self._GA.rcv_score_req_from_user(self._nonce * self._score)
+        self._GA.score_req(self, self._nonce * self._score)
 
     # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
     # It calls the appropriate method inside the GA class with the user's infection status as argument
@@ -119,7 +114,7 @@ class ProtocolUser:
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.
     # The nonce is removed and the score is updated.
-    def rcv_score_from_ga(self, nonced_score):
+    def score_from_ga(self, nonced_score):
         self._score = nonced_score / self._nonce
         if self._score >= self._threshold:
             self.test_me()
