@@ -90,3 +90,10 @@ class GovAgent:
     # Placeholder method
     def test_user(self, user):
         self._scores[0] = self._scores[0]
+
+    # sts_from_user updates the user's status inside the GA's respective list of user status
+    def status_from_user(self, user, status):
+        if status == 1:
+            self._status[user.uID] = status
+        elif status == 0:
+            self._status[user.uID] = status

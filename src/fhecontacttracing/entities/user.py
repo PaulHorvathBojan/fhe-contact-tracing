@@ -109,7 +109,7 @@ class ProtocolUser:
     # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
     # It calls the appropriate method inside the GA class with the user's infection status as argument
     def send_sts_to_ga(self):
-        self._GA.infection_sts_from_user(self._status)
+        self._GA.status_from_user(self, self._status)
 
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.

@@ -1,4 +1,4 @@
-class MobileOperator:   # TODO: - ga communication code inside GA class
+class MobileOperator:  # TODO: - ga communication code inside GA class
     #                           - reimplement MO db binary search
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
@@ -42,9 +42,9 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
 
         self._other_mos = []
 
-        for _ in range(270):
+        for _ in range(74):
             ys = []
-            for _ in range(270):
+            for _ in range(74):
                 ys.append(set())
             self._area_array.append(ys)
 
@@ -166,12 +166,12 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
 
         if area_tuple[0] == 0:
             edge_area_aux += 1
-        elif area_tuple[0] == len(self._area_array):
+        elif area_tuple[0] == len(self._area_array) - 1:
             edge_area_aux += 4
 
         if area_tuple[1] == 0:
             edge_area_aux += 2
-        elif area_tuple[1] == len(self._area_array[0]):
+        elif area_tuple[1] == len(self._area_array[0]) - 1:
             edge_area_aux += 7
 
         return self.edge_case_range_dict[edge_area_aux]
@@ -201,6 +201,7 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
         self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
+    # TODO: Parallel implementation where this formula is the actual Euclidean distance
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
     def location_pair_contact_score(self, location1, location2):
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
@@ -211,23 +212,19 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
     # The second tiny assertion is that no one will ever try ever to search for things that are not there.
     # In any case, an error is thrown if the MO is not in the db.
     def search_mo_db(self, mo):
-        stop_bool = 0
         left = 0
         right = len(self._other_mos) - 1
 
-        while stop_bool == 0:
+        while left <= right:
             mid = (left + right) // 2
-            if self._other_mos[mid].id <= mo.id:
-                right = mid
+            if self._other_mos[mid].id < mo.id:
+                left = mid + 1
+            elif self._other_mos[mid].id > mo.id:
+                right = mid - 1
             else:
-                left = mid
-            if left == right:
-                stop_bool = 1
+                return mid
 
-        if self._other_mos[mid] is mo:
-            return mid
-        else:
-            AssertionError("MO does not exist")  # TODO: cut this from final?
+        return -1
 
     # rcv_data_from_mo models data transfer from the other mobile operators
     # The other_mo MO is searched for in the self._other_mos local MO list and its index is returned
@@ -247,7 +244,7 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
 
             for j in adj_indices[0]:
                 for k in adj_indices[1]:
-                    curr_bucket = area_list[area_list[0] + j][area_list[1] + k]
+                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
                     for user_index in curr_bucket:
                         self._scores[user_index] += sts_list[i] * self.location_pair_contact_score(
                             location1=loc_list[i],
@@ -278,7 +275,7 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
 
                     for user_index in curr_bucket:
                         if not user_index == i:
-                            self._scores[i] += self._status[i] * self.location_pair_contact_score(
+                            self._scores[i] += self._status[user_index] * self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
 
@@ -366,3 +363,7 @@ class MobileOperator:   # TODO: - ga communication code inside GA class
 # #               uinit_x=5,
 # #               uinit_y=5
 # #               )
+
+#%%
+
+#%%

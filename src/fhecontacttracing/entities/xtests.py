@@ -99,8 +99,16 @@ class GovAgent:
     def score_req(self, user, nonced_score):
         user.score_from_ga(nonced_score)
 
+    # Placeholder method
     def test_user(self, user):
         self._scores[0] = self._scores[0]
+
+    # sts_from_user updates the user's status inside the GA's respective list of user status
+    def status_from_user(self, user, status):
+        if status == 1:
+            self._status[user.uID] = status
+        elif status == 0:
+            self._status[user.uID] = status
 
 
 class MobileOperator:  # TODO: - ga communication code inside GA class
@@ -306,6 +314,7 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
         self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
+    # TODO: Parallel implementation where this formula is the actual Euclidean distance
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
     def location_pair_contact_score(self, location1, location2):
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
@@ -316,23 +325,19 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
     # The second tiny assertion is that no one will ever try ever to search for things that are not there.
     # In any case, an error is thrown if the MO is not in the db.
     def search_mo_db(self, mo):
-        stop_bool = 0
         left = 0
         right = len(self._other_mos) - 1
 
-        while stop_bool == 0:
+        while left <= right:
             mid = (left + right) // 2
-            if self._other_mos[mid].id <= mo.id:
-                right = mid
+            if self._other_mos[mid].id < mo.id:
+                left = mid + 1
+            elif self._other_mos[mid].id > mo.id:
+                right = mid - 1
             else:
-                left = mid
-            if left == right:
-                stop_bool = 1
+                return mid
 
-        if self._other_mos[mid] is mo:
-            return mid
-        else:
-            AssertionError("MO does not exist")  # TODO: cut this from final?
+        return -1
 
     # rcv_data_from_mo models data transfer from the other mobile operators
     # The other_mo MO is searched for in the self._other_mos local MO list and its index is returned
@@ -352,7 +357,7 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
 
             for j in adj_indices[0]:
                 for k in adj_indices[1]:
-                    curr_bucket = area_list[area_list[0] + j][area_list[1] + k]
+                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
                     for user_index in curr_bucket:
                         self._scores[user_index] += sts_list[i] * self.location_pair_contact_score(
                             location1=loc_list[i],
@@ -383,7 +388,7 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
 
                     for user_index in curr_bucket:
                         if not user_index == i:
-                            self._scores[i] += self._status[i] * self.location_pair_contact_score(
+                            self._scores[i] += self._status[user_index] * self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
 
@@ -431,6 +436,14 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
         index = self.search_user_db(user=user)
 
         user.score_from_mo(score=self._scores[index])
+
+
+class QuickMO(MobileOperator):
+
+    def location_pair_contact_score(self, location1, location2):
+        if (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2 <= 4:
+            return 1
+        return 0
 
 
 class ProtocolUser:
@@ -544,7 +557,7 @@ class ProtocolUser:
     # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
     # It calls the appropriate method inside the GA class with the user's infection status as argument
     def send_sts_to_ga(self):
-        self._GA.infection_sts_from_user(self._status)
+        self._GA.status_from_user(self, self._status)
 
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.
@@ -1417,6 +1430,79 @@ class UserTest(unittest.TestCase):
                 test_user.score_from_ga(nonced_score=nonced_score)
                 self.assertEqual(test_user._score, i, "score from ga method in user class no work")
 
+    def test_sendststoga(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=dummy_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        test_user = ProtocolUser(init_x=15,
+                                 init_y=15,
+                                 mo=dummy_mo,
+                                 uid=0,
+                                 ga=dummy_ga
+                                 )
+        self.assertEqual(test_user._status, 0, "status in user class not initialized to 0")
+        self.assertEqual(dummy_ga._status[0], 0, "status in GA class not initialized to 0")
+
+        test_user.send_sts_to_ga()
+        self.assertEqual(dummy_ga._status[0], 0, "send sts to ga method big unexpect behaviour")
+
+        test_user.infect()
+        self.assertEqual(test_user._status, 1, "status in user class not updated after infect called")
+
+        test_user.send_sts_to_ga()
+        self.assertEqual(dummy_ga._status[0], 1, "send sts to ga unexpect behaviour")
+
+    def test_scorereceiptproc(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=dummy_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        test_user = ProtocolUser(init_x=15,
+                                 init_y=15,
+                                 mo=dummy_mo,
+                                 uid=0,
+                                 ga=dummy_ga
+                                 )
+
+        self.assertEqual(dummy_mo._scores, [0], "score list in MO class not initialized with 0")
+
+        dummy_mo._scores[0] = 2022
+        test_user.score_receipt_proc()
+        self.assertEqual(test_user._score, 2022, "score receipt proc method in user class no work")
+
 
 # Mobile operator test class
 class MOTest(unittest.TestCase):
@@ -2098,6 +2184,42 @@ class MOTest(unittest.TestCase):
         self.assertEqual(test_mo._status, [0], "user upd method in MO class wrongly modifies status list")
         self.assertEqual(test_mo.usr_count, 1, "user upd method in MO class wrongly increments user count")
 
+    def test_locpaircontactscore(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        for i in range(test_mo.area_side_x):
+            for j in range(test_mo.area_side_y):
+                for x in range(-test_mo.area_side_x + 1, test_mo.area_side_x):
+                    for y in range(-test_mo.area_side_y + 1, test_mo.area_side_y):
+                        location_1 = (i, j)
+                        location_2 = (i + x, j + y)
+
+                        if x ** 2 + y ** 2 <= 4:
+                            self.assertGreaterEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.194,
+                                                    "location pair contact score method in MO class no work")
+
+                        else:
+                            self.assertLessEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.194,
+                                                 "bad val: " + str(x) + " " + str(y))
+
     def test_tousercomm(self):
         # Baseline movement iterator
         dummy_gm = gauss_markov(nr_nodes=10,
@@ -2163,6 +2285,206 @@ class MOTest(unittest.TestCase):
         test_mo.rcv_user_ping(user=dummy_user)
 
         self.assertEqual(dummy_user._score, 15, "rcv_user_ping method in MO class not proper")
+
+    def test_modbsearch(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = MobileOperator(ga=dummy_ga,
+                                 mo_id=0,
+                                 area_side_x=50,
+                                 area_side_y=50
+                                 )
+
+        all_mo_list = [test_mo]
+        for i in range(1, 1000):
+            new_mo = MobileOperator(ga=dummy_ga,
+                                    mo_id=i,
+                                    area_side_x=50,
+                                    area_side_y=50)
+
+            for other_mo in all_mo_list:
+                other_mo.register_other_mo(new_mo=new_mo)
+
+            all_mo_list.append(new_mo)
+
+        for i in range(1, 1000):
+            self.assertEqual(test_mo.search_mo_db(all_mo_list[i]), i - 1, "mo db search method in MO class no work")
+
+    def test_rcvdatafrommo(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+        alt_mo = MobileOperator(ga=dummy_ga,
+                                mo_id=1,
+                                area_side_x=50,
+                                area_side_y=50
+                                )
+
+        test_mo.register_other_mo(alt_mo)
+        alt_mo.register_other_mo(test_mo)
+        mos = [test_mo, alt_mo]
+
+        int_content = []
+        for i in range(10):
+            int_content.append((0, 0))
+
+        usr_list = []
+        for i in range(len(int_content)):
+            usr_list.append(ProtocolUser(init_x=int_content[i][0],
+                                         init_y=int_content[i][1],
+                                         mo=mos[i % 2],
+                                         uid=i,
+                                         ga=dummy_ga
+                                         ))
+
+        self.assertEqual(test_mo.users, [usr_list[0], usr_list[2], usr_list[4], usr_list[6], usr_list[8]],
+                         "users not added properly to MO user list on creation")
+        self.assertEqual(test_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+        self.assertEqual(alt_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+
+        alt_mo._status[0] = 1
+        test_mo.rcv_data_from_mo(loc_list=alt_mo._curr_locations,
+                                 area_list=alt_mo._curr_areas_by_user,
+                                 sts_list=alt_mo._status
+                                 )
+
+        self.assertEqual(test_mo._scores, [1, 1, 1, 1, 1], "rcv data from mo method in MO class no work")
+
+    def test_senddatatomo(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+        alt_mo = QuickMO(ga=dummy_ga,
+                         mo_id=1,
+                         area_side_x=50,
+                         area_side_y=50
+                         )
+
+        test_mo.register_other_mo(alt_mo)
+        alt_mo.register_other_mo(test_mo)
+        mos = [test_mo, alt_mo]
+
+        int_content = []
+        for i in range(10):
+            int_content.append((0, 0))
+
+        usr_list = []
+        for i in range(len(int_content)):
+            usr_list.append(ProtocolUser(init_x=int_content[i][0],
+                                         init_y=int_content[i][1],
+                                         mo=mos[i % 2],
+                                         uid=i,
+                                         ga=dummy_ga
+                                         ))
+
+        self.assertEqual(test_mo.users, [usr_list[0], usr_list[2], usr_list[4], usr_list[6], usr_list[8]],
+                         "users not added properly to MO user list on creation")
+        self.assertEqual(test_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+        self.assertEqual(alt_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+
+        test_mo._status[0] = 1
+        test_mo.send_data_to_mo(other_mo=alt_mo)
+
+        self.assertEqual(alt_mo._scores, [1, 1, 1, 1, 1], "send data to mo method in MO class no work")
+
+    def test_insidescoring(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+
+        int_content = []
+        for i in range(10):
+            int_content.append((0, 0))
+
+        usr_list = []
+        for i in range(len(int_content)):
+            usr_list.append(ProtocolUser(init_x=int_content[i][0],
+                                         init_y=int_content[i][1],
+                                         mo=test_mo,
+                                         uid=i,
+                                         ga=dummy_ga
+                                         ))
+
+        self.assertEqual(test_mo.users, usr_list,
+                         "users not added properly to MO user list on creation")
+        self.assertEqual(test_mo._scores, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+        self.assertEqual(test_mo._status, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         "user status in MO class not initialized properly")
+
+        test_mo._status[0] = 1
+        self.assertEqual(test_mo._status, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         "user status in MO class big unexpect")
+        test_mo.inside_scoring()
+
+        self.assertEqual(test_mo._status, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                         "user status in MO class big unexpect")
+        self.assertEqual(test_mo._scores, [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                         "send data to mo method in MO class no work")
 
 
 class GATest(unittest.TestCase):
@@ -2343,6 +2665,85 @@ class GATest(unittest.TestCase):
 
         self.assertEqual(test_ga.get_mos(), [dummy_mo], "MO add no work")
         self.assertEqual(test_ga.MOs, [dummy_mo], "MO add no work")
+
+    def test_scorereq(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        test_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=test_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=test_ga
+                                  )
+
+        self.assertEqual(dummy_user._score, 0, "score in user class not initialized to 0")
+
+        for i in range(1000):
+            for j in range(2, 1000):
+                score = i
+                nonce = j
+                nonced_score = nonce * score
+
+                dummy_user._nonce = nonce
+                test_ga.score_req(user=dummy_user,
+                                  nonced_score=nonced_score
+                                  )
+
+                self.assertEqual(dummy_user._score, score, "score req method in GA class no work")
+
+    def test_statusfromuser(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        test_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=test_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=test_ga
+                                  )
+
+        self.assertEqual(test_ga._status[0], 0, "initial status not 0 in GA class")
+
+        test_ga.status_from_user(dummy_user, 1)
+        self.assertEqual(test_ga._status[0], 1, "status from user method in GA class no work")
+
+        test_ga.status_from_user(dummy_user, 1234)
+        self.assertEqual(test_ga._status[0], 1, "status from user method in GA class no work")
 
 
 unittest.main()
