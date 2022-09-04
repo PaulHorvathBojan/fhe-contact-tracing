@@ -469,6 +469,7 @@ class ProtocolUser:
         self._status = 0
         self._score = 0
         self._nonce = 0
+        self._risk = 0
 
         self._MO.add_user(self)
         self._GA.add_user(self)
@@ -513,7 +514,7 @@ class ProtocolUser:
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
-    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update
+    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update?
         self._x = new_x
         self._y = new_y
         self._last_update = update_time
@@ -565,16 +566,11 @@ class ProtocolUser:
     def score_from_ga(self, nonced_score):
         self._score = nonced_score / self._nonce
         if self._score >= self._threshold:
-            self.test_me()
+            self.at_risk()
 
-    # test_me models requesting an infection test to the GA
-    # It calls the test_user method in the _GA.
-    def test_me(self):
-        self._GA.test_user(self)
-
-    #
+    # at_risk sets the value of _risk to 1
     def at_risk(self):
-        self.test_me()
+        self._risk = 1
 
     # score_receipt_proc models the score receipt procedure
     # There are a number of methods in various classes that call each other once certain criteria are met.
@@ -2486,6 +2482,176 @@ class MOTest(unittest.TestCase):
         self.assertEqual(test_mo._scores, [0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                          "send data to mo method in MO class no work")
 
+    def test_tick(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+        alt_mo = QuickMO(ga=dummy_ga,
+                         mo_id=1,
+                         area_side_x=50,
+                         area_side_y=50
+                         )
+
+        test_mo.register_other_mo(alt_mo)
+        alt_mo.register_other_mo(test_mo)
+        mos = [test_mo, alt_mo]
+
+        int_content = []
+        for i in range(10):
+            int_content.append((0, 0))
+
+        usr_list = []
+        for i in range(len(int_content)):
+            usr_list.append(ProtocolUser(init_x=int_content[i][0],
+                                         init_y=int_content[i][1],
+                                         mo=mos[i % 2],
+                                         uid=i,
+                                         ga=dummy_ga
+                                         ))
+
+        self.assertEqual(test_mo.users, [usr_list[0], usr_list[2], usr_list[4], usr_list[6], usr_list[8]],
+                         "users not added properly to MO user list on creation")
+        self.assertEqual(test_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+        self.assertEqual(test_mo._curr_locations, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "user initial locations not initialized properly on creation")
+        self.assertEqual(test_mo._curr_areas_by_user, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "user area list not initialized properly on creation")
+        self.assertEqual(test_mo._status, [0, 0, 0, 0, 0], "user status not initialized properly on creation")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(test_mo._area_array[i][j], set([0, 1, 2, 3, 4]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+        self.assertEqual(test_mo._curr_time, 0, "curr time not initialized to 0 on creation")
+
+        self.assertEqual(alt_mo.users, [usr_list[1], usr_list[3], usr_list[5], usr_list[7], usr_list[9]],
+                         "users not added properly to MO user list on creation")
+        self.assertEqual(alt_mo._scores, [0, 0, 0, 0, 0],
+                         "user scores in MO class not initialized properly on creation")
+        self.assertEqual(alt_mo._curr_locations, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "user initial locations not initialized properly on creation")
+        self.assertEqual(alt_mo._curr_areas_by_user, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "user area list not initialized properly on creation")
+        self.assertEqual(alt_mo._status, [0, 0, 0, 0, 0], "user status not initialized properly on creation")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(alt_mo._area_array[i][j], set([0, 1, 2, 3, 4]),
+                                     "add user method in MO class does not add to area bucket " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(alt_mo._area_array[i][j], set(),
+                                     "add user method in MO class adds to wrong area bucket " + str(i) + " " + str(j))
+        self.assertEqual(alt_mo._curr_time, 0, "curr time not initialized to 0 on creation")
+
+        test_mo.tick()
+        self.assertEqual(test_mo.users, [usr_list[0], usr_list[2], usr_list[4], usr_list[6], usr_list[8]],
+                         "tick after no change reports user list change")
+        self.assertEqual(test_mo._scores, [0, 0, 0, 0, 0],
+                         "tick after no change reports score list change")
+        self.assertEqual(test_mo._curr_locations, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "tick after no change reports location list change")
+        self.assertEqual(test_mo._curr_areas_by_user, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "tick after no change reports area by user list change")
+        self.assertEqual(test_mo._status, [0, 0, 0, 0, 0], "tick after no change reports status list change")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(test_mo._area_array[i][j], set([0, 1, 2, 3, 4]),
+                                     "tick after no change reports area bucket change " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "tick after no change reports area bucket change " + str(i) + " " + str(j))
+        self.assertEqual(test_mo._curr_time, 1, "curr time not incremented on tick")
+
+        self.assertEqual(alt_mo.users, [usr_list[1], usr_list[3], usr_list[5], usr_list[7], usr_list[9]],
+                         "tick after no change reports user list change")
+        self.assertEqual(alt_mo._scores, [0, 0, 0, 0, 0],
+                         "tick after no change reports score list change")
+        self.assertEqual(alt_mo._curr_locations, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "tick after no change reports location list change")
+        self.assertEqual(alt_mo._curr_areas_by_user, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "tick after no change reports area by user list change")
+        self.assertEqual(alt_mo._status, [0, 0, 0, 0, 0], "tick after no change reports status list change")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(alt_mo._area_array[i][j], set([0, 1, 2, 3, 4]),
+                                     "tick after no change reports area bucket change " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(alt_mo._area_array[i][j], set(),
+                                     "tick after no change reports area bucket change " + str(i) + " " + str(j))
+        self.assertEqual(alt_mo._curr_time, 0, "improper curr time change")
+
+        test_mo._status[0] = 1
+        usr_list[2].move_to(new_x=51,
+                            new_y=0,
+                            update_time=2)
+        test_mo.tick()
+
+        self.assertEqual(test_mo.users, [usr_list[0], usr_list[2], usr_list[4], usr_list[6], usr_list[8]],
+                         "tick after no user change reports user list change")
+        self.assertEqual(test_mo._scores, [0, 0, 1, 1, 1], "improper score list change")
+        self.assertEqual(test_mo._curr_locations, [(0, 0), (51, 0), (0, 0), (0, 0), (0, 0)],
+                         "improper location list change")
+        self.assertEqual(test_mo._curr_areas_by_user, [(0, 0), (1, 0), (0, 0), (0, 0), (0, 0)],
+                         "improper area by user list change")
+        self.assertEqual(test_mo._status, [1, 0, 0, 0, 0], "improper status list change")
+        for i in range(73):
+            for j in range(73):
+                if j == 0:
+                    if i == 0:
+                        self.assertEqual(test_mo._area_array[i][j], set([0, 2, 3, 4]),
+                                         "improper area bucket change " + str(i) + " " + str(j))
+                    elif i == 1:
+                        self.assertEqual(test_mo._area_array[i][j], set([1]),
+                                         "improper area bucket change " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(test_mo._area_array[i][j], set(),
+                                     "improper area bucket change " + str(i) + " " + str(j))
+        self.assertEqual(test_mo._curr_time, 2, "curr time not incremented on tick")
+
+        self.assertEqual(alt_mo.users, [usr_list[1], usr_list[3], usr_list[5], usr_list[7], usr_list[9]],
+                         "improper user list change")
+        self.assertEqual(alt_mo._scores, [1, 1, 1, 1, 1],
+                         "improper score list change")
+        self.assertEqual(alt_mo._curr_locations, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "improper location list change")
+        self.assertEqual(alt_mo._curr_areas_by_user, [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0)],
+                         "improper area by user list change")
+        self.assertEqual(alt_mo._status, [0, 0, 0, 0, 0], "improper status list change")
+        for i in range(73):
+            for j in range(73):
+                if i == 0 and j == 0:
+                    self.assertEqual(alt_mo._area_array[i][j], set([0, 1, 2, 3, 4]),
+                                     "improper area bucket change " + str(i) + " " + str(j))
+                else:
+                    self.assertEqual(alt_mo._area_array[i][j], set(),
+                                     "improper area bucket change " + str(i) + " " + str(j))
+        self.assertEqual(alt_mo._curr_time, 0, "improper curr time change")
+
+    def test_togacomm(self):
+        print("We test togacomm in MOTest after testing rcvscores in GATest")
+
 
 class GATest(unittest.TestCase):
     def test_mogetters(self):
@@ -2744,6 +2910,9 @@ class GATest(unittest.TestCase):
 
         test_ga.status_from_user(dummy_user, 1234)
         self.assertEqual(test_ga._status[0], 1, "status from user method in GA class no work")
+
+    def test_rcvscores(self):
+        print("test rcvscores after testing atrisk in UserTest")
 
 
 unittest.main()

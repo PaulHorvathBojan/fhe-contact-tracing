@@ -21,6 +21,7 @@ class ProtocolUser:
         self._status = 0
         self._score = 0
         self._nonce = 0
+        self._risk = 0
 
         self._MO.add_user(self)
         self._GA.add_user(self)
@@ -65,7 +66,7 @@ class ProtocolUser:
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
-    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update
+    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update?
         self._x = new_x
         self._y = new_y
         self._last_update = update_time
@@ -117,16 +118,11 @@ class ProtocolUser:
     def score_from_ga(self, nonced_score):
         self._score = nonced_score / self._nonce
         if self._score >= self._threshold:
-            self.test_me()
+            self.at_risk()
 
-    # test_me models requesting an infection test to the GA
-    # It calls the test_user method in the _GA.
-    def test_me(self):
-        self._GA.test_user(self)
-
-    #
+    # at_risk sets the value of _risk to 1
     def at_risk(self):
-        self.test_me()
+        self._risk = 1
 
     # score_receipt_proc models the score receipt procedure
     # There are a number of methods in various classes that call each other once certain criteria are met.

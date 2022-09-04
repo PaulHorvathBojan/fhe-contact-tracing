@@ -201,8 +201,7 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
         self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
-    # TODO: Parallel implementation where this formula is the actual Euclidean distance
-    # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
+    # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
                 / self._L_max ** 2) ** 1024
