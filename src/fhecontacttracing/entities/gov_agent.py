@@ -87,10 +87,6 @@ class GovAgent:
     def score_req(self, user, nonced_score):
         user.score_from_ga(nonced_score)
 
-    # Placeholder method
-    def test_user(self, user):
-        self._scores[0] = self._scores[0]
-
     # sts_from_user updates the user's status inside the GA's respective list of user status
     def status_from_user(self, user, status):
         if status == 1:

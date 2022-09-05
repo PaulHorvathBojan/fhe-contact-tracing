@@ -99,10 +99,6 @@ class GovAgent:
     def score_req(self, user, nonced_score):
         user.score_from_ga(nonced_score)
 
-    # Placeholder method
-    def test_user(self, user):
-        self._scores[0] = self._scores[0]
-
     # sts_from_user updates the user's status inside the GA's respective list of user status
     def status_from_user(self, user, status):
         if status == 1:
@@ -1499,6 +1495,39 @@ class UserTest(unittest.TestCase):
         test_user.score_receipt_proc()
         self.assertEqual(test_user._score, 2022, "score receipt proc method in user class no work")
 
+    def test_atrisk(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=dummy_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        test_user = ProtocolUser(init_x=15,
+                                 init_y=15,
+                                 mo=dummy_mo,
+                                 uid=0,
+                                 ga=dummy_ga
+                                 )
+
+        self.assertEqual(test_user._risk, 0, "risk state not initialized as 0 in ProtocolUser class")
+
+        test_user.at_risk()
+        self.assertEqual(test_user._risk, 1, "risk state properly set to 1 when method called in ProtocolUser class")
+
 
 # Mobile operator test class
 class MOTest(unittest.TestCase):
@@ -2650,7 +2679,78 @@ class MOTest(unittest.TestCase):
         self.assertEqual(alt_mo._curr_time, 0, "improper curr time change")
 
     def test_togacomm(self):
-        print("We test togacomm in MOTest after testing rcvscores in GATest")
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+
+        dummy_user = ProtocolUser(init_x=0,
+                                  init_y=0,
+                                  mo=test_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        self.assertEqual(test_mo._scores, [0], "score list not initialized properly in MO class")
+        self.assertEqual(dummy_ga._scores, [0], "score list not initialized properly in GA class")
+
+        test_mo._scores[0] = 14
+        test_mo.to_ga_comm()
+        self.assertEqual(dummy_ga._scores, [14], "score list not modified properly in GA class")
+
+    def test_fromgacomm(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        dummy_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        test_mo = QuickMO(ga=dummy_ga,
+                          mo_id=0,
+                          area_side_x=50,
+                          area_side_y=50
+                          )
+
+        dummy_user = ProtocolUser(init_x=0,
+                                  init_y=0,
+                                  mo=test_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        self.assertEqual(test_mo._status, [0], "status list not initialized properly in MO class")
+        self.assertEqual(test_mo._scores, [0], "score list not initialized properly in MO class")
+        self.assertEqual(dummy_ga._status, [0], "status list not initialized properly in GA class")
+        self.assertEqual(dummy_ga._scores, [0], "score list not initialized properly in GA class")
+
+        test_mo._scores[0] = 1971
+        dummy_ga._status[0] = 1
+
+        test_mo.from_ga_comm(dummy_ga._status)
+
+        self.assertEqual(test_mo._status, [1], "status list not modified properly in MO class")
+        self.assertEqual(dummy_ga._scores, [1971], "score list not modified properly in GA class")
 
 
 class GATest(unittest.TestCase):
@@ -2912,7 +3012,40 @@ class GATest(unittest.TestCase):
         self.assertEqual(test_ga._status[0], 1, "status from user method in GA class no work")
 
     def test_rcvscores(self):
-        print("test rcvscores after testing atrisk in UserTest")
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        test_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=test_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=test_ga
+                                  )
+
+        self.assertEqual(test_ga._scores, [0], "score list not initialized properly in GA class")
+        self.assertEqual(dummy_user._risk, 0, "user not initialized with 0 risk")
+
+        mo_package = [(0, 12)]
+        test_ga.rcv_scores(from_mo_package=mo_package)
+        self.assertEqual(test_ga._scores, [12], "score list not updated properly")
+        self.assertEqual(dummy_user._risk, 1, "user not notified of risk")
 
 
 unittest.main()
