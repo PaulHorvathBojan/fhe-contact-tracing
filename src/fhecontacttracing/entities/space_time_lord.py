@@ -42,7 +42,6 @@ class SpaceTimeLord:
                                 )
 
         self._users.append(new_user)
-        self._mos[uid % self._mo_count].add_user(new_user)
 
     def get_current_locations(self):
         return self._current_locations
