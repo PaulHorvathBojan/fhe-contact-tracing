@@ -1,6 +1,3 @@
-from pymobility.models import gauss_markov
-
-
 class SpaceTimeLord:
 
     def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes):
@@ -34,6 +31,7 @@ class SpaceTimeLord:
             self.add_user(location=self._current_locations[i],
                           uid=i
                           )
+            self._usr_count += 1
 
     def add_user(self, location, uid):
         new_user = ProtocolUser(init_x=location[0],
@@ -101,19 +99,3 @@ class SpaceTimeLord:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
-
-
-def quicktest(pop, dims, mo_ct, risk_thr):
-    gm = gauss_markov(nr_nodes=pop,
-                      dimensions=dims,
-                      )
-    stl = SpaceTimeLord(movements_iterable=gm,
-                        mo_count=mo_ct,
-                        risk_thr=risk_thr,
-                        area_sizes=(50, 50)
-                        )
-
-    print(stl.mo_count)
-
-
-quicktest(10, (100, 100), 1, 1)

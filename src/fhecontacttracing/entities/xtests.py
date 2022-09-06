@@ -617,6 +617,7 @@ class SpaceTimeLord:
             self.add_user(location=self._current_locations[i],
                           uid=i
                           )
+            self._usr_count += 1
 
     def add_user(self, location, uid):
         new_user = ProtocolUser(init_x=location[0],
@@ -3047,6 +3048,108 @@ class GATest(unittest.TestCase):
         self.assertEqual(test_ga._scores, [12], "score list not updated properly")
         self.assertEqual(dummy_user._risk, 1, "user not notified of risk")
 
+    def test_daily(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        MinutelyMovement(movement_iter=dummy_gm)
+
+        # Dummy GA so that methods work with less expected errors
+        test_ga = GovAgent(risk_threshold=1)
+
+        # Dummy MO so that methods work with less expected errors
+        dummy_mo = MobileOperator(ga=test_ga,
+                                  mo_id=0,
+                                  area_side_x=50,
+                                  area_side_y=50
+                                  )
+
+        dummy_user = ProtocolUser(init_x=15,
+                                  init_y=15,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=test_ga
+                                  )
+
+        self.assertEqual(dummy_mo._scores, [0], "score list in MO class not initialized to zeros")
+        self.assertEqual(dummy_mo._status, [0], "status list in MO class not initialized to zeros")
+        self.assertEqual(test_ga._scores, [0], "score list in GA class not initialized to zeros")
+        self.assertEqual(test_ga._status, [0], "status list in GA class not initialized to zeros")
+
+        test_ga._status[0] = 1
+        dummy_mo._scores[0] = 1975
+
+        test_ga.daily()
+        self.assertEqual(dummy_mo._scores, [1975], "score list in MO class not modified properly")
+        self.assertEqual(dummy_mo._status, [1], "status list in MO class not modified properly")
+        self.assertEqual(test_ga._scores, [1975], "score list in GA class not modified properly")
+        self.assertEqual(test_ga._status, [1], "status list in GA class not modified properly")
+
+        test_ga2 = GovAgent(risk_threshold=1)
+
+        mo_list = []
+        for i in range(100):
+            mo_list.append(MobileOperator(ga=test_ga2,
+                                          mo_id=i,
+                                          area_side_x=50,
+                                          area_side_y=50))
+
+        usr_list = []
+        for i in range(1000):
+            usr_list.append(ProtocolUser(init_x=0,
+                                         init_y=0,
+                                         mo=mo_list[i % 100],
+                                         uid=i,
+                                         ga=test_ga2))
+
+        for i in range(100):
+            mo_list[i]._scores[1] = 1975
+            test_ga2._status[100 + i] = 1
+
+        test_ga2.daily()
+
+        for i in range(100):
+            self.assertEqual(test_ga2._scores[i], 0, "improper score list in GA after daily@ " + str(i))
+        for i in range(101, 200):
+            self.assertEqual(test_ga2._scores[i], 1975, "improper score list in GA after daily@ " + str(i))
+        for i in range(201, 1000):
+            self.assertEqual(test_ga2._scores[i], 0, "improper score list in GA after daily@ " + str(i))
+        for i in range(100):
+            self.assertEqual(mo_list[i]._status, [0, 1, 0, 0, 0, 0, 0, 0, 0, 0], "improper status list in MO " + str(i))
+
+
+class STLTest(unittest.TestCase):
+    def test_init(self):
+        # Baseline movement iterator
+        dummy_gm = gauss_markov(nr_nodes=10,
+                                dimensions=(3652, 3652),
+                                velocity_mean=3.,
+                                variance=2.
+                                )
+
+        # Baseline minutely movement iterator
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+
+        # Create SpaceTimeLord
+        test_stl = SpaceTimeLord(movements_iterable=dummy_gm,
+                                 mo_count=1,
+                                 risk_thr=4,
+                                 area_sizes=(50, 50))
+
+        self.assertEqual(test_stl._movements_iterable, dummy_gm, "wrong movements iterable in STL class")
+        print(test_stl._current_locations)
+        print(len(test_stl._current_locations))
+        print(test_stl._users)
+        self.assertEqual(test_stl.user_count, 10, "wrong initial user count in STL class")
+        self.assertEqual(test_stl.mo_count, 1, "wrong MO count")
+        self.assertEqual(len(test_stl.mos), 1, "MO count and length of MO list incompatible")
+        self.assertEqual(len(test_stl.users), 10, "user count and length of user list incompatible")
+
 
 unittest.main()
 # Fill dummy_out.txt with traces of 10 users for 1440 iterations
@@ -3064,3 +3167,5 @@ unittest.main()
 #             int_rot.append(member)
 #         int_content.append(list(int_rot))
 #     dummy_outfile.write(str(int_content) + "\n")
+
+# %%
