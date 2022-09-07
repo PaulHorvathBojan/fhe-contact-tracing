@@ -1,5 +1,4 @@
-class MobileOperator:  # TODO: - ga communication code inside GA class
-    #                           - reimplement MO db binary search
+class MobileOperator:
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
     edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
@@ -24,12 +23,20 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
     #   - _curr_time is 0
     #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
     #       divided into 50 x 50 m squares
-    def __init__(self, ga, mo_id, area_side_x, area_side_y):
+    def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._GA = ga
         self._id = mo_id
         self._area_side_x = area_side_x
         self._area_side_y = area_side_y
         self._L_max = max(self._area_side_y, self._area_side_x)
+        if max_x % area_side_x == 0:
+            self._area_count_x = max_x / area_side_x
+        else:
+            self._area_count_x = max_x // area_side_x + 1
+        if max_y % area_side_y == 0:
+            self._area_count_y = max_y / area_side_y
+        else:
+            self._area_count_y = max_y // area_side_y + 1
 
         self._usr_count = 0
         self._users = []
@@ -42,9 +49,9 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
 
         self._other_mos = []
 
-        for _ in range(74):
+        for _ in range(self._area_count_x):
             ys = []
-            for _ in range(74):
+            for _ in range(self._area_count_y):
                 ys.append(set())
             self._area_array.append(ys)
 

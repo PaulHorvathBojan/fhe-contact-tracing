@@ -628,7 +628,6 @@ class SpaceTimeLord:
                                 )
 
         self._users.append(new_user)
-        self._mos[uid % self._mo_count].add_user(new_user)
 
     def get_current_locations(self):
         return self._current_locations
@@ -3149,6 +3148,9 @@ class STLTest(unittest.TestCase):
         self.assertEqual(test_stl.mo_count, 1, "wrong MO count")
         self.assertEqual(len(test_stl.mos), 1, "MO count and length of MO list incompatible")
         self.assertEqual(len(test_stl.users), 10, "user count and length of user list incompatible")
+
+        self.assertEqual(test_stl.mos[0].users, test_stl.users, "faulty user list in MO")
+        for i in range(10):
 
 
 unittest.main()
