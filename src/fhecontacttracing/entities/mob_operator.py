@@ -28,15 +28,9 @@ class MobileOperator:
         self._id = mo_id
         self._area_side_x = area_side_x
         self._area_side_y = area_side_y
-        self._L_max = max(self._area_side_y, self._area_side_x)
-        if max_x % area_side_x == 0:
-            self._area_count_x = max_x / area_side_x
-        else:
-            self._area_count_x = max_x // area_side_x + 1
-        if max_y % area_side_y == 0:
-            self._area_count_y = max_y / area_side_y
-        else:
-            self._area_count_y = max_y // area_side_y + 1
+        self._L_max = 2 * max(self._area_side_y, self._area_side_x)
+        self._area_count_x = int(max_x // area_side_x) + 1
+        self._area_count_y = int(max_y // area_side_y) + 1
 
         self._usr_count = 0
         self._users = []
@@ -210,8 +204,7 @@ class MobileOperator:
     # location_pair_contacts generates contact approx score between 2 locations
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
-        return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
-                / self._L_max ** 2) ** 1024
+        return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -329,47 +322,3 @@ class MobileOperator:
         index = self.search_user_db(user=user)
 
         user.score_from_mo(score=self._scores[index])
-
-# def quicktest(side_x, side_y):
-#     testmo = MobileOperator(ga=69,
-#                             mo_id=0,
-#                             area_side_x=side_x,
-#                             area_side_y=side_y
-#                             )
-#
-#     print(testmo.id)
-#     print(testmo.curr_time)
-#
-#
-# quicktest(50, 50)
-#
-#
-# def add_user_test(side_x, side_y, uinit_x, uinit_y):
-#     testga = GovAgent(risk_threshold=1)
-#
-#     testmo = MobileOperator(ga=testga,
-#                             mo_id=0,
-#                             area_side_x=side_x,
-#                             area_side_y=side_y
-#                             )
-# # if you wanna run this it will create a circular dependency
-#     testuser = ProtocolUser(init_x=uinit_x,
-#                             init_y=uinit_y,
-#                             mo=testmo,
-#                             uid=0,
-#                             ga=testmo.GA
-#                             )
-#
-#     print(testmo.users)
-#
-# # from user import ProtocolUser for this to not spit errors
-# # otherwise running it will need a circular dependency to be created
-# # add_user_test(side_x=50,
-# #               side_y=50,
-# #               uinit_x=5,
-# #               uinit_y=5
-# #               )
-
-#%%
-
-#%%

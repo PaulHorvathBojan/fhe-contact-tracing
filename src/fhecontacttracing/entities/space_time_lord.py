@@ -1,10 +1,12 @@
 class SpaceTimeLord:
 
-    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes):
+    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes):
         self._movements_iterable = movements_iterable
         self._risk_threshold = risk_thr
-        self._max_x = area_sizes[0]
-        self._max_y = area_sizes[1]
+        self._max_x = max_sizes[0]
+        self._max_y = max_sizes[1]
+        self._area_size_x = area_sizes[0]
+        self._area_size_y = area_sizes[1]
 
         self._usr_count = 0
         self._mo_count = 0
@@ -19,8 +21,10 @@ class SpaceTimeLord:
         while self._mo_count < mo_count:
             new_mo = MobileOperator(ga=self._ga,
                                     mo_id=self._mo_count,
-                                    area_side_x=self._max_x,
-                                    area_side_y=self._max_y
+                                    area_side_x=self._area_size_x,
+                                    area_side_y=self._area_size_y,
+                                    max_x=self._max_x,
+                                    max_y=self._max_y
                                     )
             for prev_mo in self._mos:
                 new_mo.register_other_mo(prev_mo)
@@ -49,7 +53,7 @@ class SpaceTimeLord:
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._max_x, self._max_y
+        return self._area_size_x, self._area_size_ys
 
     area_sizes = property(fget=get_area_sizes)
 
