@@ -10,6 +10,7 @@ np.random.seed(1234)
 
 
 # Casually copy everything from the 3 modules you have to test they work
+# !!! CODE TESTS FUNCTIONALITY PRE-SIMULATION
 class GovAgent:
 
     # initialise the class with empty user list, MO list, infected list, status list, score list

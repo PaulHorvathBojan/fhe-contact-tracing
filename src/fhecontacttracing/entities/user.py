@@ -66,14 +66,15 @@ class ProtocolUser:
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
-    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update?
-        self._x = new_x
-        self._y = new_y
-        self._last_update = update_time
+    def move_to(self, new_x, new_y, update_time):
+        if update_time > self._last_update:
+            self._x = new_x
+            self._y = new_y
+            self._last_update = update_time
 
-        ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
-        if ask_score == 1:
-            self.score_receipt_proc()
+            ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
+            if ask_score == 1:
+                self.score_receipt_proc()
 
     # infect infects a user by setting status to 1
     def infect(self):
@@ -138,3 +139,24 @@ class ProtocolUser:
     def score_receipt_proc(self):
         self.ping_mo_for_score()
         self.decr_score_from_ga()
+
+
+class EncryptedUser(ProtocolUser):  # TODO:     - Encryption user class
+#                                                   - encryption context setters
+#                                                   - nonce multiplication
+#                                               - Encryption GA class
+#                                                   - encryption context setup and distribution
+#                                                   - status encryption and distribution to MOs
+#                                                   - score decryption and evaluation
+#                                                   -
+#                                               - Encryption MO class
+
+    def __init__(self, init_x, init_y, mo, uid, ga):
+        super().__init__(init_x, init_y, mo, uid, ga)
+
+        self._encr_status = 0
+        self._evaluator = None
+
+    def set_evaluator(self, new_eval):
+        self._evaluator = new_eval
+
