@@ -93,3 +93,5 @@ class GovAgent:
             self._status[user.uID] = status
         elif status == 0:
             self._status[user.uID] = status
+
+class EncryptionGovAgent(GovAgent):

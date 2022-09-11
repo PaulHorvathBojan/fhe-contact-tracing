@@ -18,7 +18,6 @@ class ProtocolUser:
 
         # intuitively going for a Susceptible(0)-Infected(1) model;
         # recovery is beyond the scope of this project
-        self._status = 0
         self._score = 0
         self._nonce = 0
         self._risk = 0
@@ -58,11 +57,6 @@ class ProtocolUser:
 
     last_update = property(fget=get_last_update_time)
 
-    def get_status(self):
-        return self._status
-
-    status = property(fget=get_status)
-
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
@@ -72,13 +66,9 @@ class ProtocolUser:
             self._y = new_y
             self._last_update = update_time
 
-            ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
+            ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880, which attempts to model a request
             if ask_score == 1:
                 self.score_receipt_proc()
-
-    # infect infects a user by setting status to 1
-    def infect(self):
-        self._status = 1
 
     # upd_to_mo updates the data that the MO has regarding the self
     # it essentially calls a function in the MO that performs the updating
@@ -108,11 +98,6 @@ class ProtocolUser:
         self._nonce = random.randint(2, 2 ** 60)
         self._GA.score_req(self, self._nonce * self._score)
 
-    # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
-    # It calls the appropriate method inside the GA class with the user's infection status as argument
-    def send_sts_to_ga(self):
-        self._GA.status_from_user(self, self._status)
-
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.
     # The nonce is removed and the score is updated.
@@ -141,22 +126,47 @@ class ProtocolUser:
         self.decr_score_from_ga()
 
 
-class EncryptedUser(ProtocolUser):  # TODO:     - Encryption user class
-#                                                   - encryption context setters
-#                                                   - nonce multiplication
-#                                               - Encryption GA class
-#                                                   - encryption context setup and distribution
-#                                                   - status encryption and distribution to MOs
-#                                                   - score decryption and evaluation
-#                                                   -
-#                                               - Encryption MO class
+class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
+    #                                                   - encryption context setup and distribution
+    #                                                   - status encryption and distribution to MOs
+    #                                                   - score decryption and evaluation
+    #                                                   -
+    #                                               - Encryption MO class
 
     def __init__(self, init_x, init_y, mo, uid, ga):
         super().__init__(init_x, init_y, mo, uid, ga)
 
-        self._encr_status = 0
+        self._encr_score = None
         self._evaluator = None
+        self._encryptor = None
+        self._encoder = None
 
-    def set_evaluator(self, new_eval):
-        self._evaluator = new_eval
+    def get_encoder(self):
+        return self._encoder
 
+    def get_evaluator(self):
+        return self._evaluator
+
+    evaluator = property(fget=get_evaluator)
+
+    def get_encryptor(self):
+        return self._encryptor
+
+    encryptor = property(fget=get_encryptor)
+
+    def get_encr_score(self):
+        return self._encr_score
+
+    encr_score = property(fget=get_encr_score)
+
+    def score_from_mo(self, score):
+        self._encr_score = score
+
+    def decr_score_from_ga(self):
+        self._nonce = random.randint(2, 2 ** 60)
+        enco_nonce = self.encoder.encode([complex(self._nonce, 0)])
+
+        nonced_score = self._evaluator.muliply_plain(ciph=self._encr_score,
+                                                     plain=enco_nonce)
+
+        self._GA.score_req(self, nonced_score)
