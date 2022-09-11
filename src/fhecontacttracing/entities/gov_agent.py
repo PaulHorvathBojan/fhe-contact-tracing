@@ -104,3 +104,46 @@ class EncryptionGovAgent(GovAgent):
                                           big_modulus=big_modulus,
                                           scaling_factor=scaling_factor
                                           )
+
+        self._key_generator = CKKSKeyGenerator(self._ckks_params)
+
+        self._public_key = self._key_generator.public_key
+        self._secret_key = self._key_generator.secret_key
+        self._relin_key = self._key_generator.relin_key
+        self._scaling_factor = scaling_factor
+
+        self._encoder = CKKSEncoder(self._ckks_params)
+        self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
+        self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
+        self._evaluator = CKKSEvaluator(self._ckks_params)
+
+    def get_public_key(self):
+        return self._public_key
+
+    public_key = property(fget=get_public_key)
+
+    def get_relin_key(self):
+        return self._relin_key
+
+    relin_key = property(fget=get_relin_key)
+
+    def get_encoder(self):
+        return self._encoder
+
+    encoder = property(fget=get_encoder)
+
+    def get_encryptor(self):
+        return self._encryptor
+
+    encryptor = property(fget=get_encryptor)
+
+    def get_evaluator(self):
+        return self._evaluator
+
+    evaluator = property(fget=get_evaluator)
+
+    def get_scaling_factor(self):
+        return self._scaling_factor
+
+    scaling_factor = property(fget=get_scaling_factor)
+
