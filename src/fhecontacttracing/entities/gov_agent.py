@@ -94,4 +94,13 @@ class GovAgent:
         elif status == 0:
             self._status[user.uID] = status
 
+
 class EncryptionGovAgent(GovAgent):
+    def __init__(self, risk_threshold, degree, cipher_modulus, big_modulus, scaling_factor):
+        super.__init__(self, risk_threshold)
+
+        self._ckks_params = CKKSParameter(poly_degree=degree,
+                                          ciph_modulus=cipher_modulus,
+                                          big_modulus=big_modulus,
+                                          scaling_factor=scaling_factor
+                                          )

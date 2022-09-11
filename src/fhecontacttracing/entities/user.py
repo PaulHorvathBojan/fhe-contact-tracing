@@ -140,6 +140,7 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
         self._evaluator = None
         self._encryptor = None
         self._encoder = None
+        self._scaling_factor = None
 
     def get_encoder(self):
         return self._encoder
@@ -158,6 +159,11 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
         return self._encr_score
 
     encr_score = property(fget=get_encr_score)
+
+    def get_scaling_factor(self):
+        return self._scaling_factor
+
+    scaling_factor = property(fget=get_scaling_factor)
 
     def score_from_mo(self, score):
         self._encr_score = score
