@@ -147,3 +147,16 @@ class EncryptionGovAgent(GovAgent):
 
     scaling_factor = property(fget=get_scaling_factor)
 
+    def new_encryption_suite(self):
+        self._key_generator = CKKSKeyGenerator(self._ckks_params)
+
+        self._public_key = self._key_generator.public_key
+        self._secret_key = self._key_generator.secret_key
+        self._relin_key = self._key_generator.relin_key
+        self._scaling_factor = scaling_factor
+
+        self._encoder = CKKSEncoder(self._ckks_params)
+        self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
+        self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
+        self._evaluator = CKKSEvaluator(self._ckks_params)
+

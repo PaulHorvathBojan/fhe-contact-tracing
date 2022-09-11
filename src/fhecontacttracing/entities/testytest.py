@@ -24,51 +24,12 @@ key_generator = CKKSKeyGenerator(params)
 public_key = key_generator.public_key
 secret_key = key_generator.secret_key
 relin_key = key_generator.relin_key
-encoder = CKKSEncoder(params)
-encryptor = CKKSEncryptor(params, public_key, secret_key)
-decryptor = CKKSDecryptor(params, secret_key)
-evaluator = CKKSEvaluator(params)
-post_setup = time.time() - pre_setup
-print("Took " + str(post_setup) + " seconds to set up the context.")
 
+skey_generator = CKKSKeyGenerator(params)
+spublic_key = skey_generator.public_key
+ssecret_key = skey_generator.secret_key
+srelin_key = skey_generator.relin_key
 
-# 0.194 is the contact threshold for integer distances given current scoring formula
-
-def enco_encr(plain_val, encoder, encryptor, scaling_factor):
-    list_val = [complex(plain_val, 0)]
-
-    encoded = encoder.encode(values=list_val, scaling_factor=scaling_factor)
-
-    encrypted = encryptor.encrypt(plain=encoded)
-
-    return encrypted
-
-
-def decr_deco(encr_val, encoder, decryptor):
-    decrypted = decryptor.decrypt(ciphertext=encr_val)
-
-    decoded = encoder.decode(decrypted)
-
-    return decoded
-
-
-pre_test_time = time.time()
-max_diff = 0
-for i in range(1000000):
-    encenc = enco_encr(plain_val=i,
-                       encoder=encoder,
-                       encryptor=encryptor,
-                       scaling_factor=SCALING_FACTOR)
-    decdec = decr_deco(encr_val=encenc,
-                       encoder=encoder,
-                       decryptor=decryptor)
-    eedd_val = decdec[0].real
-    curr_diff = abs(i - eedd_val)
-    if curr_diff > max_diff:
-        max_diff = curr_diff
-post_test_time = time.time()
-test_time = post_test_time - pre_test_time
-print("It took " + str(test_time) + " to encode-encrypt-decrypt-decode a million numbers.")
-print("diff: " + str(max_diff))
-evaluator.multiply_plain(ciph=,
-                         plain=)
+print(public_key == spublic_key)
+print(secret_key == ssecret_key)
+print(relin_key == srelin_key)
