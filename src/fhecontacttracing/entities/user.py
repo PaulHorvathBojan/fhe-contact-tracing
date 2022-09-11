@@ -130,7 +130,6 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
     #                                                   - encryption context setup and distribution
     #                                                   - status encryption and distribution to MOs
     #                                                   - score decryption and evaluation
-    #                                                   -
     #                                               - Encryption MO class
 
     def __init__(self, init_x, init_y, mo, uid, ga):
