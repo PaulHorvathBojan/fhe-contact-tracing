@@ -177,3 +177,9 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
                                                      plain=enco_nonce)
 
         self._GA.score_req(self, nonced_score)
+
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor):
+        self._evaluator = new_evaluator
+        self._encryptor = new_encryptor
+        self._encoder = new_encoder
+        self._scaling_factor = new_scaling_factor
