@@ -108,8 +108,7 @@ class GovAgent:
             self._status[user.uID] = status
 
 
-class MobileOperator:  # TODO: - ga communication code inside GA class
-    #                           - reimplement MO db binary search
+class MobileOperator:
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
     edge_case_range_dict = {0: ([-1, 0, 1], [-1, 0, 1]),
@@ -311,7 +310,6 @@ class MobileOperator:  # TODO: - ga communication code inside GA class
         self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
-    # TODO: Parallel implementation where this formula is the actual Euclidean distance
     # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
     def location_pair_contact_score(self, location1, location2):
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
@@ -511,7 +509,7 @@ class ProtocolUser:
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
-    def move_to(self, new_x, new_y, update_time):  # TODO: make code do nothing if update time < last update?
+    def move_to(self, new_x, new_y, update_time):
         self._x = new_x
         self._y = new_y
         self._last_update = update_time

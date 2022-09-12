@@ -144,6 +144,8 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
     def get_encoder(self):
         return self._encoder
 
+    encoder = property(fget=get_encoder)
+
     def get_evaluator(self):
         return self._evaluator
 

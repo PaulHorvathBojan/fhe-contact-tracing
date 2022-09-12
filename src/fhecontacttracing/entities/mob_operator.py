@@ -334,3 +334,28 @@ class EncryptionMO(MobileOperator):
         self._encryptor = None
         self._encoder = None
         self._scaling_factor = None
+
+    def get_encoder(self):
+        return self._encoder
+
+    encoder = property(fget=get_encoder)
+
+    def get_evaluator(self):
+        return self._evaluator
+
+    evaluator = property(fget=get_evaluator)
+
+    def get_encryptor(self):
+        return self._encryptor
+
+    encryptor = property(fget=get_encryptor)
+
+    def get_encr_score(self):
+        return self._encr_score
+
+    encr_score = property(fget=get_encr_score)
+
+    def get_scaling_factor(self):
+        return self._scaling_factor
+
+    scaling_factor = property(fget=get_scaling_factor)
