@@ -153,7 +153,6 @@ class EncryptionGovAgent(GovAgent):
         self._public_key = self._key_generator.public_key
         self._secret_key = self._key_generator.secret_key
         self._relin_key = self._key_generator.relin_key
-        self._scaling_factor = scaling_factor
 
         self._encoder = CKKSEncoder(self._ckks_params)
         self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
@@ -164,13 +163,11 @@ class EncryptionGovAgent(GovAgent):
         for mo in self._MOs:
             mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder,
-                                 new_scaling_factor=self._scaling_factor)
+                                 new_encoder=self._encoder)
 
         for user in self._users:
             user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder,
-                                   new_scaling_factor=self._scaling_factor)
+                                   new_encoder=self._encoder)
 
     def
