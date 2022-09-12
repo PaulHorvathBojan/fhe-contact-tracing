@@ -185,3 +185,18 @@ class EncryptionGovAgent(GovAgent):
                                  new_encryptor=self._encryptor,
                                  new_encoder=self._encoder)
 
+    def daily(self):
+        for mo in self._MOs:
+            index_list = []
+            for user in mo.users:
+                index_list.append(user.uID)
+
+            status_list = []
+            for i in index_list:
+                pre_encode_list = [complex(self._status[i], 0)]
+                encoded_sts = self._encoder.encode(values=pre_encode_list,
+                                                   scaling_factor=self._scaling_factor)
+                encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
+                status_list.append(encrypted_sts)
+
+            mo.from_ga_comm(new_status=status_list)
