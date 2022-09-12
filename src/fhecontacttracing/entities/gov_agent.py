@@ -117,7 +117,6 @@ class EncryptionGovAgent(GovAgent):
         self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
         self._evaluator = CKKSEvaluator(self._ckks_params)
 
-
     def get_public_key(self):
         return self._public_key
 
@@ -200,3 +199,14 @@ class EncryptionGovAgent(GovAgent):
                 status_list.append(encrypted_sts)
 
             mo.from_ga_comm(new_status=status_list)
+
+    def rcv_scores(self, from_mo_package):
+
+        for tup in from_mo_package:
+            decr = self._decryptor.decrypt(ciphertext=tup[1])
+            deco = self._encoder.decode(plain=decr)
+            score = deco[0].real
+
+            self._scores[tup[0]] = score
+            if score >= self.risk_threshold and self._status[tup[0]] == 0:
+                self._users[tup[0]].at_risk()

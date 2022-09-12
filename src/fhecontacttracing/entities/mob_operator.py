@@ -205,7 +205,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                    (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
