@@ -178,4 +178,10 @@ class EncryptionGovAgent(GovAgent):
                                    new_encryptor=self._encryptor,
                                    new_encoder=self._encoder)
 
-    def
+    def add_mo(self, new_mo):
+        super(EncryptionGovAgent, self).add_user(new_mo)
+
+        new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
+                                 new_encryptor=self._encryptor,
+                                 new_encoder=self._encoder)
+
