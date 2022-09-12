@@ -133,7 +133,7 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
     #                                               - Encryption MO class
 
     def __init__(self, init_x, init_y, mo, uid, ga):
-        super().__init__(init_x, init_y, mo, uid, ga)
+        super(EncryptedUser, self).__init__(init_x, init_y, mo, uid, ga)
 
         self._encr_score = None
         self._evaluator = None

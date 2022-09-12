@@ -97,7 +97,7 @@ class GovAgent:
 
 class EncryptionGovAgent(GovAgent):
     def __init__(self, risk_threshold, degree, cipher_modulus, big_modulus, scaling_factor):
-        super().__init__(risk_threshold=risk_threshold)
+        super(EncryptionGovAgent, self).__init__(risk_threshold=risk_threshold)
 
         self._ckks_params = CKKSParameter(poly_degree=degree,
                                           ciph_modulus=cipher_modulus,
@@ -172,9 +172,10 @@ class EncryptionGovAgent(GovAgent):
                                    new_encoder=self._encoder)
 
     def add_user(self, new_user):
-        super().add_user(new_user)
+        super(EncryptionGovAgent, self).add_user(new_user)
 
         new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
                                    new_encoder=self._encoder)
 
+    def

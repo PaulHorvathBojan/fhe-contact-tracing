@@ -328,7 +328,7 @@ class MobileOperator:
 class EncryptionMO(MobileOperator):
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
-        super().__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
+        super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
 
         self._evaluator = None
         self._encryptor = None
