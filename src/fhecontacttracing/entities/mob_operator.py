@@ -354,3 +354,9 @@ class EncryptionMO(MobileOperator):
         return self._scaling_factor
 
     scaling_factor = property(fget=get_scaling_factor)
+
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor):
+        self._evaluator = new_evaluator
+        self._encryptor = new_encryptor
+        self._encoder = new_encoder
+        self._scaling_factor = new_scaling_factor

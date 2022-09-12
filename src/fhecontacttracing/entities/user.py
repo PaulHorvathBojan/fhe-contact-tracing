@@ -184,3 +184,4 @@ class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
+
