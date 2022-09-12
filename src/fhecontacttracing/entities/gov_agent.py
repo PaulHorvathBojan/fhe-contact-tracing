@@ -117,6 +117,7 @@ class EncryptionGovAgent(GovAgent):
         self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
         self._evaluator = CKKSEvaluator(self._ckks_params)
 
+
     def get_public_key(self):
         return self._public_key
 
@@ -170,4 +171,10 @@ class EncryptionGovAgent(GovAgent):
                                    new_encryptor=self._encryptor,
                                    new_encoder=self._encoder)
 
-    def
+    def add_user(self, new_user):
+        super().add_user(new_user)
+
+        new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
+                                   new_encryptor=self._encryptor,
+                                   new_encoder=self._encoder)
+
