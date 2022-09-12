@@ -350,11 +350,6 @@ class EncryptionMO(MobileOperator):
 
     encryptor = property(fget=get_encryptor)
 
-    def get_encr_score(self):
-        return self._encr_score
-
-    encr_score = property(fget=get_encr_score)
-
     def get_scaling_factor(self):
         return self._scaling_factor
 
