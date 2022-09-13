@@ -210,3 +210,10 @@ class EncryptionGovAgent(GovAgent):
             self._scores[tup[0]] = score
             if score >= self.risk_threshold and self._status[tup[0]] == 0:
                 self._users[tup[0]].at_risk()
+
+    def score_req(self, user, encr_score):
+        decr_score = self._decryptor.decrypt(ciphertext=encr_score)
+        deco_score = self._encoder.decode(plain=decr_score)
+        plain_score = deco_score[0].real
+
+        user.score_from_ga(plain_score)
