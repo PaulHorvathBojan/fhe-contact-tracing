@@ -159,16 +159,20 @@ class EncryptionGovAgent(GovAgent):
         self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
         self._evaluator = CKKSEvaluator(self._ckks_params)
 
+        self.distribute_fhe_suite()
+
     def distribute_fhe_suite(self):
         for mo in self._MOs:
             mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder)
+                                 new_encoder=self._encoder,
+                                 new_relin_key=self._relin_key)
 
         for user in self._users:
             user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder)
+                                   new_encoder=self._encoder,
+                                   new_relin_key=self._relin_key)
 
     def add_user(self, new_user):
         super(EncryptionGovAgent, self).add_user(new_user)

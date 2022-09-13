@@ -334,6 +334,7 @@ class EncryptionMO(MobileOperator):
         self._encryptor = None
         self._encoder = None
         self._scaling_factor = None
+        self._relin_key = None
 
     def get_encoder(self):
         return self._encoder
@@ -355,10 +356,11 @@ class EncryptionMO(MobileOperator):
 
     scaling_factor = property(fget=get_scaling_factor)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder):
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_relin_key):
         self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
+        self._relin_key = new_relin_key
 
     def add_user(self, user):
         self._users.append(user)
@@ -371,13 +373,26 @@ class EncryptionMO(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
-        enco_0 = self._encoder.encode(values=[complex(0,0)],
+        enco_0 = self._encoder.encode(values=[complex(0, 0)],
                                       scaling_factor=self._scaling_factor)
         encr_0 = self._encryptor.encrypt(plain=enco_0)
+
         self._scores.append(encr_0)
 
         self._status.append(encr_0)
 
         self._usr_count += 1
 
-    
+    def location_pair_contact_score(self, location1, location2):
+        (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
+
+        sq_diff_xs = self._evaluator.multiply_plain(ciph=location2[0],
+                                                    plain=self._encoder.encode(values=[complex(-1, 0)],
+                                                                               scaling_factor=self._scaling_factor))
+
+        sq_diff_xs = self._evaluator.add(ciph1=location1[0],
+                                         ciph2=sq_diff_xs)
+
+        sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
+                                              ciph2=sq_diff_xs,
+                                              relin_key=self._relin_key)
