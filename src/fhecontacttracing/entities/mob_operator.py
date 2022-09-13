@@ -384,8 +384,6 @@ class EncryptionMO(MobileOperator):
         self._usr_count += 1
 
     def location_pair_contact_score(self, location1, location2):
-        (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
-
         sq_diff_xs = self._evaluator.multiply_plain(ciph=location2[0],
                                                     plain=self._encoder.encode(values=[complex(-1, 0)],
                                                                                scaling_factor=self._scaling_factor))
@@ -396,3 +394,34 @@ class EncryptionMO(MobileOperator):
         sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
                                               ciph2=sq_diff_xs,
                                               relin_key=self._relin_key)
+
+        sq_diff_ys = self._evaluator.multiply_plain(ciph=location2[1],
+                                                    plain=self._encoder.encode(values=[complex(-1, 0)],
+                                                                               scaling_factor=self._scaling_factor))
+
+        sq_diff_ys = self._evaluator.add(ciph1=location1[1],
+                                         ciph2=sq_diff_ys)
+
+        sq_diff_ys = self._evaluator.multiply(ciph1=sq_diff_ys,
+                                              ciph2=sq_diff_ys,
+                                              relin_key=self._relin_key)
+
+        sq_euclidean = self._evaluator.add(ciph1=sq_diff_xs,
+                                           ciph2=sq_diff_ys)
+
+        const = -1 / (self._L_max ** 2)
+        const = self._encoder.encode(values=[complex(const, 0)],
+                                     scaling_factor=self._scaling_factor)
+
+        variable = self._evaluator.multiply_plain(ciph=sq_euclidean,
+                                                  plain=const)
+
+        diff = self._evaluator.add_plain(ciph=variable,
+                                         plain=1)
+
+        for _ in range(10):
+            diff = self._evaluator.multiply(ciph1=diff,
+                                            ciph2=diff,
+                                            relin_key=self._relin_key)
+
+        return diff

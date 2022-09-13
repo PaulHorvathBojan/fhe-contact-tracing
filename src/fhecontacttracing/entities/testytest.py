@@ -70,4 +70,4 @@ post_test_time = time.time()
 test_time = post_test_time - pre_test_time
 print("It took " + str(test_time) + " to encode-encrypt-decrypt-decode a million numbers.")
 print("diff: " + str(max_diff))
-evaluator.mu
+evaluator.mul
