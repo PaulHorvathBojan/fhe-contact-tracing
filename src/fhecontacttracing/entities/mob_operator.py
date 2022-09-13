@@ -468,3 +468,20 @@ class EncryptionMO(MobileOperator):
                                   area_list=self._curr_areas_by_user,
                                   sts_list=self._status
                                   )
+
+    def inside_scoring(self):
+        for i in range(len(self._users)):
+            area = self._curr_areas_by_user[i]
+            adj_indices = self.det_adj_area_ranges(area_tuple=area)
+
+            for j in adj_indices[0]:
+                for k in adj_indices[1]:
+                    curr_bucket = self._area_array[area[0] + j][area[1] + k]
+
+                    for user_index in curr_bucket:
+                        if not user_index == i:
+                            contact_score = self.location_pair_contact_score(
+                                location1=self._curr_locations[i],
+                                location2=self._curr_locations[user_index])
+                            self._scores[i] = self._evaluator.multiply_plain(ciph=self._status[user_index],
+                                                                             plain=contact_score)

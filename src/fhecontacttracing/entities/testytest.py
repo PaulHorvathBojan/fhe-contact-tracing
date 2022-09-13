@@ -32,3 +32,4 @@ post_setup = time.time() - pre_setup
 print("Took " + str(post_setup) + " seconds to set up the context.")
 
 encryptor.
+evaluator.mul
