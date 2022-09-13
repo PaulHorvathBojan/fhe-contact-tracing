@@ -360,3 +360,24 @@ class EncryptionMO(MobileOperator):
         self._encryptor = new_encryptor
         self._encoder = new_encoder
 
+    def add_user(self, user):
+        self._users.append(user)
+
+        self._curr_locations.append((user.x, user.y))
+
+        area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
+        loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
+        loc_bucket.add(self.usr_count)
+
+        self._curr_areas_by_user.append(area_aux)
+
+        enco_0 = self._encoder.encode(values=[complex(0,0)],
+                                      scaling_factor=self._scaling_factor)
+        encr_0 = self._encryptor.encrypt(plain=enco_0)
+        self._scores.append(encr_0)
+
+        self._status.append(encr_0)
+
+        self._usr_count += 1
+
+    
