@@ -449,3 +449,22 @@ class EncryptionMO(MobileOperator):
 
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
+
+    def send_data_to_mo(self, other_mo):
+        loc_list = []
+
+        for user in self._users:
+            enco_x = self._encoder.encode(values=[complex(user.x, 0)],
+                                          scaling_factor=self._scaling_factor)
+            encr_x = self._encryptor.encrypt(plain=enco_x)
+
+            enco_y = self._encoder.encode(values=[complex(user.y, 0)],
+                                          scaling_factor=self._scaling_factor)
+            encr_y = self._encryptor.encrypt(plain=enco_y)
+
+            loc_list.append((encr_x, encr_y))
+
+        other_mo.rcv_data_from_mo(loc_list=loc_list,
+                                  area_list=self._curr_areas_by_user,
+                                  sts_list=self._status
+                                  )
