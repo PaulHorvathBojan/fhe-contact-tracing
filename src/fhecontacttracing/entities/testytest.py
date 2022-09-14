@@ -1,4 +1,7 @@
 import time
+import numpy as np
+
+from pymobility.models.mobility import gauss_markov
 
 from ckks.ckks_decryptor import CKKSDecryptor
 from ckks.ckks_encoder import CKKSEncoder
@@ -31,5 +34,10 @@ evaluator = CKKSEvaluator(params)
 post_setup = time.time() - pre_setup
 print("Took " + str(post_setup) + " seconds to set up the context.")
 
-encryptor.
-evaluator.mul
+gm1 = gauss_markov(nr_nodes=10,
+                   dimensions=(10,10))
+
+locs = next(gm1)
+print(locs)
+
+print((int(np.rint(locs[0][0])), int(np.rint(locs[0][1]))))
