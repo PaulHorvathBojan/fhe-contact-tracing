@@ -186,6 +186,8 @@ class EncryptedUser(ProtocolUser):
         self._encryptor = None
         self._encoder = None
         self._scaling_factor = None
+        self._relin_key = None
+        self._public_key = None
 
     def get_encoder(self):
         return self._encoder
@@ -212,6 +214,16 @@ class EncryptedUser(ProtocolUser):
 
     scaling_factor = property(fget=get_scaling_factor)
 
+    def get_relin_key(self):
+        return self._relin_key
+
+    relin_key = property(fget=get_relin_key)
+
+    def get_pubilc_key(self):
+        return self._public_key
+
+    public_key = property(fget=get_pubilc_key)
+
     def score_from_mo(self, score):
         self._encr_score = score
 
@@ -225,10 +237,14 @@ class EncryptedUser(ProtocolUser):
 
         self._GA.score_req(self, nonced_score)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor):
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
+                          new_public_key):
         self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
+        self._scaling_factor = new_scaling_factor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
 
 
 class GovAgent:
@@ -399,13 +415,17 @@ class EncryptionGovAgent(GovAgent):
             mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
                                  new_encoder=self._encoder,
-                                 new_relin_key=self._relin_key)
+                                 new_scaling_factor=self._scaling_factor,
+                                 new_relin_key=self._relin_key,
+                                 new_public_key=self._public_key)
 
         for user in self._users:
             user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
                                    new_encoder=self._encoder,
-                                   new_relin_key=self._relin_key)
+                                   new_scaling_factor=self._scaling_factor,
+                                   new_relin_key=self._relin_key,
+                                   new_public_key=self._public_key)
 
     def add_user(self, new_user):
         super(EncryptionGovAgent, self).add_user(new_user)
@@ -415,12 +435,11 @@ class EncryptionGovAgent(GovAgent):
                                    new_encoder=self._encoder)
 
     def add_mo(self, new_mo):
-        super(EncryptionGovAgent, self).add_mo(new_mo)
+        super(EncryptionGovAgent, self).add_user(new_mo)
 
         new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder,
-                                 new)
+                                 new_encoder=self._encoder)
 
     def daily(self):
         for mo in self._MOs:
@@ -789,6 +808,7 @@ class EncryptionMO(MobileOperator):
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
 
+        self._public_key = None
         self._evaluator = None
         self._encryptor = None
         self._encoder = None
@@ -815,11 +835,14 @@ class EncryptionMO(MobileOperator):
 
     scaling_factor = property(fget=get_scaling_factor)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_relin_key):
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
+                          new_public_key):
         self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
+        self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
+        self._public_key = new_public_key
 
     def add_user(self, user):
         self._users.append(user)
@@ -1001,7 +1024,7 @@ class SpaceTimeLord:
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._area_size_x, self._area_size_ys
+        return self._area_size_x, self._area_size_y
 
     area_sizes = property(fget=get_area_sizes)
 

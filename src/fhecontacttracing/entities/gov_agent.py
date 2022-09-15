@@ -183,14 +183,20 @@ class EncryptionGovAgent(GovAgent):
 
         new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder)
+                                   new_encoder=self._encoder,
+                                   new_scaling_factor=self._scaling_factor,
+                                   new_relin_key=self._relin_key,
+                                   new_public_key=self._public_key)
 
     def add_mo(self, new_mo):
-        super(EncryptionGovAgent, self).add_user(new_mo)
+        super(EncryptionGovAgent, self).add_mo(new_mo)
 
         new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder)
+                                 new_encoder=self._encoder,
+                                 new_scaling_factor=self._scaling_factor,
+                                 new_relin_key=self._relin_key,
+                                 new_public_key=self._public_key)
 
     def daily(self):
         for mo in self._MOs:
