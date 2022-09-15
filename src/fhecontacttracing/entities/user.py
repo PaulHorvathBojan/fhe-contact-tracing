@@ -126,11 +126,7 @@ class ProtocolUser:
         self.decr_score_from_ga()
 
 
-class EncryptedUser(ProtocolUser):  # TODO: - Encryption GA class
-    #                                                   - encryption context setup and distribution
-    #                                                   - status encryption and distribution to MOs
-    #                                                   - score decryption and evaluation
-    #                                               - Encryption MO class
+class EncryptedUser(ProtocolUser):
 
     def __init__(self, init_x, init_y, mo, uid, ga):
         super(EncryptedUser, self).__init__(init_x, init_y, mo, uid, ga)
