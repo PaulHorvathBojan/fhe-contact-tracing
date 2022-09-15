@@ -362,6 +362,11 @@ class EncryptionMO(MobileOperator):
 
     relin_key = property(fget=get_relin_key)
 
+    def get_public_key(self):
+        return self._public_key
+
+    public_key = property(fget=get_public_key)
+
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
         self._encryptor = new_encryptor
