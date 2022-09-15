@@ -99,6 +99,7 @@ class EncryptionGovAgent(GovAgent):
     def __init__(self, risk_threshold, degree, cipher_modulus, big_modulus, scaling_factor):
         super(EncryptionGovAgent, self).__init__(risk_threshold=risk_threshold)
 
+        self._scaling_factor = scaling_factor
         self._ckks_params = CKKSParameters(poly_degree=degree,
                                            ciph_modulus=cipher_modulus,
                                            big_modulus=big_modulus,
@@ -110,7 +111,6 @@ class EncryptionGovAgent(GovAgent):
         self._public_key = self._key_generator.public_key
         self._secret_key = self._key_generator.secret_key
         self._relin_key = self._key_generator.relin_key
-        self._scaling_factor = scaling_factor
 
         self._encoder = CKKSEncoder(self._ckks_params)
         self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
@@ -161,34 +161,34 @@ class EncryptionGovAgent(GovAgent):
 
     def distribute_fhe_suite(self):
         for mo in self._MOs:
-            mo.set_new_fhe_suite(new_encryptor=self._encryptor,
-                                 new_relin_key=self._relin_key,
-                                 new_public_key=self._public_key)
+            mo.refresh_fhe_keys(new_encryptor=self._encryptor,
+                                new_relin_key=self._relin_key,
+                                new_public_key=self._public_key)
 
         for user in self._users:
-            user.set_new_fhe_suite(new_encryptor=self._encryptor,
-                                   new_relin_key=self._relin_key,
-                                   new_public_key=self._public_key)
+            user.refresh_fhe_keys(new_encryptor=self._encryptor,
+                                  new_relin_key=self._relin_key,
+                                  new_public_key=self._public_key)
 
     def add_user(self, new_user):
         super(EncryptionGovAgent, self).add_user(new_user)
 
-        new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                   new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder,
-                                   new_scaling_factor=self._scaling_factor,
-                                   new_relin_key=self._relin_key,
-                                   new_public_key=self._public_key)
+        new_user.first_time_fhe_setup(new_evaluator=self._evaluator,
+                                      new_encryptor=self._encryptor,
+                                      new_encoder=self._encoder,
+                                      new_scaling_factor=self._scaling_factor,
+                                      new_relin_key=self._relin_key,
+                                      new_public_key=self._public_key)
 
     def add_mo(self, new_mo):
         super(EncryptionGovAgent, self).add_mo(new_mo)
 
-        new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                 new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder,
-                                 new_scaling_factor=self._scaling_factor,
-                                 new_relin_key=self._relin_key,
-                                 new_public_key=self._public_key)
+        new_mo.first_time_fhe_setup(new_evaluator=self._evaluator,
+                                    new_encryptor=self._encryptor,
+                                    new_encoder=self._encoder,
+                                    new_scaling_factor=self._scaling_factor,
+                                    new_relin_key=self._relin_key,
+                                    new_public_key=self._public_key)
 
     def daily(self):
         for mo in self._MOs:

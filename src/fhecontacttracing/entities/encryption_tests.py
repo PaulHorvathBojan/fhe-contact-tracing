@@ -229,25 +229,28 @@ class EncryptedUser(ProtocolUser):
 
     def decr_score_from_ga(self):
         self._nonce = random.randint(2, 2 ** 60)
-        enco_nonce = self._encoder.encode(values=[complex(self._nonce, 0)],
-                                          scaling_factor=self._scaling_factor)
+        enco_nonce = self._evaluator.create_constant_plain(const=self._nonce)
 
         nonced_score = self._evaluator.multiply_plain(ciph=self._encr_score,
                                                       plain=enco_nonce)
 
         self._GA.score_req(self, nonced_score)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
-                          new_public_key):
+    def first_time_fhe_setup(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
+                             new_public_key):
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
-        if self._evaluator is not None and self._encr_score is not None:
-            self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
-                                                          key=self._public_key)
         self._evaluator = new_evaluator
+
+    def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
+        self._encryptor = new_encryptor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
+        self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
+                                                      key=self._public_key)
 
 
 class GovAgent:
@@ -854,18 +857,23 @@ class EncryptionMO(MobileOperator):
 
     public_key = property(fget=get_public_key)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
-                          new_public_key):
+    def first_time_fhe_setup(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
+                             new_public_key):
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
-        if self._evaluator is not None:
-            for score in self._scores:
-                self._evaluator.switch_key(ciph=score,
-                                           key=self._public_key)
         self._evaluator = new_evaluator
+
+    def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
+        self._encryptor = new_encryptor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
+
+        for score in self._scores:
+            self._evaluator.switch_key(ciph=score,
+                                       key=self._public_key)
 
     def add_user(self, user):
         self._users.append(user)
@@ -1522,7 +1530,6 @@ class EncryptionMOTest(unittest.TestCase):
 
         self.assertEqual(test_mo.get_evaluator(), None, "evaluator getter no work")
         self.assertEqual(test_mo.evaluator, None, "evaluator property no work")
-
 
 
 unittest.main()
