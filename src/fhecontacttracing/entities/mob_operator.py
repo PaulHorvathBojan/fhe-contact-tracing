@@ -330,6 +330,7 @@ class EncryptionMO(MobileOperator):
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
 
+        self._public_key = None
         self._evaluator = None
         self._encryptor = None
         self._encoder = None
@@ -356,11 +357,13 @@ class EncryptionMO(MobileOperator):
 
     scaling_factor = property(fget=get_scaling_factor)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_relin_key):
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key, new_public_key):
         self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
+        self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
+        self._public_key = new_public_key
 
     def add_user(self, user):
         self._users.append(user)

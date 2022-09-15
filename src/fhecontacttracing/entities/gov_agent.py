@@ -166,13 +166,17 @@ class EncryptionGovAgent(GovAgent):
             mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
                                  new_encoder=self._encoder,
-                                 new_relin_key=self._relin_key)
+                                 new_scaling_factor=self._scaling_factor,
+                                 new_relin_key=self._relin_key,
+                                 new_public_key=self._public_key)
 
         for user in self._users:
             user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
                                    new_encoder=self._encoder,
-                                   new_relin_key=self._relin_key)
+                                   new_scaling_factor=self._scaling_factor,
+                                   new_relin_key=self._relin_key,
+                                   new_public_key=self._public_key)
 
     def add_user(self, new_user):
         super(EncryptionGovAgent, self).add_user(new_user)

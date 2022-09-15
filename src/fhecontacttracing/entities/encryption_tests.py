@@ -415,11 +415,12 @@ class EncryptionGovAgent(GovAgent):
                                    new_encoder=self._encoder)
 
     def add_mo(self, new_mo):
-        super(EncryptionGovAgent, self).add_user(new_mo)
+        super(EncryptionGovAgent, self).add_mo(new_mo)
 
         new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder)
+                                 new_encoder=self._encoder,
+                                 new)
 
     def daily(self):
         for mo in self._MOs:
@@ -1275,36 +1276,33 @@ class EncryptionLibraryTest(unittest.TestCase):
 
 class EncryptedUserTest(unittest.TestCase):
     def test_encodergetters(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=8,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
 
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
+        dummy_mo = EncryptionMO(ga=dummy_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
 
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
+        test_user = EncryptedUser(init_x=12,
+                                  init_y=12,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
 
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50,
-                                  max_x=3652,
-                                  max_y=3652
-                                  )
+        test_user._encoder = 5
+        self.assertEqual(test_user.get_encoder(), 5, "encoder getter not proper")
+        self.assertEqual(test_user.encoder, 5, "encoder property not proper")
 
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-
-        self.assertEqual(test_user.get_x(), 15, "x getter not proper")
+        test_user._encoder = dummy_ga.encoder
+        johnathan = dummy_ga.encoder
+        self.assertEqual(test_user.get_encoder(), johnathan, "encoder getter not proper")
+        self.assertEqual(test_user.encoder, johnathan, "encoder property not proper")
 
 
 unittest.main()

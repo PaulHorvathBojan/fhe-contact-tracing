@@ -136,6 +136,8 @@ class EncryptedUser(ProtocolUser):
         self._encryptor = None
         self._encoder = None
         self._scaling_factor = None
+        self._relin_key = None
+        self._public_key = None
 
     def get_encoder(self):
         return self._encoder
@@ -162,6 +164,16 @@ class EncryptedUser(ProtocolUser):
 
     scaling_factor = property(fget=get_scaling_factor)
 
+    def get_relin_key(self):
+        return self._relin_key
+
+    relin_key = property(fget=get_relin_key)
+
+    def get_pubilc_key(self):
+        return self._public_key
+
+    public_key = property(fget=get_pubilc_key)
+
     def score_from_mo(self, score):
         self._encr_score = score
 
@@ -175,8 +187,10 @@ class EncryptedUser(ProtocolUser):
 
         self._GA.score_req(self, nonced_score)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor):
+    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key, new_public_key):
         self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
-
+        self._scaling_factor = new_scaling_factor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
