@@ -325,11 +325,18 @@ class MobileOperator:
         user.score_from_mo(score=self._scores[index])
 
 
-class EncryptionMO(MobileOperator): # TODO: -key switch on fhe suite change
-    #                                       -replace manual encoding with create_constant_plain
+class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
+        self._evaluator = None
+        self._public_key = None
+        self._relin_key = None
+        self._scaling_factor = None
+        self._encoder = None
+        self._encryptor = None
+
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
+
 
     def get_encoder(self):
         return self._encoder
@@ -353,12 +360,16 @@ class EncryptionMO(MobileOperator): # TODO: -key switch on fhe suite change
 
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
-        self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
+        if self._evaluator is not None:
+            for score in self._scores:
+                self._evaluator.switch_key(ciph=score,
+                                           key=self._public_key)
+        self._evaluator = new_evaluator
 
     def add_user(self, user):
         self._users.append(user)
