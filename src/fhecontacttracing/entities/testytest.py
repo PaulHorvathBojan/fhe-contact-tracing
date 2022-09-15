@@ -134,5 +134,8 @@ class EncryptionLibraryTest(unittest.TestCase):
             self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 
 
+class EncryptedUserTest(unittest.TestCase):
+    def
+
 
 unittest.main()

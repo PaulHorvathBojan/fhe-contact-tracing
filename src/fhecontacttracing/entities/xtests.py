@@ -10,7 +10,6 @@ np.random.seed(1234)
 
 
 # Casually copy everything from the 3 modules you have to test they work
-# !!! CODE TESTS FUNCTIONALITY PRE-SIMULATION
 class GovAgent:
 
     # initialise the class with empty user list, MO list, infected list, status list, score list
@@ -133,12 +132,14 @@ class MobileOperator:
     #   - _curr_time is 0
     #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
     #       divided into 50 x 50 m squares
-    def __init__(self, ga, mo_id, area_side_x, area_side_y):
+    def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._GA = ga
         self._id = mo_id
         self._area_side_x = area_side_x
         self._area_side_y = area_side_y
-        self._L_max = max(self._area_side_y, self._area_side_x)
+        self._L_max = 2 * max(self._area_side_y, self._area_side_x)
+        self._area_count_x = int(max_x // area_side_x) + 1
+        self._area_count_y = int(max_y // area_side_y) + 1
 
         self._usr_count = 0
         self._users = []
@@ -151,9 +152,9 @@ class MobileOperator:
 
         self._other_mos = []
 
-        for _ in range(74):
+        for _ in range(self._area_count_x):
             ys = []
-            for _ in range(74):
+            for _ in range(self._area_count_y):
                 ys.append(set())
             self._area_array.append(ys)
 
@@ -310,10 +311,10 @@ class MobileOperator:
         self._curr_areas_by_user[user_index] = post_area
 
     # location_pair_contacts generates contact approx score between 2 locations
-    # The actual formula may or may not be prone to changes; right now the general vibe is not exactly best.
+    # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
-        return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2)
-                / self._L_max ** 2) ** 1024
+        return (1 - (
+                    (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -461,7 +462,6 @@ class ProtocolUser:
 
         # intuitively going for a Susceptible(0)-Infected(1) model;
         # recovery is beyond the scope of this project
-        self._status = 0
         self._score = 0
         self._nonce = 0
         self._risk = 0
@@ -501,26 +501,18 @@ class ProtocolUser:
 
     last_update = property(fget=get_last_update_time)
 
-    def get_status(self):
-        return self._status
-
-    status = property(fget=get_status)
-
     # move_to updates the current location of the user and the time of the last update.
     # The final part produces a Bernoulli variable that models the chance to ask the MO for the score:
     #   - the chance to ask for score is 1/(the number of seconds in 2 days)
     def move_to(self, new_x, new_y, update_time):
-        self._x = new_x
-        self._y = new_y
-        self._last_update = update_time
+        if update_time > self._last_update:
+            self._x = new_x
+            self._y = new_y
+            self._last_update = update_time
 
-        ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880
-        if ask_score == 1:
-            self.score_receipt_proc()
-
-    # infect infects a user by setting status to 1
-    def infect(self):
-        self._status = 1
+            ask_score = bernoulli.rvs(0.00034722222)  # bernoulli argument is 1/2880, which attempts to model a request
+            if ask_score == 1:
+                self.score_receipt_proc()
 
     # upd_to_mo updates the data that the MO has regarding the self
     # it essentially calls a function in the MO that performs the updating
@@ -549,11 +541,6 @@ class ProtocolUser:
     def decr_score_from_ga(self):
         self._nonce = random.randint(2, 2 ** 60)
         self._GA.score_req(self, self._nonce * self._score)
-
-    # send_sts_to_ga models the update procedure of the user's infection status inside the GA class
-    # It calls the appropriate method inside the GA class with the user's infection status as argument
-    def send_sts_to_ga(self):
-        self._GA.status_from_user(self, self._status)
 
     # rcv_score_from_ga models receipt of score from the affiliated GA
     # The received value is the score masked multiplicatively with self._nonce.
@@ -585,11 +572,13 @@ class ProtocolUser:
 
 class SpaceTimeLord:
 
-    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes):
+    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes):
         self._movements_iterable = movements_iterable
         self._risk_threshold = risk_thr
-        self._max_x = area_sizes[0]
-        self._max_y = area_sizes[1]
+        self._max_x = max_sizes[0]
+        self._max_y = max_sizes[1]
+        self._area_size_x = area_sizes[0]
+        self._area_size_y = area_sizes[1]
 
         self._usr_count = 0
         self._mo_count = 0
@@ -604,8 +593,10 @@ class SpaceTimeLord:
         while self._mo_count < mo_count:
             new_mo = MobileOperator(ga=self._ga,
                                     mo_id=self._mo_count,
-                                    area_side_x=self._max_x,
-                                    area_side_y=self._max_y
+                                    area_side_x=self._area_size_x,
+                                    area_side_y=self._area_size_y,
+                                    max_x=self._max_x,
+                                    max_y=self._max_y
                                     )
             for prev_mo in self._mos:
                 new_mo.register_other_mo(prev_mo)
@@ -634,7 +625,7 @@ class SpaceTimeLord:
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._max_x, self._max_y
+        return self._area_size_x, self._area_size_ys
 
     area_sizes = property(fget=get_area_sizes)
 
@@ -718,7 +709,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -748,7 +741,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -778,7 +773,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -808,7 +805,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -838,7 +837,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -868,7 +869,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -898,7 +901,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -928,7 +933,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -958,7 +965,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -988,7 +997,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1018,7 +1029,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1048,7 +1061,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1059,66 +1074,6 @@ class UserTest(unittest.TestCase):
                                  )
 
         self.assertEqual(test_user.last_update, 0, "last update property not proper")
-
-    def test_statusgetter(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
-
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
-
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
-
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50
-                                  )
-
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-
-        self.assertEqual(test_user.get_status(), 0, "status getter not proper")
-
-    def test_statusproperty(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
-
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
-
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
-
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50
-                                  )
-
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-
-        self.assertEqual(test_user.status, 0, "status property not proper")
 
     def test_moveto(self):
         # Baseline movement iterator
@@ -1138,7 +1093,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1164,42 +1121,9 @@ class UserTest(unittest.TestCase):
                           new_y=-5,
                           update_time=-3.14)
 
-        self.assertEqual(test_user.x, 1971, "x after multiple move_tos not proper")
-        self.assertEqual(test_user.y, -5, "y after multiple move_tos not proper")
-        self.assertEqual(test_user.last_update, -3.14, "last update time after multiple move_tos not proper")
-        # tests work, HOWEVER should reimplement some things
-
-    def test_infect(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
-
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
-
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
-
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50
-                                  )
-
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-
-        test_user.infect()
-
-        self.assertEqual(test_user.status, 1, "infect method not proper")
+        self.assertEqual(test_user.x, 30, "x after multiple move_tos not proper")
+        self.assertEqual(test_user.y, 12, "y after multiple move_tos not proper")
+        self.assertEqual(test_user.last_update, 2, "last update time after multiple move_tos not proper")
 
     def test_updtomo(self):
         # Baseline movement iterator
@@ -1219,7 +1143,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         self.assertEqual(dummy_mo._users, [], "initial user list in MO class not empty")
@@ -1300,7 +1226,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1333,7 +1261,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1366,7 +1296,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1401,7 +1333,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1421,45 +1355,6 @@ class UserTest(unittest.TestCase):
                 test_user.score_from_ga(nonced_score=nonced_score)
                 self.assertEqual(test_user._score, i, "score from ga method in user class no work")
 
-    def test_sendststoga(self):
-        # Baseline movement iterator
-        dummy_gm = gauss_markov(nr_nodes=10,
-                                dimensions=(3652, 3652),
-                                velocity_mean=3.,
-                                variance=2.
-                                )
-
-        # Baseline minutely movement iterator
-        MinutelyMovement(movement_iter=dummy_gm)
-
-        # Dummy GA so that methods work with less expected errors
-        dummy_ga = GovAgent(risk_threshold=1)
-
-        # Dummy MO so that methods work with less expected errors
-        dummy_mo = MobileOperator(ga=dummy_ga,
-                                  mo_id=0,
-                                  area_side_x=50,
-                                  area_side_y=50
-                                  )
-
-        test_user = ProtocolUser(init_x=15,
-                                 init_y=15,
-                                 mo=dummy_mo,
-                                 uid=0,
-                                 ga=dummy_ga
-                                 )
-        self.assertEqual(test_user._status, 0, "status in user class not initialized to 0")
-        self.assertEqual(dummy_ga._status[0], 0, "status in GA class not initialized to 0")
-
-        test_user.send_sts_to_ga()
-        self.assertEqual(dummy_ga._status[0], 0, "send sts to ga method big unexpect behaviour")
-
-        test_user.infect()
-        self.assertEqual(test_user._status, 1, "status in user class not updated after infect called")
-
-        test_user.send_sts_to_ga()
-        self.assertEqual(dummy_ga._status[0], 1, "send sts to ga unexpect behaviour")
-
     def test_scorereceiptproc(self):
         # Baseline movement iterator
         dummy_gm = gauss_markov(nr_nodes=10,
@@ -1478,7 +1373,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1512,7 +1409,9 @@ class UserTest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=dummy_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         test_user = ProtocolUser(init_x=15,
@@ -1549,7 +1448,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.get_ga(), dummy_ga, "ga getter in mo class not proper")
@@ -1572,7 +1473,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.GA, dummy_ga, "ga property in mo class not proper")
@@ -1595,7 +1498,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         # Dummy user list creation
@@ -1638,7 +1543,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         # Dummy user list creation
@@ -1681,7 +1588,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.get_id(), 0, "id getter in mo class not proper")
@@ -1704,7 +1613,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.id, 0, "id property in mo class not proper")
@@ -1727,7 +1638,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.get_usr_count(), 0, "init usr count getter in mo class not proper")
@@ -1772,7 +1685,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.usr_count, 0, "init usr count property in mo class not proper")
@@ -1817,7 +1732,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.get_area_side_x(), 50, "area side x getter in mo class not proper")
@@ -1842,12 +1759,14 @@ class MOTest(unittest.TestCase):
         # Dummy MO so that methods work with less expected errors
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
-                                 area_side_x=1923,
-                                 area_side_y=50
+                                 area_side_x=962,
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
-        self.assertEqual(test_mo.get_lmax(), 1923, "L_max getter in MO class not proper")
-        self.assertEqual(test_mo.L_max, 1923, "L_max property in MO class not proper")
+        self.assertEqual(test_mo.get_lmax(), 1924, "L_max getter in MO class not proper")
+        self.assertEqual(test_mo.L_max, 1924, "L_max property in MO class not proper")
 
     def test_timegetters(self):
         # Baseline movement iterator
@@ -1867,7 +1786,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.get_curr_time(), 0, "curr time getter in MO class not proper")
@@ -1897,7 +1818,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         other_mos = []
@@ -1907,7 +1830,9 @@ class MOTest(unittest.TestCase):
             aux_mo = MobileOperator(ga=dummy_ga,
                                     mo_id=i + 1,
                                     area_side_x=50,
-                                    area_side_y=50
+                                    area_side_y=50,
+                                    max_x=3652,
+                                    max_y=3652
                                     )
             test_mo.register_other_mo(new_mo=aux_mo)
             other_mos.append(aux_mo)
@@ -1933,7 +1858,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         # Dummy user list creation
@@ -1979,7 +1906,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.assign_area(loc_tuple=(1234, 1234)), (1234 // 50, 1234 // 50),
@@ -2003,7 +1932,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo._users, [], "initial user list in MO class not empty")
@@ -2059,7 +1990,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo.det_adj_area_ranges(area_tuple=(0, 0)), ([0, 1], [0, 1]),
@@ -2143,7 +2076,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         self.assertEqual(test_mo._users, [], "initial user list in MO class not empty")
@@ -2226,7 +2161,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         for i in range(test_mo.area_side_x):
@@ -2237,11 +2174,11 @@ class MOTest(unittest.TestCase):
                         location_2 = (i + x, j + y)
 
                         if x ** 2 + y ** 2 <= 4:
-                            self.assertGreaterEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.194,
+                            self.assertGreaterEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.4407,
                                                     "location pair contact score method in MO class no work")
 
                         else:
-                            self.assertLessEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.194,
+                            self.assertLessEqual(test_mo.location_pair_contact_score(location_1, location_2), 0.4407,
                                                  "bad val: " + str(x) + " " + str(y))
 
     def test_tousercomm(self):
@@ -2262,7 +2199,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2295,7 +2234,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2328,7 +2269,9 @@ class MOTest(unittest.TestCase):
         test_mo = MobileOperator(ga=dummy_ga,
                                  mo_id=0,
                                  area_side_x=50,
-                                 area_side_y=50
+                                 area_side_y=50,
+                                 max_x=3652,
+                                 max_y=3652
                                  )
 
         all_mo_list = [test_mo]
@@ -2336,7 +2279,9 @@ class MOTest(unittest.TestCase):
             new_mo = MobileOperator(ga=dummy_ga,
                                     mo_id=i,
                                     area_side_x=50,
-                                    area_side_y=50)
+                                    area_side_y=50,
+                                    max_x=3652,
+                                    max_y=3652)
 
             for other_mo in all_mo_list:
                 other_mo.register_other_mo(new_mo=new_mo)
@@ -2364,12 +2309,16 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
         alt_mo = MobileOperator(ga=dummy_ga,
                                 mo_id=1,
                                 area_side_x=50,
-                                area_side_y=50
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652
                                 )
 
         test_mo.register_other_mo(alt_mo)
@@ -2422,12 +2371,16 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
         alt_mo = QuickMO(ga=dummy_ga,
                          mo_id=1,
                          area_side_x=50,
-                         area_side_y=50
+                         area_side_y=50,
+                         max_x=3652,
+                         max_y=3652
                          )
 
         test_mo.register_other_mo(alt_mo)
@@ -2477,7 +2430,9 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
 
         int_content = []
@@ -2528,12 +2483,16 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
         alt_mo = QuickMO(ga=dummy_ga,
                          mo_id=1,
                          area_side_x=50,
-                         area_side_y=50
+                         area_side_y=50,
+                         max_x=3652,
+                         max_y=3652
                          )
 
         test_mo.register_other_mo(alt_mo)
@@ -2695,7 +2654,9 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
 
         dummy_user = ProtocolUser(init_x=0,
@@ -2729,7 +2690,9 @@ class MOTest(unittest.TestCase):
         test_mo = QuickMO(ga=dummy_ga,
                           mo_id=0,
                           area_side_x=50,
-                          area_side_y=50
+                          area_side_y=50,
+                          max_x=3652,
+                          max_y=3652
                           )
 
         dummy_user = ProtocolUser(init_x=0,
@@ -2771,7 +2734,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2802,7 +2767,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2833,7 +2800,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2881,7 +2850,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         self.assertEqual(test_ga.get_users(), [], "user list in GA class not properly initialized as empty")
@@ -2918,7 +2889,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2949,7 +2922,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -2992,7 +2967,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -3028,7 +3005,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -3064,7 +3043,9 @@ class GATest(unittest.TestCase):
         dummy_mo = MobileOperator(ga=test_ga,
                                   mo_id=0,
                                   area_side_x=50,
-                                  area_side_y=50
+                                  area_side_y=50,
+                                  max_x=3652,
+                                  max_y=3652
                                   )
 
         dummy_user = ProtocolUser(init_x=15,
@@ -3095,7 +3076,9 @@ class GATest(unittest.TestCase):
             mo_list.append(MobileOperator(ga=test_ga2,
                                           mo_id=i,
                                           area_side_x=50,
-                                          area_side_y=50))
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652))
 
         usr_list = []
         for i in range(1000):
@@ -3137,7 +3120,8 @@ class STLTest(unittest.TestCase):
         test_stl = SpaceTimeLord(movements_iterable=dummy_gm,
                                  mo_count=1,
                                  risk_thr=4,
-                                 area_sizes=(50, 50))
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652))
 
         self.assertEqual(test_stl._movements_iterable, dummy_gm, "wrong movements iterable in STL class")
         print(test_stl._current_locations)
@@ -3149,7 +3133,6 @@ class STLTest(unittest.TestCase):
         self.assertEqual(len(test_stl.users), 10, "user count and length of user list incompatible")
 
         self.assertEqual(test_stl.mos[0].users, test_stl.users, "faulty user list in MO")
-        for i in range(10):
 
 
 unittest.main()
