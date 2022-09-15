@@ -129,8 +129,11 @@ class EncryptionSTL():
 
         self._curr_time = 0
 
-        self._ga = EncryptionGovAgent(risk_threshold=self._risk_threshold, degree, cipher_modulus, big_modulus,
-                                      scaling_factor)
+        self._ga = EncryptionGovAgent(risk_threshold=self._risk_threshold,
+                                      degree=degree,
+                                      cipher_modulus=cipher_modulus,
+                                      big_modulus=big_modulus,
+                                      scaling_factor=scaling_factor)
 
         while self._mo_count < mo_count:
             new_mo = EncryptionMO(ga=self._ga,
@@ -167,7 +170,7 @@ class EncryptionSTL():
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._area_size_x, self._area_size_ys
+        return self._area_size_x, self._area_size_y
 
     area_sizes = property(fget=get_area_sizes)
 
