@@ -99,11 +99,11 @@ class EncryptionGovAgent(GovAgent):
     def __init__(self, risk_threshold, degree, cipher_modulus, big_modulus, scaling_factor):
         super(EncryptionGovAgent, self).__init__(risk_threshold=risk_threshold)
 
-        self._ckks_params = CKKSParameter(poly_degree=degree,
-                                          ciph_modulus=cipher_modulus,
-                                          big_modulus=big_modulus,
-                                          scaling_factor=scaling_factor
-                                          )
+        self._ckks_params = CKKSParameters(poly_degree=degree,
+                                           ciph_modulus=cipher_modulus,
+                                           big_modulus=big_modulus,
+                                           scaling_factor=scaling_factor
+                                           )
 
         self._key_generator = CKKSKeyGenerator(self._ckks_params)
 

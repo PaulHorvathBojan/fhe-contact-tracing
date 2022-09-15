@@ -139,7 +139,7 @@ class MobileOperator:
     def add_user(self, user):
         self._users.append(user)
 
-        self._curr_locations.append((rint(user.x), rint(user.y)))
+        self._curr_locations.append((np.rint(user.x), np.rint(user.y)))
 
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
         loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
