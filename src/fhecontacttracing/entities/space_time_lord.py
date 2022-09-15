@@ -53,7 +53,7 @@ class SpaceTimeLord:
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._area_size_x, self._area_size_ys
+        return self._area_size_x, self._area_size_y
 
     area_sizes = property(fget=get_area_sizes)
 
@@ -104,7 +104,7 @@ class SpaceTimeLord:
             self._ga.daily()
 
 
-class EncryptionSTL():
+class EncryptionSTL:
     def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes, degree, cipher_modulus,
                  big_modulus, scaling_factor):
         self._movements_iterable = movements_iterable
