@@ -376,6 +376,15 @@ class EncryptionMO(MobileOperator):
         self._public_key = new_public_key
         self._evaluator = new_evaluator
 
+    def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
+        self._encryptor = new_encryptor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
+
+        for score in self._scores:
+            self._evaluator.switch_key(ciph=score,
+                                       key=self._public_key)
+
     def add_user(self, user):
         self._users.append(user)
 
