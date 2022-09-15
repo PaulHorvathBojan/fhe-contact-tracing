@@ -225,7 +225,7 @@ class EncryptedUser(ProtocolUser):
                                           scaling_factor=self._scaling_factor)
 
         nonced_score = self._evaluator.multiply_plain(ciph=self._encr_score,
-                                                     plain=enco_nonce)
+                                                      plain=enco_nonce)
 
         self._GA.score_req(self, nonced_score)
 
@@ -801,7 +801,8 @@ class MobileOperator:
         user.score_from_mo(score=self._scores[index])
 
 
-class EncryptionMO(MobileOperator):
+class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
+    #                                       -replace manual encoding with create_constant_plain
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
@@ -846,8 +847,7 @@ class EncryptionMO(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
-        enco_0 = self._encoder.encode(values=[complex(0, 0)],
-                                      scaling_factor=self._scaling_factor)
+        enco_0 = self._evaluator.create_constant_plain(const=0)
         encr_0 = self._encryptor.encrypt(plain=enco_0)
 
         self._scores.append(encr_0)
@@ -859,15 +859,13 @@ class EncryptionMO(MobileOperator):
     def plain_encr_location_pair_contact_score(self, plain_location, encr_location):
 
         sq_diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
-                                               plain=self._encoder.encode(values=[complex(-plain_location[0], 0)],
-                                                                          scaling_factor=self._scaling_factor))
+                                               plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
         sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
                                               ciph2=sq_diff_xs,
                                               relin_key=self._relin_key)
 
         sq_diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
-                                               plain=self._encoder.encode(values=[complex(-plain_location[1], 0)],
-                                                                          scaling_factor=self._scaling_factor))
+                                               plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
         sq_diff_ys = self._evaluator.multiply(ciph1=sq_diff_ys,
                                               ciph2=sq_diff_ys,
                                               relin_key=self._relin_key)
@@ -876,15 +874,13 @@ class EncryptionMO(MobileOperator):
                                       ciph2=sq_diff_ys)
 
         const = -1 / (self._L_max ** 2)
-        const = self._encoder.encode(values=[complex(const, 0)],
-                                     scaling_factor=self._scaling_factor)
+        const = self._evaluator.create_constant_plain(const=const)
 
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
                                                   plain=const)
 
         base = self._evaluator.add_plain(ciph=fraction,
-                                         plain=self._encoder.encode(values=[complex(1, 0)],
-                                                                    scaling_factor=self._scaling_factor))
+                                         plain=self._evaluator.create_constant_plain(const=1))
 
         for i in range(11):
             base = self._evaluator.multiply(ciph1=base,
@@ -927,12 +923,10 @@ class EncryptionMO(MobileOperator):
         loc_list = []
 
         for user in self._users:
-            enco_x = self._encoder.encode(values=[complex(user.x, 0)],
-                                          scaling_factor=self._scaling_factor)
+            enco_x = self._evaluator.create_constant_plain(const=user.x)
             encr_x = self._encryptor.encrypt(plain=enco_x)
 
-            enco_y = self._encoder.encode(values=[complex(user.y, 0)],
-                                          scaling_factor=self._scaling_factor)
+            enco_y = self._evaluator.create_constant_plain(const=user.y)
             encr_y = self._encryptor.encrypt(plain=enco_y)
 
             loc_list.append((encr_x, encr_y))
@@ -1418,11 +1412,36 @@ class EncryptedUserTest(unittest.TestCase):
                                   ga=dummy_ga)
 
         plane = 1234.1234
-        encoplane = dummy_ga._encoder.encode(values=[complex(plane,0)],
+        encoplane = dummy_ga._encoder.encode(values=[complex(plane, 0)],
                                              scaling_factor=dummy_ga._scaling_factor)
         encrplane = dummy_ga._encryptor.encrypt(plain=encoplane)
         test_user._encr_score = encrplane
         test_user.decr_score_from_ga()
         self.assertLessEqual(abs(plane - test_user._score), 3e-9, "decr score from ga no work")
+
+    def test_setnewfhesuite(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        dummy_ga.new_encryption_suite()
+
+        dummy_mo = EncryptionMO(ga=dummy_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
+
+        test_user = EncryptedUser(init_x=12,
+                                  init_y=12,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        dummy_ga.evaluator.create_constant_plain(c)
+
 
 unittest.main()
