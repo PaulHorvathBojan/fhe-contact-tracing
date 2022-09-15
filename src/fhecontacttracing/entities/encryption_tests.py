@@ -245,6 +245,8 @@ class EncryptedUser(ProtocolUser):
         self._public_key = new_public_key
         self._evaluator = new_evaluator
 
+        self._encr_score = self._encryptor.encrypt(plain=self._evaluator.create_constant_plain(const=0))
+
     def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
         self._encryptor = new_encryptor
         self._relin_key = new_relin_key
@@ -354,6 +356,7 @@ class EncryptionGovAgent(GovAgent):
     def __init__(self, risk_threshold, degree, cipher_modulus, big_modulus, scaling_factor):
         super(EncryptionGovAgent, self).__init__(risk_threshold=risk_threshold)
 
+        self._scaling_factor = scaling_factor
         self._ckks_params = CKKSParameters(poly_degree=degree,
                                            ciph_modulus=cipher_modulus,
                                            big_modulus=big_modulus,
@@ -365,7 +368,6 @@ class EncryptionGovAgent(GovAgent):
         self._public_key = self._key_generator.public_key
         self._secret_key = self._key_generator.secret_key
         self._relin_key = self._key_generator.relin_key
-        self._scaling_factor = scaling_factor
 
         self._encoder = CKKSEncoder(self._ckks_params)
         self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
@@ -409,49 +411,41 @@ class EncryptionGovAgent(GovAgent):
         self._secret_key = self._key_generator.secret_key
         self._relin_key = self._key_generator.relin_key
 
-        self._encoder = CKKSEncoder(self._ckks_params)
         self._encryptor = CKKSEncryptor(self._ckks_params, self._public_key, self._secret_key)
         self._decryptor = CKKSDecryptor(self._ckks_params, self._secret_key)
-        self._evaluator = CKKSEvaluator(self._ckks_params)
 
         self.distribute_fhe_suite()
 
     def distribute_fhe_suite(self):
         for mo in self._MOs:
-            mo.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                 new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder,
-                                 new_scaling_factor=self._scaling_factor,
-                                 new_relin_key=self._relin_key,
-                                 new_public_key=self._public_key)
+            mo.refresh_fhe_keys(new_encryptor=self._encryptor,
+                                new_relin_key=self._relin_key,
+                                new_public_key=self._public_key)
 
         for user in self._users:
-            user.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                   new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder,
-                                   new_scaling_factor=self._scaling_factor,
-                                   new_relin_key=self._relin_key,
-                                   new_public_key=self._public_key)
+            user.refresh_fhe_keys(new_encryptor=self._encryptor,
+                                  new_relin_key=self._relin_key,
+                                  new_public_key=self._public_key)
 
     def add_user(self, new_user):
         super(EncryptionGovAgent, self).add_user(new_user)
 
-        new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                   new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder,
-                                   new_scaling_factor=self._scaling_factor,
-                                   new_relin_key=self._relin_key,
-                                   new_public_key=self._public_key)
+        new_user.first_time_fhe_setup(new_evaluator=self._evaluator,
+                                      new_encryptor=self._encryptor,
+                                      new_encoder=self._encoder,
+                                      new_scaling_factor=self._scaling_factor,
+                                      new_relin_key=self._relin_key,
+                                      new_public_key=self._public_key)
 
     def add_mo(self, new_mo):
         super(EncryptionGovAgent, self).add_mo(new_mo)
 
-        new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
-                                 new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder,
-                                 new_scaling_factor=self._scaling_factor,
-                                 new_relin_key=self._relin_key,
-                                 new_public_key=self._public_key)
+        new_mo.first_time_fhe_setup(new_evaluator=self._evaluator,
+                                    new_encryptor=self._encryptor,
+                                    new_encoder=self._encoder,
+                                    new_scaling_factor=self._scaling_factor,
+                                    new_relin_key=self._relin_key,
+                                    new_public_key=self._public_key)
 
     def daily(self):
         for mo in self._MOs:
@@ -1513,23 +1507,23 @@ class EncryptionMOTest(unittest.TestCase):
                                max_x=3652,
                                max_y=3652)
 
-        self.assertEqual(test_mo.get_encryptor(), None, "encryptor getter no work")
-        self.assertEqual(test_mo.encryptor, None, "encryptor property no work")
+        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
 
-        self.assertEqual(test_mo.get_encoder(), None, "encoder getter no work")
-        self.assertEqual(test_mo.encoder, None, "encoder property no work")
+        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
 
-        self.assertEqual(test_mo.get_scaling_factor(), None, "scaling factor getter no work")
-        self.assertEqual(test_mo.scaling_factor, None, "scaling factor property no work")
+        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
 
-        self.assertEqual(test_mo.get_relin_key(), None, "relin key getter no work")
-        self.assertEqual(test_mo.relin_key, None, "relin key property no work")
+        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
 
-        self.assertEqual(test_mo.get_public_key(), None, "public key getter no work")
-        self.assertEqual(test_mo.public_key, None, "public key property no work")
+        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
 
-        self.assertEqual(test_mo.get_evaluator(), None, "evaluator getter no work")
-        self.assertEqual(test_mo.evaluator, None, "evaluator property no work")
+        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
 
 
 unittest.main()

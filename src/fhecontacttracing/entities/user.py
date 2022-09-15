@@ -195,6 +195,8 @@ class EncryptedUser(ProtocolUser):
         self._public_key = new_public_key
         self._evaluator = new_evaluator
 
+        self._encr_score = self._encryptor.encrypt(plain=self._evaluator.create_constant_plain(const=0))
+
     def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
         self._encryptor = new_encryptor
         self._relin_key = new_relin_key
