@@ -186,14 +186,18 @@ class EncryptedUser(ProtocolUser):
 
         self._GA.score_req(self, nonced_score)
 
-    def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
-                          new_public_key):
+    def first_time_fhe_setup(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
+                             new_public_key):
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
-        if self._evaluator is not None and self._encr_score is not None:
-            self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
-                                                          key=self._public_key)
         self._evaluator = new_evaluator
+
+    def refresh_fhe_keys(self, new_encryptor, new_relin_key, new_public_key):
+        self._encryptor = new_encryptor
+        self._relin_key = new_relin_key
+        self._public_key = new_public_key
+        self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
+                                                      key=self._public_key)

@@ -844,6 +844,16 @@ class EncryptionMO(MobileOperator):
 
     scaling_factor = property(fget=get_scaling_factor)
 
+    def get_relin_key(self):
+        return self._relin_key
+
+    relin_key = property(fget=get_relin_key)
+
+    def get_public_key(self):
+        return self._public_key
+
+    public_key = property(fget=get_public_key)
+
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
         self._encryptor = new_encryptor
@@ -1497,10 +1507,22 @@ class EncryptionMOTest(unittest.TestCase):
 
         self.assertEqual(test_mo.get_encryptor(), None, "encryptor getter no work")
         self.assertEqual(test_mo.encryptor, None, "encryptor property no work")
+
         self.assertEqual(test_mo.get_encoder(), None, "encoder getter no work")
         self.assertEqual(test_mo.encoder, None, "encoder property no work")
+
         self.assertEqual(test_mo.get_scaling_factor(), None, "scaling factor getter no work")
         self.assertEqual(test_mo.scaling_factor, None, "scaling factor property no work")
-        self.assertEqual(test_mo.get_relin)
+
+        self.assertEqual(test_mo.get_relin_key(), None, "relin key getter no work")
+        self.assertEqual(test_mo.relin_key, None, "relin key property no work")
+
+        self.assertEqual(test_mo.get_public_key(), None, "public key getter no work")
+        self.assertEqual(test_mo.public_key, None, "public key property no work")
+
+        self.assertEqual(test_mo.get_evaluator(), None, "evaluator getter no work")
+        self.assertEqual(test_mo.evaluator, None, "evaluator property no work")
+
+
 
 unittest.main()
