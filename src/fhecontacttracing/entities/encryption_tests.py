@@ -179,6 +179,14 @@ class ProtocolUser:
 class EncryptedUser(ProtocolUser):
 
     def __init__(self, init_x, init_y, mo, uid, ga):
+        self._evaluator = None
+        self._encryptor = None
+        self._encoder = None
+        self._scaling_factor = None
+        self._relin_key = None
+        self._public_key = None
+        self._encr_score = None
+
         super(EncryptedUser, self).__init__(init_x, init_y, mo, uid, ga)
 
     def get_encoder(self):
@@ -231,12 +239,15 @@ class EncryptedUser(ProtocolUser):
 
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
-        self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
+        if self._evaluator is not None and self._encr_score is not None:
+            self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
+                                                          key=self._public_key)
+        self._evaluator = new_evaluator
 
 
 class GovAgent:
@@ -801,10 +812,16 @@ class MobileOperator:
         user.score_from_mo(score=self._scores[index])
 
 
-class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
-    #                                       -replace manual encoding with create_constant_plain
+class EncryptionMO(MobileOperator):
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
+        self._evaluator = None
+        self._public_key = None
+        self._relin_key = None
+        self._scaling_factor = None
+        self._encoder = None
+        self._encryptor = None
+
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
 
     def get_encoder(self):
@@ -829,12 +846,16 @@ class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
 
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
-        self._evaluator = new_evaluator
         self._encryptor = new_encryptor
         self._encoder = new_encoder
         self._scaling_factor = new_scaling_factor
         self._relin_key = new_relin_key
         self._public_key = new_public_key
+        if self._evaluator is not None:
+            for score in self._scores:
+                self._evaluator.switch_key(ciph=score,
+                                           key=self._public_key)
+        self._evaluator = new_evaluator
 
     def add_user(self, user):
         self._users.append(user)
@@ -1184,7 +1205,7 @@ class EncryptionSTL:
 
 
 # class IterTest(unittest.TestCase):
-# 
+#
 #     def test_functionality(self):
 #         for _ in range(10):
 #             dummy_gm = gauss_markov(nr_nodes=10,
@@ -1192,13 +1213,13 @@ class EncryptionSTL:
 #                                     velocity_mean=7.,
 #                                     alpha=.5,
 #                                     variance=7.)
-# 
+#
 #             dual = DualIter(init_iter=dummy_gm)
-# 
+#
 #             for _ in range(10):
 #                 fst = next(dual)
 #                 snd = next(dual)
-# 
+#
 #                 for i in range(len(fst)):
 #                     self.assertEqual(fst[i][0], snd[i][0], "Dual iterator no work")
 #                     self.assertEqual(fst[i][1], snd[i][1], "Dual iterator no work")
@@ -1209,15 +1230,15 @@ class EncryptionSTL:
 #         poly_deg = 2
 #         scaling_fact = 1 << 30
 #         big_mod = 1 << 1200
-# 
+#
 #         ciph_mod = 1 << 300
 #         params = CKKSParameters(poly_degree=poly_deg,
 #                                 ciph_modulus=ciph_mod,
 #                                 big_modulus=big_mod,
 #                                 scaling_factor=scaling_fact)
-# 
+#
 #         encoder = CKKSEncoder(params=params)
-# 
+#
 #         for val in range(3653):
 #             e1 = encoder.encode(values=[val],
 #                                 scaling_factor=scaling_fact)
@@ -1225,35 +1246,35 @@ class EncryptionSTL:
 #                                 scaling_factor=scaling_fact)
 #             e3 = encoder.encode(values=[complex(val, 0)],
 #                                 scaling_factor=scaling_fact)
-# 
+#
 #             self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
 #             self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
 #             self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
-# 
+#
 #     def test_encodeencryptdecryptdecode(self):
 #         poly_deg = 2
 #         scaling_fact = 1 << 30
 #         big_mod = 1 << 1200
-# 
+#
 #         ciph_mod = 1 << 300
 #         params = CKKSParameters(poly_degree=poly_deg,
 #                                 ciph_modulus=ciph_mod,
 #                                 big_modulus=big_mod,
 #                                 scaling_factor=scaling_fact)
-# 
+#
 #         keygen = CKKSKeyGenerator(params=params)
 #         pk = keygen.public_key
 #         sk = keygen.secret_key
-# 
+#
 #         encoder = CKKSEncoder(params=params)
-# 
+#
 #         encryptor = CKKSEncryptor(params=params,
 #                                   public_key=pk,
 #                                   secret_key=sk)
-# 
+#
 #         decryptor = CKKSDecryptor(params=params,
 #                                   secret_key=sk)
-# 
+#
 #         for val in range(3653):
 #             e1 = encoder.encode(values=[val],
 #                                 scaling_factor=scaling_fact)
@@ -1261,19 +1282,19 @@ class EncryptionSTL:
 #                                 scaling_factor=scaling_fact)
 #             e3 = encoder.encode(values=[complex(val, 0)],
 #                                 scaling_factor=scaling_fact)
-# 
+#
 #             ee1 = encryptor.encrypt(plain=e1)
 #             ee2 = encryptor.encrypt(plain=e2)
 #             ee3 = encryptor.encrypt(plain=e3)
-# 
+#
 #             eed1 = decryptor.decrypt(ciphertext=ee1)
 #             eed2 = decryptor.decrypt(ciphertext=ee2)
 #             eed3 = decryptor.decrypt(ciphertext=ee3)
-# 
+#
 #             eedd1 = encoder.decode(plain=eed1)
 #             eedd2 = encoder.decode(plain=eed2)
 #             eedd3 = encoder.decode(plain=eed3)
-# 
+#
 #             self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 #             self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 #             self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
@@ -1441,7 +1462,45 @@ class EncryptedUserTest(unittest.TestCase):
                                   uid=0,
                                   ga=dummy_ga)
 
-        dummy_ga.evaluator.create_constant_plain(c)
+        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "encryptor setter no work")
+        self.assertEqual(dummy_ga.encoder, test_user.encoder, "encoder setter no work")
+        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "scaling_factor setter no work")
+        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "relin_key setter no work")
+        self.assertEqual(dummy_ga.public_key, test_user.public_key, "public_key setter no work")
+        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "evaluator setter no work")
 
+        test_const = 1976
+        test_ptext = test_user._evaluator.create_constant_plain(const=test_const)
+        test_ctext = test_user._encryptor.encrypt(plain=test_ptext)
+        dummy_ga.new_encryption_suite()
+        test_decr = dummy_ga._decryptor.decrypt(ciphertext=test_ctext)
+        test_deco = dummy_ga._encoder.decode(plain=test_decr)
+
+        self.assertLessEqual(abs(test_deco[0] - test_const), 3e-9,
+                             "new encryption suite no work OR distribute fhe suite no work")
+
+
+class EncryptionMOTest(unittest.TestCase):
+    def test_suitegetters(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+
+        self.assertEqual(test_mo.get_encryptor(), None, "encryptor getter no work")
+        self.assertEqual(test_mo.encryptor, None, "encryptor property no work")
+        self.assertEqual(test_mo.get_encoder(), None, "encoder getter no work")
+        self.assertEqual(test_mo.encoder, None, "encoder property no work")
+        self.assertEqual(test_mo.get_scaling_factor(), None, "scaling factor getter no work")
+        self.assertEqual(test_mo.scaling_factor, None, "scaling factor property no work")
+        self.assertEqual(test_mo.get_relin)
 
 unittest.main()

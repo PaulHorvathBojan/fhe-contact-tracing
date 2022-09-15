@@ -179,8 +179,7 @@ class EncryptedUser(ProtocolUser):
 
     def decr_score_from_ga(self):
         self._nonce = random.randint(2, 2 ** 60)
-        enco_nonce = self._encoder.encode(values=[complex(self._nonce, 0)],
-                                          scaling_factor=self._scaling_factor)
+        enco_nonce = self._evaluator.create_constant_plain(const=self._nonce)
 
         nonced_score = self._evaluator.multiply_plain(ciph=self._encr_score,
                                                       plain=enco_nonce)

@@ -325,7 +325,7 @@ class MobileOperator:
         user.score_from_mo(score=self._scores[index])
 
 
-class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
+class EncryptionMO(MobileOperator):
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._evaluator = None
@@ -336,7 +336,6 @@ class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
         self._encryptor = None
 
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
-
 
     def get_encoder(self):
         return self._encoder
@@ -357,6 +356,11 @@ class EncryptionMO(MobileOperator):  # TODO: -key switch on fhe suite change
         return self._scaling_factor
 
     scaling_factor = property(fget=get_scaling_factor)
+
+    def get_relin_key(self):
+        return self._relin_key
+
+    relin_key = property(fget=get_relin_key)
 
     def set_new_fhe_suite(self, new_evaluator, new_encryptor, new_encoder, new_scaling_factor, new_relin_key,
                           new_public_key):
