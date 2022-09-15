@@ -131,14 +131,6 @@ class EncryptedUser(ProtocolUser):
     def __init__(self, init_x, init_y, mo, uid, ga):
         super(EncryptedUser, self).__init__(init_x, init_y, mo, uid, ga)
 
-        self._encr_score = None
-        self._evaluator = None
-        self._encryptor = None
-        self._encoder = None
-        self._scaling_factor = None
-        self._relin_key = None
-        self._public_key = None
-
     def get_encoder(self):
         return self._encoder
 
@@ -169,10 +161,10 @@ class EncryptedUser(ProtocolUser):
 
     relin_key = property(fget=get_relin_key)
 
-    def get_pubilc_key(self):
+    def get_public_key(self):
         return self._public_key
 
-    public_key = property(fget=get_pubilc_key)
+    public_key = property(fget=get_public_key)
 
     def score_from_mo(self, score):
         self._encr_score = score

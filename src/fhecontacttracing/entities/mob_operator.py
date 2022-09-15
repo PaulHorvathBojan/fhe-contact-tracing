@@ -330,13 +330,6 @@ class EncryptionMO(MobileOperator):
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
 
-        self._public_key = None
-        self._evaluator = None
-        self._encryptor = None
-        self._encoder = None
-        self._scaling_factor = None
-        self._relin_key = None
-
     def get_encoder(self):
         return self._encoder
 

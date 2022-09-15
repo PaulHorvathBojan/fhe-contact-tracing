@@ -181,14 +181,6 @@ class EncryptedUser(ProtocolUser):
     def __init__(self, init_x, init_y, mo, uid, ga):
         super(EncryptedUser, self).__init__(init_x, init_y, mo, uid, ga)
 
-        self._encr_score = None
-        self._evaluator = None
-        self._encryptor = None
-        self._encoder = None
-        self._scaling_factor = None
-        self._relin_key = None
-        self._public_key = None
-
     def get_encoder(self):
         return self._encoder
 
@@ -219,10 +211,10 @@ class EncryptedUser(ProtocolUser):
 
     relin_key = property(fget=get_relin_key)
 
-    def get_pubilc_key(self):
+    def get_public_key(self):
         return self._public_key
 
-    public_key = property(fget=get_pubilc_key)
+    public_key = property(fget=get_public_key)
 
     def score_from_mo(self, score):
         self._encr_score = score
@@ -432,14 +424,20 @@ class EncryptionGovAgent(GovAgent):
 
         new_user.set_new_fhe_suite(new_evaluator=self._evaluator,
                                    new_encryptor=self._encryptor,
-                                   new_encoder=self._encoder)
+                                   new_encoder=self._encoder,
+                                   new_scaling_factor=self._scaling_factor,
+                                   new_relin_key=self._relin_key,
+                                   new_public_key=self._public_key)
 
     def add_mo(self, new_mo):
-        super(EncryptionGovAgent, self).add_user(new_mo)
+        super(EncryptionGovAgent, self).add_mo(new_mo)
 
         new_mo.set_new_fhe_suite(new_evaluator=self._evaluator,
                                  new_encryptor=self._encryptor,
-                                 new_encoder=self._encoder)
+                                 new_encoder=self._encoder,
+                                 new_scaling_factor=self._scaling_factor,
+                                 new_relin_key=self._relin_key,
+                                 new_public_key=self._public_key)
 
     def daily(self):
         for mo in self._MOs:
@@ -807,13 +805,6 @@ class EncryptionMO(MobileOperator):
 
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         super(EncryptionMO, self).__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
-
-        self._public_key = None
-        self._evaluator = None
-        self._encryptor = None
-        self._encoder = None
-        self._scaling_factor = None
-        self._relin_key = None
 
     def get_encoder(self):
         return self._encoder
@@ -1198,112 +1189,114 @@ class EncryptionSTL:
             self._ga.daily()
 
 
-class IterTest(unittest.TestCase):
+# class IterTest(unittest.TestCase):
+# 
+#     def test_functionality(self):
+#         for _ in range(10):
+#             dummy_gm = gauss_markov(nr_nodes=10,
+#                                     dimensions=(3652, 3652),
+#                                     velocity_mean=7.,
+#                                     alpha=.5,
+#                                     variance=7.)
+# 
+#             dual = DualIter(init_iter=dummy_gm)
+# 
+#             for _ in range(10):
+#                 fst = next(dual)
+#                 snd = next(dual)
+# 
+#                 for i in range(len(fst)):
+#                     self.assertEqual(fst[i][0], snd[i][0], "Dual iterator no work")
+#                     self.assertEqual(fst[i][1], snd[i][1], "Dual iterator no work")
 
-    def test_functionality(self):
-        for _ in range(10):
-            dummy_gm = gauss_markov(nr_nodes=10,
-                                    dimensions=(3652, 3652),
-                                    velocity_mean=7.,
-                                    alpha=.5,
-                                    variance=7.)
 
-            dual = DualIter(init_iter=dummy_gm)
-
-            for _ in range(10):
-                fst = next(dual)
-                snd = next(dual)
-
-                for i in range(len(fst)):
-                    self.assertEqual(fst[i][0], snd[i][0], "Dual iterator no work")
-                    self.assertEqual(fst[i][1], snd[i][1], "Dual iterator no work")
-
-
-class EncryptionLibraryTest(unittest.TestCase):
-    def test_encodedecode(self):
-        poly_deg = 2
-        scaling_fact = 1 << 30
-        big_mod = 1 << 1200
-
-        ciph_mod = 1 << 300
-        params = CKKSParameters(poly_degree=poly_deg,
-                                ciph_modulus=ciph_mod,
-                                big_modulus=big_mod,
-                                scaling_factor=scaling_fact)
-
-        encoder = CKKSEncoder(params=params)
-
-        for val in range(3653):
-            e1 = encoder.encode(values=[val],
-                                scaling_factor=scaling_fact)
-            e2 = encoder.encode(values=[val + 0j],
-                                scaling_factor=scaling_fact)
-            e3 = encoder.encode(values=[complex(val, 0)],
-                                scaling_factor=scaling_fact)
-
-            self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
-            self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
-            self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
-
-    def test_encodeencryptdecryptdecode(self):
-        poly_deg = 2
-        scaling_fact = 1 << 30
-        big_mod = 1 << 1200
-
-        ciph_mod = 1 << 300
-        params = CKKSParameters(poly_degree=poly_deg,
-                                ciph_modulus=ciph_mod,
-                                big_modulus=big_mod,
-                                scaling_factor=scaling_fact)
-
-        keygen = CKKSKeyGenerator(params=params)
-        pk = keygen.public_key
-        sk = keygen.secret_key
-
-        encoder = CKKSEncoder(params=params)
-
-        encryptor = CKKSEncryptor(params=params,
-                                  public_key=pk,
-                                  secret_key=sk)
-
-        decryptor = CKKSDecryptor(params=params,
-                                  secret_key=sk)
-
-        for val in range(3653):
-            e1 = encoder.encode(values=[val],
-                                scaling_factor=scaling_fact)
-            e2 = encoder.encode(values=[val + 0j],
-                                scaling_factor=scaling_fact)
-            e3 = encoder.encode(values=[complex(val, 0)],
-                                scaling_factor=scaling_fact)
-
-            ee1 = encryptor.encrypt(plain=e1)
-            ee2 = encryptor.encrypt(plain=e2)
-            ee3 = encryptor.encrypt(plain=e3)
-
-            eed1 = decryptor.decrypt(ciphertext=ee1)
-            eed2 = decryptor.decrypt(ciphertext=ee2)
-            eed3 = decryptor.decrypt(ciphertext=ee3)
-
-            eedd1 = encoder.decode(plain=eed1)
-            eedd2 = encoder.decode(plain=eed2)
-            eedd3 = encoder.decode(plain=eed3)
-
-            self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+# class EncryptionLibraryTest(unittest.TestCase):
+#     def test_encodedecode(self):
+#         poly_deg = 2
+#         scaling_fact = 1 << 30
+#         big_mod = 1 << 1200
+# 
+#         ciph_mod = 1 << 300
+#         params = CKKSParameters(poly_degree=poly_deg,
+#                                 ciph_modulus=ciph_mod,
+#                                 big_modulus=big_mod,
+#                                 scaling_factor=scaling_fact)
+# 
+#         encoder = CKKSEncoder(params=params)
+# 
+#         for val in range(3653):
+#             e1 = encoder.encode(values=[val],
+#                                 scaling_factor=scaling_fact)
+#             e2 = encoder.encode(values=[val + 0j],
+#                                 scaling_factor=scaling_fact)
+#             e3 = encoder.encode(values=[complex(val, 0)],
+#                                 scaling_factor=scaling_fact)
+# 
+#             self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
+#             self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
+#             self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
+# 
+#     def test_encodeencryptdecryptdecode(self):
+#         poly_deg = 2
+#         scaling_fact = 1 << 30
+#         big_mod = 1 << 1200
+# 
+#         ciph_mod = 1 << 300
+#         params = CKKSParameters(poly_degree=poly_deg,
+#                                 ciph_modulus=ciph_mod,
+#                                 big_modulus=big_mod,
+#                                 scaling_factor=scaling_fact)
+# 
+#         keygen = CKKSKeyGenerator(params=params)
+#         pk = keygen.public_key
+#         sk = keygen.secret_key
+# 
+#         encoder = CKKSEncoder(params=params)
+# 
+#         encryptor = CKKSEncryptor(params=params,
+#                                   public_key=pk,
+#                                   secret_key=sk)
+# 
+#         decryptor = CKKSDecryptor(params=params,
+#                                   secret_key=sk)
+# 
+#         for val in range(3653):
+#             e1 = encoder.encode(values=[val],
+#                                 scaling_factor=scaling_fact)
+#             e2 = encoder.encode(values=[val + 0j],
+#                                 scaling_factor=scaling_fact)
+#             e3 = encoder.encode(values=[complex(val, 0)],
+#                                 scaling_factor=scaling_fact)
+# 
+#             ee1 = encryptor.encrypt(plain=e1)
+#             ee2 = encryptor.encrypt(plain=e2)
+#             ee3 = encryptor.encrypt(plain=e3)
+# 
+#             eed1 = decryptor.decrypt(ciphertext=ee1)
+#             eed2 = decryptor.decrypt(ciphertext=ee2)
+#             eed3 = decryptor.decrypt(ciphertext=ee3)
+# 
+#             eedd1 = encoder.decode(plain=eed1)
+#             eedd2 = encoder.decode(plain=eed2)
+#             eedd3 = encoder.decode(plain=eed3)
+# 
+#             self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 
 
 class EncryptedUserTest(unittest.TestCase):
     def test_encodergetters(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=8,
+                                      degree=2,
                                       cipher_modulus=1 << 300,
                                       big_modulus=1 << 1200,
                                       scaling_factor=1 << 30)
+
+        dummy_ga.new_encryption_suite()
 
         dummy_mo = EncryptionMO(ga=dummy_ga,
                                 mo_id=0,
@@ -1327,5 +1320,49 @@ class EncryptedUserTest(unittest.TestCase):
         self.assertEqual(test_user.get_encoder(), johnathan, "encoder getter not proper")
         self.assertEqual(test_user.encoder, johnathan, "encoder property not proper")
 
+        test_user._evaluator = 5
+        self.assertEqual(test_user.get_evaluator(), 5, "evaluator getter not proper")
+        self.assertEqual(test_user.evaluator, 5, "evaluator property not proper")
+
+        test_user._evaluator = dummy_ga.evaluator
+        johnathan = dummy_ga.evaluator
+        self.assertEqual(test_user.get_evaluator(), johnathan, "evaluator getter not proper")
+        self.assertEqual(test_user.evaluator, johnathan, "evaluator property not proper")
+
+        test_user._encryptor = 5
+        self.assertEqual(test_user.get_encryptor(), 5, "encryptor getter not proper")
+        self.assertEqual(test_user.encryptor, 5, "encryptor property not proper")
+
+        test_user._encryptor = dummy_ga.encryptor
+        johnathan = dummy_ga.encryptor
+        self.assertEqual(test_user.get_encryptor(), johnathan, "encryptor getter not proper")
+        self.assertEqual(test_user.encryptor, johnathan, "encryptor property not proper")
+
+        test_user._scaling_factor = 5
+        self.assertEqual(test_user.get_scaling_factor(), 5, "scaling_factor getter not proper")
+        self.assertEqual(test_user.scaling_factor, 5, "scaling_factor property not proper")
+
+        test_user._scaling_factor = dummy_ga.scaling_factor
+        johnathan = dummy_ga.scaling_factor
+        self.assertEqual(test_user.get_scaling_factor(), johnathan, "scaling_factor getter not proper")
+        self.assertEqual(test_user.scaling_factor, johnathan, "scaling_factor property not proper")
+
+        test_user._relin_key = 5
+        self.assertEqual(test_user.get_relin_key(), 5, "relin_key getter not proper")
+        self.assertEqual(test_user.relin_key, 5, "relin_key property not proper")
+
+        test_user._relin_key = dummy_ga.relin_key
+        johnathan = dummy_ga.relin_key
+        self.assertEqual(test_user.get_relin_key(), johnathan, "relin_key getter not proper")
+        self.assertEqual(test_user.relin_key, johnathan, "relin_key property not proper")
+
+        test_user._public_key = 5
+        self.assertEqual(test_user.get_public_key(), 5, "public_key getter not proper")
+        self.assertEqual(test_user.public_key, 5, "public_key property not proper")
+
+        test_user._public_key = dummy_ga.public_key
+        johnathan = dummy_ga.public_key
+        self.assertEqual(test_user.get_public_key(), johnathan, "public_key getter not proper")
+        self.assertEqual(test_user.public_key, johnathan, "public_key property not proper")
 
 unittest.main()
