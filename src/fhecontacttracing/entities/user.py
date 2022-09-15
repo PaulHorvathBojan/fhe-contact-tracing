@@ -174,8 +174,8 @@ class EncryptedUser(ProtocolUser):
         enco_nonce = self._encoder.encode(values=[complex(self._nonce, 0)],
                                           scaling_factor=self._scaling_factor)
 
-        nonced_score = self._evaluator.muliply_plain(ciph=self._encr_score,
-                                                     plain=enco_nonce)
+        nonced_score = self._evaluator.multiply_plain(ciph=self._encr_score,
+                                                      plain=enco_nonce)
 
         self._GA.score_req(self, nonced_score)
 

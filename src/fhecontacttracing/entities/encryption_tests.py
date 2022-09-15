@@ -224,7 +224,7 @@ class EncryptedUser(ProtocolUser):
         enco_nonce = self._encoder.encode(values=[complex(self._nonce, 0)],
                                           scaling_factor=self._scaling_factor)
 
-        nonced_score = self._evaluator.muliply_plain(ciph=self._encr_score,
+        nonced_score = self._evaluator.multiply_plain(ciph=self._encr_score,
                                                      plain=enco_nonce)
 
         self._GA.score_req(self, nonced_score)
@@ -1364,5 +1364,65 @@ class EncryptedUserTest(unittest.TestCase):
         johnathan = dummy_ga.public_key
         self.assertEqual(test_user.get_public_key(), johnathan, "public_key getter not proper")
         self.assertEqual(test_user.public_key, johnathan, "public_key property not proper")
+
+    def test_scorefrommo(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        dummy_ga.new_encryption_suite()
+
+        dummy_mo = EncryptionMO(ga=dummy_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
+
+        test_user = EncryptedUser(init_x=12,
+                                  init_y=12,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        test_user.score_from_mo(score=dummy_mo._scores[0])
+        decr = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+        deco = test_user._encoder.decode(plain=decr)
+        self.assertLessEqual(abs(deco[0].real), 3e-9, "score from mo no work")
+
+        test_user.score_from_mo(69)
+        self.assertEqual(test_user._encr_score, 69, "score from mo no work")
+
+    def test_decrscorefromga(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        dummy_ga.new_encryption_suite()
+
+        dummy_mo = EncryptionMO(ga=dummy_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
+
+        test_user = EncryptedUser(init_x=12,
+                                  init_y=12,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        plane = 1234.1234
+        encoplane = dummy_ga._encoder.encode(values=[complex(plane,0)],
+                                             scaling_factor=dummy_ga._scaling_factor)
+        encrplane = dummy_ga._encryptor.encrypt(plain=encoplane)
+        test_user._encr_score = encrplane
+        test_user.decr_score_from_ga()
+        self.assertLessEqual(abs(plane - test_user._score), 3e-9, "decr score from ga no work")
 
 unittest.main()
