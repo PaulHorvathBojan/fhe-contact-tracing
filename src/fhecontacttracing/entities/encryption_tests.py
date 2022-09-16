@@ -1,6 +1,5 @@
 # TODO:
 #   2. test in EncryptionMO:
-#                               -user addition
 #                               -plain + encr location score
 #                               -data from MO routine
 #                               -data to MO routine
@@ -920,12 +919,15 @@ class EncryptionMO(MobileOperator):
         sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
                                               ciph2=sq_diff_xs,
                                               relin_key=self._relin_key)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
 
         sq_diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
                                                plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
         sq_diff_ys = self._evaluator.multiply(ciph1=sq_diff_ys,
                                               ciph2=sq_diff_ys,
                                               relin_key=self._relin_key)
+        sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
+                                             division_factor=self._scaling_factor)
 
         sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
                                       ciph2=sq_diff_ys)
@@ -943,6 +945,8 @@ class EncryptionMO(MobileOperator):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=self._relin_key)
+            base = self._evaluator.rescale(ciph=base,
+                                           division_factor=self._scaling_factor)
 
         return base
 
@@ -1677,7 +1681,7 @@ class EncryptionMOTest(unittest.TestCase):
 
     def test_useraddition(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=4,
+                                      degree=2,
                                       cipher_modulus=1 << 300,
                                       big_modulus=1 << 1200,
                                       scaling_factor=1 << 30)
@@ -1706,5 +1710,53 @@ class EncryptionMOTest(unittest.TestCase):
         test_mo._scores[0] = 14
         self.assertNotEqual(test_mo._status[0], 14, "score and status lists pointwise same object")
 
+    def test_plainencrlocscore(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+
+        for x in range(0, 50):
+            for y in range(0, 50):
+                randx = random.randint(-50, 50)
+                randy = random.randint(-50, 50)
+
+                randareax = random.randint(0, 73)
+                randareay = random.randint(0, 73)
+
+                x += 50 * randareax
+                y += 50 * randareay
+                test_mo._curr_locations.append((x, y))
+
+                randx += 50 * randareax
+                randy += 50 * randareay
+
+                encox = test_mo._evaluator.create_constant_plain(const=randx)
+                encoy = test_mo._evaluator.create_constant_plain(const=randy)
+
+                encrx = test_mo._encryptor.encrypt(plain=encox)
+                encry = test_mo._encryptor.encrypt(plain=encoy)
+
+                actual = (1 - ((x - randx) ** 2 + (y - randy) ** 2) / test_mo.L_max ** 2) ** 2048
+                encr_val = test_mo.plain_encr_location_pair_contact_score(plain_location=test_mo._curr_locations[-1],
+                                                                          encr_location=(encrx, encry))
+
+                decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
+                deco_val = dummy_ga._encoder.decode(plain=decr_val)
+
+                self.assertLessEqual(abs(deco_val[0].real - actual), 5.1e-9,
+                                     "plain encr location score routine no work")
+
 
 unittest.main()
+
+j = CKKSEvaluator(7)
+j.rescale()

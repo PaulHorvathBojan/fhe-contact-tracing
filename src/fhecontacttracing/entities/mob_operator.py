@@ -415,12 +415,15 @@ class EncryptionMO(MobileOperator):
         sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
                                               ciph2=sq_diff_xs,
                                               relin_key=self._relin_key)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
 
         sq_diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
                                                plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
         sq_diff_ys = self._evaluator.multiply(ciph1=sq_diff_ys,
                                               ciph2=sq_diff_ys,
                                               relin_key=self._relin_key)
+        sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
+                                             division_factor=self._scaling_factor)
 
         sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
                                       ciph2=sq_diff_ys)
@@ -438,6 +441,8 @@ class EncryptionMO(MobileOperator):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=self._relin_key)
+            base = self._evaluator.rescale(ciph=base,
+                                           division_factor=self._scaling_factor)
 
         return base
 
