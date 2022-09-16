@@ -398,12 +398,13 @@ class EncryptionMO(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
-        enco_0 = self._evaluator.create_constant_plain(const=0)
-        encr_0 = self._encryptor.encrypt(plain=enco_0)
+        enco_01 = self._evaluator.create_constant_plain(const=0)
+        encr_01 = self._encryptor.encrypt(plain=enco_01)
+        self._scores.append(encr_01)
 
-        self._scores.append(encr_0)
-
-        self._status.append(encr_0)
+        enco_02 = self._evaluator.create_constant_plain(const=0)
+        encr_02 = self._encryptor.encrypt(plain=enco_02)
+        self._status.append(encr_02)
 
         self._usr_count += 1
 

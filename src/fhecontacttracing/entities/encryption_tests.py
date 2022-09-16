@@ -903,12 +903,13 @@ class EncryptionMO(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
-        enco_0 = self._evaluator.create_constant_plain(const=0)
-        encr_0 = self._encryptor.encrypt(plain=enco_0)
+        enco_01 = self._evaluator.create_constant_plain(const=0)
+        encr_01 = self._encryptor.encrypt(plain=enco_01)
+        self._scores.append(encr_01)
 
-        self._scores.append(encr_0)
-
-        self._status.append(encr_0)
+        enco_02 = self._evaluator.create_constant_plain(const=0)
+        encr_02 = self._encryptor.encrypt(plain=enco_02)
+        self._status.append(encr_02)
 
         self._usr_count += 1
 
@@ -1616,7 +1617,8 @@ class EncryptionMOTest(unittest.TestCase):
         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
 
-        self.assertEqual(test_mo._scores)
+        self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
+        self.assertEqual(test_mo._status, [], "status list not initialized to empty")
 
     def test_keyrefresh(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
@@ -1670,9 +1672,12 @@ class EncryptionMOTest(unittest.TestCase):
         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
 
+        self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
+        self.assertEqual(test_mo._status, [], "status list not initialized to empty")
+
     def test_useraddition(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
+                                      degree=4,
                                       cipher_modulus=1 << 300,
                                       big_modulus=1 << 1200,
                                       scaling_factor=1 << 30)
@@ -1683,6 +1688,23 @@ class EncryptionMOTest(unittest.TestCase):
                                area_side_y=50,
                                max_x=3652,
                                max_y=3652)
+
+        dummy_user = EncryptedUser(init_x=5,
+                                   init_y=5,
+                                   mo=test_mo,
+                                   uid=0,
+                                   ga=dummy_ga)
+
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+        deco_score = dummy_ga._encoder.decode(plain=decr_score)
+        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score not proper")
+
+        decr_status = dummy_ga._decryptor.decrypt(ciphertext=test_mo._status[0])
+        deco_status = dummy_ga._encoder.decode(plain=decr_status)
+        self.assertLessEqual(abs(deco_status[0].real), 3e-9, "initial status not proper")
+
+        test_mo._scores[0] = 14
+        self.assertNotEqual(test_mo._status[0], 14, "score and status lists pointwise same object")
 
 
 unittest.main()
