@@ -381,8 +381,10 @@ class EncryptionMO(MobileOperator):
         self._relin_key = new_relin_key
         self._public_key = new_public_key
 
-        for score in self._scores:
-            self._evaluator.switch_key(ciph=score,
+        for i in range(len(self._scores)):
+            self._evaluator.switch_key(ciph=self._scores[i],
+                                       key=self._public_key)
+            self._evaluator.switch_key(ciph=self._status[i],
                                        key=self._public_key)
 
     def add_user(self, user):

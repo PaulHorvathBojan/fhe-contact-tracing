@@ -1,3 +1,24 @@
+# TODO:
+#   2. test in EncryptionMO:
+#                               -user addition
+#                               -plain + encr location score
+#                               -data from MO routine
+#                               -data to MO routine
+#                               -inside scoring routine
+#   3. test in EncryptionGA:    -__init__
+#                               -getters
+#                               -fhe suite refresh
+#                               -fhe suite distribution
+#                               -add user
+#                               -add MO
+#                               -daily
+#                               -score receipt from MO
+#                               -score decrypt request from user
+#   4. test EncryptionSTL:      -__init__
+#                               -getters
+#                               -user creation
+#                               -tick
+#                               -MO creation where???
 import numpy as np
 import math
 import cmath
@@ -865,8 +886,10 @@ class EncryptionMO(MobileOperator):
         self._relin_key = new_relin_key
         self._public_key = new_public_key
 
-        for score in self._scores:
-            self._evaluator.switch_key(ciph=score,
+        for i in range(len(self._scores)):
+            self._evaluator.switch_key(ciph=self._scores[i],
+                                       key=self._public_key)
+            self._evaluator.switch_key(ciph=self._status[i],
                                        key=self._public_key)
 
     def add_user(self, user):
@@ -1452,7 +1475,7 @@ class EncryptedUserTest(unittest.TestCase):
         test_user.decr_score_from_ga()
         self.assertLessEqual(abs(plane - test_user._score), 3e-9, "decr score from ga no work")
 
-    def test_setnewfhesuite(self):
+    def test_firsttimefhesetup(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
                                       degree=2,
                                       cipher_modulus=1 << 300,
@@ -1474,22 +1497,58 @@ class EncryptedUserTest(unittest.TestCase):
                                   uid=0,
                                   ga=dummy_ga)
 
-        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "encryptor setter no work")
-        self.assertEqual(dummy_ga.encoder, test_user.encoder, "encoder setter no work")
-        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "scaling_factor setter no work")
-        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "relin_key setter no work")
-        self.assertEqual(dummy_ga.public_key, test_user.public_key, "public_key setter no work")
-        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "evaluator setter no work")
+        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
+        self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
+        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
+        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
+        self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
+        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
 
-        test_const = 1976
-        test_ptext = test_user._evaluator.create_constant_plain(const=test_const)
-        test_ctext = test_user._encryptor.encrypt(plain=test_ptext)
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+        deco_score = dummy_ga.encoder.decode(plain=decr_score)
+        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
+
+    def test_refreshkeys(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
         dummy_ga.new_encryption_suite()
-        test_decr = dummy_ga._decryptor.decrypt(ciphertext=test_ctext)
-        test_deco = dummy_ga._encoder.decode(plain=test_decr)
 
-        self.assertLessEqual(abs(test_deco[0] - test_const), 3e-9,
-                             "new encryption suite no work OR distribute fhe suite no work")
+        dummy_mo = EncryptionMO(ga=dummy_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
+
+        test_user = EncryptedUser(init_x=12,
+                                  init_y=12,
+                                  mo=dummy_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
+        self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
+        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
+        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
+        self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
+        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
+
+        dummy_ga.new_encryption_suite()
+
+        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "refresh encryptor setter no work")
+        self.assertEqual(dummy_ga.encoder, test_user.encoder, "refresh encoder setter no work")
+        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "refresh scaling_factor setter no work")
+        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "refresh relin_key setter no work")
+        self.assertEqual(dummy_ga.public_key, test_user.public_key, "refresh public_key setter no work")
+        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "refresh evaluator setter no work")
+
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+        deco_score = dummy_ga.encoder.decode(plain=decr_score)
+        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
 
 
 class EncryptionMOTest(unittest.TestCase):
@@ -1524,6 +1583,106 @@ class EncryptionMOTest(unittest.TestCase):
 
         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+
+    def test_firsttimesetup(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+
+        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+
+        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+
+        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+
+        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+
+        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+
+        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+
+        self.assertEqual(test_mo._scores)
+
+    def test_keyrefresh(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+
+        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+
+        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+
+        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+
+        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+
+        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+
+        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+
+        dummy_ga.new_encryption_suite()
+
+        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+
+        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+
+        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+
+        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+
+        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+
+        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+
+    def test_useraddition(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 300,
+                                      big_modulus=1 << 1200,
+                                      scaling_factor=1 << 30)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
 
 
 unittest.main()
