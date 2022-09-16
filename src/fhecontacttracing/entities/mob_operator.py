@@ -447,17 +447,7 @@ class EncryptionMO(MobileOperator):
         return base
 
     def rcv_data_from_mo(self, loc_list, area_list, sts_list):
-        for i in range(len(loc_list)):
-            adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
 
-            for j in adj_indices[0]:
-                for k in adj_indices[1]:
-                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
-                    for user_index in curr_bucket:
-                        self._scores[user_index] += sts_list[i] * self.location_pair_contact_score(
-                            location1=loc_list[i],
-                            location2=self._curr_locations[user_index]
-                        )
         for i in range(len(loc_list)):
             adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
 
@@ -472,6 +462,9 @@ class EncryptionMO(MobileOperator):
                         add_val = self._evaluator.multiply(ciph1=sts_list[i],
                                                            ciph2=dist_score,
                                                            relin_key=self._relin_key)
+
+                        add_val = self._evaluator.rescale(ciph=add_val,
+                                                          division_factor=self._scaling_factor)
 
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
