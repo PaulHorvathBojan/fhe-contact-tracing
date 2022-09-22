@@ -433,6 +433,8 @@ class EncryptionMO(MobileOperator):
 
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
                                                   plain=const)
+        fraction = self._evaluator.rescale(ciph=fraction,
+                                           division_factor=self._scaling_factor)
 
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
@@ -453,7 +455,7 @@ class EncryptionMO(MobileOperator):
 
             for j in adj_indices[0]:
                 for k in adj_indices[1]:
-                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[area_list[i][1] + k]]
+                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
                     for user_index in curr_bucket:
                         dist_score = self.plain_encr_location_pair_contact_score(
                             plain_location=self._curr_locations[user_index],

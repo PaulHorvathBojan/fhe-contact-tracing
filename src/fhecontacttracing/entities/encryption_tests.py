@@ -1,6 +1,9 @@
 # TODO:
+#   1. test effects of the following operations on scaling factor and modulus:
+#                               - coeff_to_slot
+#                               - slot_to_coeff
+#                               - conjugate (I'm quite sure values don't change for this but make sure)
 #   2. test in EncryptionMO:
-#                               -plain + encr location score
 #                               -data from MO routine
 #                               -data to MO routine
 #                               -inside scoring routine
@@ -24,6 +27,7 @@ import cmath
 import os
 import unittest
 import random
+import gmpy2
 
 from scipy.stats import bernoulli
 from ckks.ckks_decryptor import CKKSDecryptor
@@ -32,6 +36,7 @@ from ckks.ckks_encryptor import CKKSEncryptor
 from ckks.ckks_evaluator import CKKSEvaluator
 from ckks.ckks_key_generator import CKKSKeyGenerator
 from ckks.ckks_parameters import CKKSParameters
+from gmpy2 import mpfr
 
 import util.matrix_operations as mat
 from tests.helper import check_complex_vector_approx_eq
@@ -479,6 +484,8 @@ class EncryptionGovAgent(GovAgent):
                 encoded_sts = self._encoder.encode(values=pre_encode_list,
                                                    scaling_factor=self._scaling_factor)
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
+                self._evaluator.lower_modulus(ciph=encrypted_sts,
+                                              division_factor=self._scaling_factor ** 13)
                 status_list.append(encrypted_sts)
 
             mo.from_ga_comm(new_status=status_list)
@@ -937,6 +944,8 @@ class EncryptionMO(MobileOperator):
 
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
                                                   plain=const)
+        fraction = self._evaluator.rescale(ciph=fraction,
+                                           division_factor=self._scaling_factor)
 
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
@@ -951,23 +960,13 @@ class EncryptionMO(MobileOperator):
         return base
 
     def rcv_data_from_mo(self, loc_list, area_list, sts_list):
+
         for i in range(len(loc_list)):
             adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
 
             for j in adj_indices[0]:
                 for k in adj_indices[1]:
                     curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
-                    for user_index in curr_bucket:
-                        self._scores[user_index] += sts_list[i] * self.location_pair_contact_score(
-                            location1=loc_list[i],
-                            location2=self._curr_locations[user_index]
-                        )
-        for i in range(len(loc_list)):
-            adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
-
-            for j in adj_indices[0]:
-                for k in adj_indices[1]:
-                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[area_list[i][1] + k]]
                     for user_index in curr_bucket:
                         dist_score = self.plain_encr_location_pair_contact_score(
                             plain_location=self._curr_locations[user_index],
@@ -976,6 +975,9 @@ class EncryptionMO(MobileOperator):
                         add_val = self._evaluator.multiply(ciph1=sts_list[i],
                                                            ciph2=dist_score,
                                                            relin_key=self._relin_key)
+
+                        add_val = self._evaluator.rescale(ciph=add_val,
+                                                          division_factor=self._scaling_factor)
 
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
@@ -1265,82 +1267,82 @@ class EncryptionSTL:
 #                     self.assertEqual(fst[i][1], snd[i][1], "Dual iterator no work")
 
 
-# class EncryptionLibraryTest(unittest.TestCase):
-#     def test_encodedecode(self):
-#         poly_deg = 2
-#         scaling_fact = 1 << 30
-#         big_mod = 1 << 1200
-#
-#         ciph_mod = 1 << 300
-#         params = CKKSParameters(poly_degree=poly_deg,
-#                                 ciph_modulus=ciph_mod,
-#                                 big_modulus=big_mod,
-#                                 scaling_factor=scaling_fact)
-#
-#         encoder = CKKSEncoder(params=params)
-#
-#         for val in range(3653):
-#             e1 = encoder.encode(values=[val],
-#                                 scaling_factor=scaling_fact)
-#             e2 = encoder.encode(values=[val + 0j],
-#                                 scaling_factor=scaling_fact)
-#             e3 = encoder.encode(values=[complex(val, 0)],
-#                                 scaling_factor=scaling_fact)
-#
-#             self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
-#             self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
-#             self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
-#
-#     def test_encodeencryptdecryptdecode(self):
-#         poly_deg = 2
-#         scaling_fact = 1 << 30
-#         big_mod = 1 << 1200
-#
-#         ciph_mod = 1 << 300
-#         params = CKKSParameters(poly_degree=poly_deg,
-#                                 ciph_modulus=ciph_mod,
-#                                 big_modulus=big_mod,
-#                                 scaling_factor=scaling_fact)
-#
-#         keygen = CKKSKeyGenerator(params=params)
-#         pk = keygen.public_key
-#         sk = keygen.secret_key
-#
-#         encoder = CKKSEncoder(params=params)
-#
-#         encryptor = CKKSEncryptor(params=params,
-#                                   public_key=pk,
-#                                   secret_key=sk)
-#
-#         decryptor = CKKSDecryptor(params=params,
-#                                   secret_key=sk)
-#
-#         for val in range(3653):
-#             e1 = encoder.encode(values=[val],
-#                                 scaling_factor=scaling_fact)
-#             e2 = encoder.encode(values=[val + 0j],
-#                                 scaling_factor=scaling_fact)
-#             e3 = encoder.encode(values=[complex(val, 0)],
-#                                 scaling_factor=scaling_fact)
-#
-#             ee1 = encryptor.encrypt(plain=e1)
-#             ee2 = encryptor.encrypt(plain=e2)
-#             ee3 = encryptor.encrypt(plain=e3)
-#
-#             eed1 = decryptor.decrypt(ciphertext=ee1)
-#             eed2 = decryptor.decrypt(ciphertext=ee2)
-#             eed3 = decryptor.decrypt(ciphertext=ee3)
-#
-#             eedd1 = encoder.decode(plain=eed1)
-#             eedd2 = encoder.decode(plain=eed2)
-#             eedd3 = encoder.decode(plain=eed3)
-#
-#             self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-#             self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-#             self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-#             self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-#             self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-#             self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+class EncryptionLibraryTest(unittest.TestCase):
+    def test_encodedecode(self):
+        poly_deg = 2
+        scaling_fact = 1 << 30
+        big_mod = 1 << 1200
+
+        ciph_mod = 1 << 300
+        params = CKKSParameters(poly_degree=poly_deg,
+                                ciph_modulus=ciph_mod,
+                                big_modulus=big_mod,
+                                scaling_factor=scaling_fact)
+
+        encoder = CKKSEncoder(params=params)
+
+        for val in range(3653):
+            e1 = encoder.encode(values=[val],
+                                scaling_factor=scaling_fact)
+            e2 = encoder.encode(values=[val + 0j],
+                                scaling_factor=scaling_fact)
+            e3 = encoder.encode(values=[complex(val, 0)],
+                                scaling_factor=scaling_fact)
+
+            self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
+            self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
+            self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
+
+    def test_encodeencryptdecryptdecode(self):
+        poly_deg = 2
+        scaling_fact = 1 << 30
+        big_mod = 1 << 1200
+
+        ciph_mod = 1 << 300
+        params = CKKSParameters(poly_degree=poly_deg,
+                                ciph_modulus=ciph_mod,
+                                big_modulus=big_mod,
+                                scaling_factor=scaling_fact)
+
+        keygen = CKKSKeyGenerator(params=params)
+        pk = keygen.public_key
+        sk = keygen.secret_key
+
+        encoder = CKKSEncoder(params=params)
+
+        encryptor = CKKSEncryptor(params=params,
+                                  public_key=pk,
+                                  secret_key=sk)
+
+        decryptor = CKKSDecryptor(params=params,
+                                  secret_key=sk)
+
+        for val in range(3653):
+            e1 = encoder.encode(values=[val],
+                                scaling_factor=scaling_fact)
+            e2 = encoder.encode(values=[val + 0j],
+                                scaling_factor=scaling_fact)
+            e3 = encoder.encode(values=[complex(val, 0)],
+                                scaling_factor=scaling_fact)
+
+            ee1 = encryptor.encrypt(plain=e1)
+            ee2 = encryptor.encrypt(plain=e2)
+            ee3 = encryptor.encrypt(plain=e3)
+
+            eed1 = decryptor.decrypt(ciphertext=ee1)
+            eed2 = decryptor.decrypt(ciphertext=ee2)
+            eed3 = decryptor.decrypt(ciphertext=ee3)
+
+            eedd1 = encoder.decode(plain=eed1)
+            eedd2 = encoder.decode(plain=eed2)
+            eedd3 = encoder.decode(plain=eed3)
+
+            self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+            self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+            self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+            self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+            self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+            self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 
 
 class EncryptedUserTest(unittest.TestCase):
@@ -1710,11 +1712,58 @@ class EncryptionMOTest(unittest.TestCase):
         test_mo._scores[0] = 14
         self.assertNotEqual(test_mo._status[0], 14, "score and status lists pointwise same object")
 
-    def test_plainencrlocscore(self):
+    # Commented because it takes a lot:
+    # def test_plainencrlocscore(self):
+    #     dummy_ga = EncryptionGovAgent(risk_threshold=5,
+    #                                   degree=2,
+    #                                   cipher_modulus=1 << 600,
+    #                                   big_modulus=1 << 2400,
+    #                                   scaling_factor=1 << 30)
+    #
+    #     test_mo = EncryptionMO(ga=dummy_ga,
+    #                            mo_id=0,
+    #                            area_side_x=50,
+    #                            area_side_y=50,
+    #                            max_x=3652,
+    #                            max_y=3652)
+    #
+    #     for x in range(test_mo._area_side_x):
+    #         for y in range(test_mo._area_side_y):
+    #             init_randx = random.randint(-test_mo._area_side_x, test_mo._area_side_x)
+    #             init_randy = random.randint(-test_mo._area_side_y, test_mo._area_side_y)
+    #
+    #             randareax = random.randint(0, 73)
+    #             randareay = random.randint(0, 73)
+    #
+    #             aux_x = x + test_mo._area_side_x * randareax
+    #             aux_y = y + test_mo._area_side_y * randareay
+    #             test_mo._curr_locations.append((aux_x, aux_y))
+    #
+    #             randx = test_mo._area_side_x * randareax + init_randx
+    #             randy = test_mo._area_side_y * randareay + init_randy
+    #
+    #             encox = test_mo._evaluator.create_constant_plain(const=randx)
+    #             encoy = test_mo._evaluator.create_constant_plain(const=randy)
+    #
+    #             encrx = test_mo._encryptor.encrypt(plain=encox)
+    #             encry = test_mo._encryptor.encrypt(plain=encoy)
+    #
+    #             actual = round((1 - ((aux_x - randx) ** 2 + (aux_y - randy) ** 2) / test_mo.L_max ** 2) ** 2048, 10)
+    #             encr_val = test_mo.plain_encr_location_pair_contact_score(plain_location=test_mo._curr_locations[-1],
+    #                                                                       encr_location=(encrx, encry))
+    #
+    #             decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
+    #             deco_val = dummy_ga._encoder.decode(plain=decr_val)
+    #
+    #             self.assertLessEqual(abs(deco_val[0].real - actual), 2.49e-6,
+    #                                  "plain encr location score routine no work " + str(x - init_randx) + " " + str(
+    #                                      y - init_randy))
+
+    def test_rcvdatafrommo(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
                                       degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
+                                      cipher_modulus=1 << 600,
+                                      big_modulus=1 << 2400,
                                       scaling_factor=1 << 30)
 
         test_mo = EncryptionMO(ga=dummy_ga,
@@ -1724,39 +1773,48 @@ class EncryptionMOTest(unittest.TestCase):
                                max_x=3652,
                                max_y=3652)
 
-        for x in range(0, 50):
-            for y in range(0, 50):
-                randx = random.randint(-50, 50)
-                randy = random.randint(-50, 50)
+        status = [1, 1, 1, 1, 1, 1]
+        encr_status = []
+        for sts in status:
+            plain = test_mo._evaluator.create_constant_plain(const=sts)
+            encr_status.append(test_mo._encryptor.encrypt(plain=plain))
 
-                randareax = random.randint(0, 73)
-                randareay = random.randint(0, 73)
+        locs = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
+        encr_locs = []
+        for loc in locs:
+            x = loc[0]
+            y = loc[1]
 
-                x += 50 * randareax
-                y += 50 * randareay
-                test_mo._curr_locations.append((x, y))
+            encox = test_mo._evaluator.create_constant_plain(const=x)
+            encoy = test_mo._evaluator.create_constant_plain(const=y)
 
-                randx += 50 * randareax
-                randy += 50 * randareay
+            encrx = test_mo._encryptor.encrypt(plain=encox)
+            encry = test_mo._encryptor.encrypt(plain=encoy)
 
-                encox = test_mo._evaluator.create_constant_plain(const=randx)
-                encoy = test_mo._evaluator.create_constant_plain(const=randy)
+            encr_locs.append((encrx, encry))
 
-                encrx = test_mo._encryptor.encrypt(plain=encox)
-                encry = test_mo._encryptor.encrypt(plain=encoy)
+        areas = []
+        for loc in locs:
+            areas.append(test_mo.assign_area(loc_tuple=loc))
 
-                actual = (1 - ((x - randx) ** 2 + (y - randy) ** 2) / test_mo.L_max ** 2) ** 2048
-                encr_val = test_mo.plain_encr_location_pair_contact_score(plain_location=test_mo._curr_locations[-1],
-                                                                          encr_location=(encrx, encry))
+        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
+        test_mo._curr_locations.append((0, 0))
+        test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
+        for area_tup in test_mo._curr_areas_by_user:
+            test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
 
-                decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
-                deco_val = dummy_ga._encoder.decode(plain=decr_val)
+        print("dbg: area list in package: " + str(areas))
+        test_mo.rcv_data_from_mo(loc_list=encr_locs,
+                                 area_list=areas,
+                                 sts_list=encr_status)
 
-                self.assertLessEqual(abs(deco_val[0].real - actual), 5.1e-9,
-                                     "plain encr location score routine no work")
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+        deco_score = dummy_ga._encoder.decode(plain=decr_score)
+
+        self.assertLessEqual(abs(deco_score[0].real), 2.49e-6, "rcv score from mo no work")
 
 
 unittest.main()
 
-j = CKKSEvaluator(7)
-j.rescale()
+j = CKKSEvaluator(5)
+j.lower_modulus()
