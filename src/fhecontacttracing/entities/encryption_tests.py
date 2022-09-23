@@ -1,8 +1,4 @@
 # TODO:
-#   1. test effects of the following operations on scaling factor and modulus:
-#                               - coeff_to_slot
-#                               - slot_to_coeff
-#                               - conjugate (I'm quite sure values don't change for this but make sure)
 #   2. test in EncryptionMO:
 #                               -data from MO routine
 #                               -data to MO routine
@@ -716,7 +712,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -921,17 +917,17 @@ class EncryptionMO(MobileOperator):
 
     def plain_encr_location_pair_contact_score(self, plain_location, encr_location):
 
-        sq_diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
-                                               plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
-        sq_diff_xs = self._evaluator.multiply(ciph1=sq_diff_xs,
-                                              ciph2=sq_diff_xs,
+        diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
+        sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
+                                              ciph2=diff_xs,
                                               relin_key=self._relin_key)
         sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
 
-        sq_diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
-                                               plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
-        sq_diff_ys = self._evaluator.multiply(ciph1=sq_diff_ys,
-                                              ciph2=sq_diff_ys,
+        diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
+        sq_diff_ys = self._evaluator.multiply(ciph1=diff_ys,
+                                              ciph2=diff_ys,
                                               relin_key=self._relin_key)
         sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
                                              division_factor=self._scaling_factor)
@@ -950,7 +946,7 @@ class EncryptionMO(MobileOperator):
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
 
-        for i in range(11):
+        for i in range(10):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=self._relin_key)
@@ -972,7 +968,10 @@ class EncryptionMO(MobileOperator):
                             plain_location=self._curr_locations[user_index],
                             encr_location=loc_list[i])
 
-                        add_val = self._evaluator.multiply(ciph1=sts_list[i],
+                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
+                                                                      division_factor=sts_list[i].modulus // dist_score.modulus)
+
+                        add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
                                                            relin_key=self._relin_key)
 
@@ -1762,9 +1761,9 @@ class EncryptionMOTest(unittest.TestCase):
     def test_rcvdatafrommo(self):
         dummy_ga = EncryptionGovAgent(risk_threshold=5,
                                       degree=2,
-                                      cipher_modulus=1 << 600,
+                                      cipher_modulus=1 << 1200,
                                       big_modulus=1 << 2400,
-                                      scaling_factor=1 << 30)
+                                      scaling_factor=1 << 20)
 
         test_mo = EncryptionMO(ga=dummy_ga,
                                mo_id=0,
@@ -1777,7 +1776,8 @@ class EncryptionMOTest(unittest.TestCase):
         encr_status = []
         for sts in status:
             plain = test_mo._evaluator.create_constant_plain(const=sts)
-            encr_status.append(test_mo._encryptor.encrypt(plain=plain))
+            aux_status = test_mo._encryptor.encrypt(plain=plain)
+            encr_status.append(aux_status)
 
         locs = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
         encr_locs = []
@@ -1803,7 +1803,6 @@ class EncryptionMOTest(unittest.TestCase):
         for area_tup in test_mo._curr_areas_by_user:
             test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
 
-        print("dbg: area list in package: " + str(areas))
         test_mo.rcv_data_from_mo(loc_list=encr_locs,
                                  area_list=areas,
                                  sts_list=encr_status)

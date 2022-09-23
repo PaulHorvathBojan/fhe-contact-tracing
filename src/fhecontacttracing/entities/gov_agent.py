@@ -202,8 +202,6 @@ class EncryptionGovAgent(GovAgent):
                 encoded_sts = self._encoder.encode(values=pre_encode_list,
                                                    scaling_factor=self._scaling_factor)
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
-                self._evaluator.lower_modulus(ciph=encrypted_sts,
-                                              division_factor=self._scaling_factor ** 13)
                 status_list.append(encrypted_sts)
 
             mo.from_ga_comm(new_status=status_list)
