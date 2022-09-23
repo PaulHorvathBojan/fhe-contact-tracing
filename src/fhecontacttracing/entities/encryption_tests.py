@@ -905,16 +905,11 @@ class EncryptionMO(MobileOperator):
 
         enco_01 = self._evaluator.create_constant_plain(const=0)
         encr_01 = self._encryptor.encrypt(plain=enco_01)
-        encr_01 = self._evaluator.lower_modulus(ciph=encr_01,
-                                                division_factor= self._scaling_factor ** 14)
         self._scores.append(encr_01)
 
         enco_02 = self._evaluator.create_constant_plain(const=0)
         encr_02 = self._encryptor.encrypt(plain=enco_02)
-        encr_02 = self._evaluator.lower_modulus(ciph=encr_02,
-                                                division_factor= self._scaling_factor ** 13)
         self._status.append(encr_02)
-
 
         self._usr_count += 1
 
@@ -972,7 +967,8 @@ class EncryptionMO(MobileOperator):
                             encr_location=loc_list[i])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[i].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[
+                                                                                          i].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -1269,82 +1265,82 @@ class EncryptionSTL:
 #                     self.assertEqual(fst[i][1], snd[i][1], "Dual iterator no work")
 
 
-class EncryptionLibraryTest(unittest.TestCase):
-    def test_encodedecode(self):
-        poly_deg = 2
-        scaling_fact = 1 << 30
-        big_mod = 1 << 1200
-
-        ciph_mod = 1 << 300
-        params = CKKSParameters(poly_degree=poly_deg,
-                                ciph_modulus=ciph_mod,
-                                big_modulus=big_mod,
-                                scaling_factor=scaling_fact)
-
-        encoder = CKKSEncoder(params=params)
-
-        for val in range(3653):
-            e1 = encoder.encode(values=[val],
-                                scaling_factor=scaling_fact)
-            e2 = encoder.encode(values=[val + 0j],
-                                scaling_factor=scaling_fact)
-            e3 = encoder.encode(values=[complex(val, 0)],
-                                scaling_factor=scaling_fact)
-
-            self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
-            self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
-            self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
-
-    def test_encodeencryptdecryptdecode(self):
-        poly_deg = 2
-        scaling_fact = 1 << 30
-        big_mod = 1 << 1200
-
-        ciph_mod = 1 << 300
-        params = CKKSParameters(poly_degree=poly_deg,
-                                ciph_modulus=ciph_mod,
-                                big_modulus=big_mod,
-                                scaling_factor=scaling_fact)
-
-        keygen = CKKSKeyGenerator(params=params)
-        pk = keygen.public_key
-        sk = keygen.secret_key
-
-        encoder = CKKSEncoder(params=params)
-
-        encryptor = CKKSEncryptor(params=params,
-                                  public_key=pk,
-                                  secret_key=sk)
-
-        decryptor = CKKSDecryptor(params=params,
-                                  secret_key=sk)
-
-        for val in range(3653):
-            e1 = encoder.encode(values=[val],
-                                scaling_factor=scaling_fact)
-            e2 = encoder.encode(values=[val + 0j],
-                                scaling_factor=scaling_fact)
-            e3 = encoder.encode(values=[complex(val, 0)],
-                                scaling_factor=scaling_fact)
-
-            ee1 = encryptor.encrypt(plain=e1)
-            ee2 = encryptor.encrypt(plain=e2)
-            ee3 = encryptor.encrypt(plain=e3)
-
-            eed1 = decryptor.decrypt(ciphertext=ee1)
-            eed2 = decryptor.decrypt(ciphertext=ee2)
-            eed3 = decryptor.decrypt(ciphertext=ee3)
-
-            eedd1 = encoder.decode(plain=eed1)
-            eedd2 = encoder.decode(plain=eed2)
-            eedd3 = encoder.decode(plain=eed3)
-
-            self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
-            self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+# class EncryptionLibraryTest(unittest.TestCase):
+#     def test_encodedecode(self):
+#         poly_deg = 2
+#         scaling_fact = 1 << 30
+#         big_mod = 1 << 1200
+#
+#         ciph_mod = 1 << 300
+#         params = CKKSParameters(poly_degree=poly_deg,
+#                                 ciph_modulus=ciph_mod,
+#                                 big_modulus=big_mod,
+#                                 scaling_factor=scaling_fact)
+#
+#         encoder = CKKSEncoder(params=params)
+#
+#         for val in range(3653):
+#             e1 = encoder.encode(values=[val],
+#                                 scaling_factor=scaling_fact)
+#             e2 = encoder.encode(values=[val + 0j],
+#                                 scaling_factor=scaling_fact)
+#             e3 = encoder.encode(values=[complex(val, 0)],
+#                                 scaling_factor=scaling_fact)
+#
+#             self.assertEqual([val], encoder.decode(plain=e1), "encoder no work")
+#             self.assertEqual([val], encoder.decode(plain=e2), "encoder no work")
+#             self.assertEqual([val], encoder.decode(plain=e3), "encoder no work")
+#
+#     def test_encodeencryptdecryptdecode(self):
+#         poly_deg = 2
+#         scaling_fact = 1 << 30
+#         big_mod = 1 << 1200
+#
+#         ciph_mod = 1 << 300
+#         params = CKKSParameters(poly_degree=poly_deg,
+#                                 ciph_modulus=ciph_mod,
+#                                 big_modulus=big_mod,
+#                                 scaling_factor=scaling_fact)
+#
+#         keygen = CKKSKeyGenerator(params=params)
+#         pk = keygen.public_key
+#         sk = keygen.secret_key
+#
+#         encoder = CKKSEncoder(params=params)
+#
+#         encryptor = CKKSEncryptor(params=params,
+#                                   public_key=pk,
+#                                   secret_key=sk)
+#
+#         decryptor = CKKSDecryptor(params=params,
+#                                   secret_key=sk)
+#
+#         for val in range(3653):
+#             e1 = encoder.encode(values=[val],
+#                                 scaling_factor=scaling_fact)
+#             e2 = encoder.encode(values=[val + 0j],
+#                                 scaling_factor=scaling_fact)
+#             e3 = encoder.encode(values=[complex(val, 0)],
+#                                 scaling_factor=scaling_fact)
+#
+#             ee1 = encryptor.encrypt(plain=e1)
+#             ee2 = encryptor.encrypt(plain=e2)
+#             ee3 = encryptor.encrypt(plain=e3)
+#
+#             eed1 = decryptor.decrypt(ciphertext=ee1)
+#             eed2 = decryptor.decrypt(ciphertext=ee2)
+#             eed3 = decryptor.decrypt(ciphertext=ee3)
+#
+#             eedd1 = encoder.decode(plain=eed1)
+#             eedd2 = encoder.decode(plain=eed2)
+#             eedd3 = encoder.decode(plain=eed3)
+#
+#             self.assertLessEqual(val - eedd1[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd1[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(val - eedd2[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd2[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(val - eedd3[0].real, 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
+#             self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 
 
 class EncryptedUserTest(unittest.TestCase):
@@ -1800,7 +1796,9 @@ class EncryptionMOTest(unittest.TestCase):
         for loc in locs:
             areas.append(test_mo.assign_area(loc_tuple=loc))
 
-        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
+        test_mo._scores.append(test_mo._evaluator.lower_modulus(
+            ciph=test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)),
+            division_factor=test_mo._scaling_factor ** 14))
         test_mo._curr_locations.append((0, 0))
         test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
         for area_tup in test_mo._curr_areas_by_user:
@@ -1813,10 +1811,7 @@ class EncryptionMOTest(unittest.TestCase):
         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
         deco_score = dummy_ga._encoder.decode(plain=decr_score)
 
-        self.assertLessEqual(abs(deco_score[0].real), 2.49e-6, "rcv score from mo no work")
+        self.assertLessEqual(abs(deco_score[0].real - 6), 2.49e-6, "rcv score from mo no work")
 
 
 unittest.main()
-
-j = CKKSEvaluator(5)
-j.lower_modulus()
