@@ -967,8 +967,7 @@ class EncryptionMO(MobileOperator):
                             encr_location=loc_list[i])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[
-                                                                                          i].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[i].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -976,6 +975,10 @@ class EncryptionMO(MobileOperator):
 
                         add_val = self._evaluator.rescale(ciph=add_val,
                                                           division_factor=self._scaling_factor)
+
+                        if self._scores[user_index].modulus > add_val.modulus:
+                            self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
+                                                                                     division_factor=self._scores[user_index].modulus // add_val.modulus)
 
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
@@ -1796,9 +1799,7 @@ class EncryptionMOTest(unittest.TestCase):
         for loc in locs:
             areas.append(test_mo.assign_area(loc_tuple=loc))
 
-        test_mo._scores.append(test_mo._evaluator.lower_modulus(
-            ciph=test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)),
-            division_factor=test_mo._scaling_factor ** 14))
+        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
         test_mo._curr_locations.append((0, 0))
         test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
         for area_tup in test_mo._curr_areas_by_user:
