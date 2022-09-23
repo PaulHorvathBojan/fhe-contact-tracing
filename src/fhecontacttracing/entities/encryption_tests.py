@@ -480,8 +480,6 @@ class EncryptionGovAgent(GovAgent):
                 encoded_sts = self._encoder.encode(values=pre_encode_list,
                                                    scaling_factor=self._scaling_factor)
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
-                self._evaluator.lower_modulus(ciph=encrypted_sts,
-                                              division_factor=self._scaling_factor ** 13)
                 status_list.append(encrypted_sts)
 
             mo.from_ga_comm(new_status=status_list)
@@ -907,11 +905,16 @@ class EncryptionMO(MobileOperator):
 
         enco_01 = self._evaluator.create_constant_plain(const=0)
         encr_01 = self._encryptor.encrypt(plain=enco_01)
+        encr_01 = self._evaluator.lower_modulus(ciph=encr_01,
+                                                division_factor= self._scaling_factor ** 14)
         self._scores.append(encr_01)
 
         enco_02 = self._evaluator.create_constant_plain(const=0)
         encr_02 = self._encryptor.encrypt(plain=enco_02)
+        encr_02 = self._evaluator.lower_modulus(ciph=encr_02,
+                                                division_factor= self._scaling_factor ** 13)
         self._status.append(encr_02)
+
 
         self._usr_count += 1
 
