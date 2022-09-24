@@ -462,7 +462,8 @@ class EncryptionMO(MobileOperator):
                             encr_location=loc_list[i])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[i].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[
+                                                                                          i].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -473,10 +474,12 @@ class EncryptionMO(MobileOperator):
 
                         if self._scores[user_index].modulus > add_val.modulus:
                             self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
-                                                                                     division_factor=self._scores[user_index].modulus // add_val.modulus)
+                                                                                     division_factor=self._scores[
+                                                                                                         user_index].modulus // add_val.modulus)
                         elif self._scores[user_index].modulus != add_val.modulus:
                             add_val = self._evaluator.lower_modulus(ciph=add_val,
-                                                                    division_factor=add_val.modulus // self._scores[user_index].modulus)
+                                                                    division_factor=add_val.modulus // self._scores[
+                                                                        user_index].modulus)
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
 
@@ -511,5 +514,23 @@ class EncryptionMO(MobileOperator):
                             contact_score = self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
-                            self._scores[i] = self._evaluator.multiply_plain(ciph=self._status[user_index],
-                                                                             plain=contact_score)
+
+                            enco_score = self._evaluator.create_constant_plain(const=contact_score)
+
+                            add_val = self._evaluator.multiply_plain(ciph=self._status[user_index],
+                                                                     plain=enco_score)
+                            add_val = self._evaluator.rescale(ciph=add_val,
+                                                              division_factor=self._scaling_factor)
+
+                            if add_val.modulus > self._scores[i].modulus:
+                                add_val = self._evaluator.lower_modulus(ciph=add_val,
+                                                                        division_factor=add_val.modulus // self._scores[i].modulus)
+                            elif add_val.modulus < self._scores[i].modulus:
+                                self._scores[i] = self._evaluator.lower_modulus(ciph=self._scores[i],
+                                                                                division_factor=self._scores[i].modulus // add_val.modulus)
+
+                            self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
+                                                                  ciph2=add_val)
+
+
+~

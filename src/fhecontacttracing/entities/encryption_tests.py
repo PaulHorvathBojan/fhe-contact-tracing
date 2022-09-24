@@ -1,8 +1,5 @@
 # TODO:
-#   2. test in EncryptionMO:
-#                               -data from MO routine
-#                               -data to MO routine
-#                               -inside scoring routine
+#   2. test in EncryptionMO:    -inside scoring routine
 #   3. test in EncryptionGA:    -__init__
 #                               -getters
 #                               -fhe suite refresh
@@ -979,7 +976,9 @@ class EncryptionMO(MobileOperator):
                         if self._scores[user_index].modulus > add_val.modulus:
                             self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
                                                                                      division_factor=self._scores[user_index].modulus // add_val.modulus)
-
+                        elif self._scores[user_index].modulus != add_val.modulus:
+                            add_val = self._evaluator.lower_modulus(ciph=add_val,
+                                                                    division_factor=add_val.modulus // self._scores[user_index].modulus)
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
 
@@ -1014,8 +1013,11 @@ class EncryptionMO(MobileOperator):
                             contact_score = self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
+
+                            enco_score = self._evaluator.create_constant_plain(const=contact_score)
+
                             self._scores[i] = self._evaluator.multiply_plain(ciph=self._status[user_index],
-                                                                             plain=contact_score)
+                                                                             plain=enco_score)
 
 
 class SpaceTimeLord:
@@ -1812,7 +1814,104 @@ class EncryptionMOTest(unittest.TestCase):
         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
         deco_score = dummy_ga._encoder.decode(plain=decr_score)
 
-        self.assertLessEqual(abs(deco_score[0].real - 6), 2.49e-6, "rcv score from mo no work")
+        self.assertLessEqual(abs(deco_score[0].real - 6), 1/163, "rcv score from mo no work")
 
+    def test_datatomo(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 1200,
+                                      big_modulus=1 << 2400,
+                                      scaling_factor=1 << 20)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+
+        alt_mo = EncryptionMO(ga=dummy_ga,
+                              mo_id=1,
+                              area_side_x=50,
+                              area_side_y=50,
+                              max_x=3652,
+                              max_y=3652)
+
+        users = []
+        for i in range(6):
+            users.append(EncryptedUser(init_x=0,
+                                       init_y=0,
+                                       mo=alt_mo,
+                                       uid=i,
+                                       ga=dummy_ga)
+                         )
+
+        status = [1, 1, 1, 1, 1, 1]
+        for i in range(len(status)):
+            plain = alt_mo._evaluator.create_constant_plain(const=status[i])
+            aux_status = alt_mo._encryptor.encrypt(plain=plain)
+            alt_mo._status[i] = aux_status
+
+        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
+        test_mo._curr_locations.append((0, 0))
+        test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
+        for area_tup in test_mo._curr_areas_by_user:
+            test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
+
+        alt_mo.send_data_to_mo(other_mo=test_mo)
+
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+        deco_score = dummy_ga._encoder.decode(plain=decr_score)
+
+        self.assertLessEqual(abs(deco_score[0].real - 6), 1/163, "send data to mo no work")
+
+    def test_insidescoring(self):
+        dummy_ga = EncryptionGovAgent(risk_threshold=5,
+                                      degree=2,
+                                      cipher_modulus=1 << 1200,
+                                      big_modulus=1 << 2400,
+                                      scaling_factor=1 << 20)
+
+        test_mo = EncryptionMO(ga=dummy_ga,
+                               mo_id=0,
+                               area_side_x=50,
+                               area_side_y=50,
+                               max_x=3652,
+                               max_y=3652)
+        init_user = EncryptedUser(init_x=0,
+                                  init_y=0,
+                                  mo=test_mo,
+                                  uid=0,
+                                  ga=dummy_ga)
+
+        users = [init_user]
+        for i in range(6):
+            users.append(EncryptedUser(init_x=0,
+                                       init_y=0,
+                                       mo=test_mo,
+                                       uid=i + 1,
+                                       ga=dummy_ga)
+                         )
+
+        status = [1, 1, 1, 1, 1, 1]
+        for i in range(len(status)):
+            plain = test_mo._evaluator.create_constant_plain(const=status[i])
+            aux_status = test_mo._encryptor.encrypt(plain=plain)
+            test_mo._status[i + 1] = aux_status
+
+        test_mo.inside_scoring()
+
+        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+        deco_score = dummy_ga._encoder.decode(plain=decr_score)
+
+        # self.assertLessEqual(abs(deco_score[0].real - 6), 1/163, "inside scoring no work" + str(deco_score[0].real))
+
+        for i in range(6):
+            decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[i + 1])
+            deco_score = dummy_ga._encoder.decode(plain=decr_score)
+
+            self.assertLessEqual(abs(deco_score[0].real - 5), 1/163, "inside scoring no work" + str(i + 1))
 
 unittest.main()
+j = CKKSEvaluator(6)
+j.add
