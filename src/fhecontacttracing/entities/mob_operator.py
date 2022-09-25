@@ -531,6 +531,3 @@ class EncryptionMO(MobileOperator):
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
-
-
-~

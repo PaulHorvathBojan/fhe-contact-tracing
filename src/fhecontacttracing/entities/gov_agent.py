@@ -198,9 +198,7 @@ class EncryptionGovAgent(GovAgent):
 
             status_list = []
             for i in index_list:
-                pre_encode_list = [complex(self._status[i], 0)]
-                encoded_sts = self._encoder.encode(values=pre_encode_list,
-                                                   scaling_factor=self._scaling_factor)
+                encoded_sts = self._evaluator.create_constant_plain(const=self._status[i])
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
                 status_list.append(encrypted_sts)
 
