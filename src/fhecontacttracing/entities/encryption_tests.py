@@ -1,11 +1,8 @@
 # TODO:
-#   3. test in EncryptionGA:    -daily
-#                               -score decrypt request from user
-#   4. test EncryptionSTL:      -__init__
+#  4. test EncryptionSTL:      -__init__
 #                               -getters
 #                               -user creation
 #                               -tick
-#                               -MO creation where???
 import numpy as np
 import math
 import cmath
@@ -466,9 +463,7 @@ class EncryptionGovAgent(GovAgent):
 
             status_list = []
             for i in index_list:
-                pre_encode_list = [complex(self._status[i], 0)]
-                encoded_sts = self._encoder.encode(values=pre_encode_list,
-                                                   scaling_factor=self._scaling_factor)
+                encoded_sts = self._evaluator.create_constant_plain(const=self._status[i])
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
                 status_list.append(encrypted_sts)
 
@@ -2240,15 +2235,81 @@ class EncryptionGATest(unittest.TestCase):
                                        ga=test_ga))
 
         for i in range(len(mos)):
-            working_mo = mos[i]
-            for it in range(len(working_mo._scores)):
-                working_mo._scores[it] = math.sqrt(working_mo._users[it]._uID)
+            for it in range(len(mos[i]._scores)):
+                aux_score = mos[i]._evaluator.create_constant_plain(const=math.sqrt(mos[i]._users[it]._uID))
+                mos[i]._scores[it] = mos[i]._encryptor.encrypt(plain=aux_score)
 
         for i in range(len(users)):
             test_ga._status[i] = users[i].uID
 
+        test_ga._status[45] = 0
 
+        test_ga.daily()
+
+        for i in range(len(mos)):
+            for it in range(len(mos[i]._status)):
+                aux_sts = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[it])
+                deco_sts = mos[i]._encoder.decode(plain=aux_sts)[0].real
+                if mos[i]._users[it].uID != 45:
+                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 6.1e-9,
+                                         "status not updated properly in MO at " + str(i) + " " + str(
+                                             mos[i]._users[it].uID))
+
+        for i in range(len(users)):
+            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 6.1e-9,
+                                 "score not updated properly in GA at " + str(i))
+            self.assertEqual(users[i]._risk == 1, i == 45, "risk status not updated properly at " + str(i))
+
+    def test_scorereq(self):
+        test_ga = EncryptionGovAgent(risk_threshold=5,
+                                     degree=4,
+                                     cipher_modulus=1 << 300,
+                                     big_modulus=1 << 1200,
+                                     scaling_factor=1 << 30)
+
+        dummy_mo = EncryptionMO(ga=test_ga,
+                                mo_id=0,
+                                area_side_x=50,
+                                area_side_y=50,
+                                max_x=3652,
+                                max_y=3652)
+
+        dummy_user = EncryptedUser(init_x=0,
+                                   init_y=0,
+                                   mo=dummy_mo,
+                                   uid=0,
+                                   ga=test_ga)
+
+        self.assertEqual(dummy_user._score, 0, "initial score in user not 0")
+        score_val = test_ga._encoder.decode(plain=test_ga._decryptor.decrypt(ciphertext=dummy_user._encr_score))[0].real
+        self.assertLessEqual(abs(score_val), 6.1e-9, "initial encrypted score not 0")
+
+        nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
+        dummy_user._encr_score = nineteenseventy
+        dummy_user.decr_score_from_ga()
+
+        self.assertLessEqual(abs(dummy_user._score - 1970), 6.1e-9, "plaintext score not properly updated in user")
+
+class EncryptionSTLTest(unittest.TestCase):
+    def test_init(self):
+
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+
+        test_stl = EncryptionSTL(movements_iterable=minute_gm,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 300,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30
+                                 )
 
 unittest.main()
-j = CKKSEvaluator(5)
-j.c

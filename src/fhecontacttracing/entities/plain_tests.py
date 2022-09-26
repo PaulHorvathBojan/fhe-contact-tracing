@@ -248,7 +248,7 @@ class MobileOperator:
     def add_user(self, user):
         self._users.append(user)
 
-        self._curr_locations.append((rint(user.x), rint(user.y)))
+        self._curr_locations.append((np.rint(user.x), np.rint(user.y)))
 
         area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
         loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
@@ -314,7 +314,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                    (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -625,7 +625,7 @@ class SpaceTimeLord:
     current_locations = property(fget=get_current_locations)
 
     def get_area_sizes(self):
-        return self._area_size_x, self._area_size_ys
+        return self._area_size_x, self._area_size_y
 
     area_sizes = property(fget=get_area_sizes)
 
@@ -3151,5 +3151,3 @@ unittest.main()
 #             int_rot.append(member)
 #         int_content.append(list(int_rot))
 #     dummy_outfile.write(str(int_content) + "\n")
-
-# %%
