@@ -305,7 +305,8 @@ class MobileOperator:
     # The new_status argument replaces the _status field inside the MO class.
     # Then, to_ga_comm is triggered to send data to the GA from the current MO.
     def from_ga_comm(self, new_status):
-        self._status = new_status
+        for i in range(len(self._status)):
+            self._status[i] = new_status[i]
 
         self.to_ga_comm()
 
@@ -531,3 +532,5 @@ class EncryptionMO(MobileOperator):
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
+
+#%%

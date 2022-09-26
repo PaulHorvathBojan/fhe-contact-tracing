@@ -466,9 +466,7 @@ class EncryptionGovAgent(GovAgent):
 
             status_list = []
             for i in index_list:
-                pre_encode_list = [complex(self._status[i], 0)]
-                encoded_sts = self._encoder.encode(values=pre_encode_list,
-                                                   scaling_factor=self._scaling_factor)
+                encoded_sts = self._evaluator.create_constant_plain(const=self._status[i])
                 encrypted_sts = self._encryptor.encrypt(plain=encoded_sts)
                 status_list.append(encrypted_sts)
 
@@ -800,7 +798,8 @@ class MobileOperator:
     # The new_status argument replaces the _status field inside the MO class.
     # Then, to_ga_comm is triggered to send data to the GA from the current MO.
     def from_ga_comm(self, new_status):
-        self._status = new_status
+        for i in range(len(self._status)):
+            self._status[i] = new_status[i]
 
         self.to_ga_comm()
 
@@ -2247,6 +2246,19 @@ class EncryptionGATest(unittest.TestCase):
         for i in range(len(users)):
             test_ga._status[i] = users[i].uID
 
+        test_ga.daily()
+
+        for i in range(len(users)):
+            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 6.1e-9,
+                                 "scores in GA not updating at " + str(i))
+            self.assertEqual(test_ga._scores[i] < 5, users[i]._risk == 0, "user risk not updating at " + str(i))
+
+        for i in range(len(mos)):
+            for j in range(len(mos[i]._status)):
+                decr_status = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[j])
+                deco_status = test_ga._encoder.decode(plain=decr_status)
+                self.assertLessEqual(abs(deco_status[0].real - mos[i]._users[j].uID), 6.1e-9,
+                                     "status in MO not updating at " + str(i) + " " + str(j))
 
 
 unittest.main()
