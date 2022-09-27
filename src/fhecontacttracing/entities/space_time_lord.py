@@ -27,7 +27,8 @@ class SpaceTimeLord:
                                     max_y=self._max_y
                                     )
             for prev_mo in self._mos:
-                new_mo.register_other_mo(prev_mo)
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
             self._mos.append(new_mo)
             self._mo_count += 1
 
@@ -144,7 +145,8 @@ class EncryptionSTL:
                                   max_y=self._max_y
                                   )
             for prev_mo in self._mos:
-                new_mo.register_other_mo(prev_mo)
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
             self._mos.append(new_mo)
             self._mo_count += 1
 

@@ -1054,7 +1054,8 @@ class SpaceTimeLord:
                                     max_y=self._max_y
                                     )
             for prev_mo in self._mos:
-                new_mo.register_other_mo(prev_mo)
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
             self._mos.append(new_mo)
             self._mo_count += 1
 
@@ -1171,7 +1172,8 @@ class EncryptionSTL:
                                   max_y=self._max_y
                                   )
             for prev_mo in self._mos:
-                new_mo.register_other_mo(prev_mo)
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
             self._mos.append(new_mo)
             self._mo_count += 1
 
@@ -2290,6 +2292,7 @@ class EncryptionGATest(unittest.TestCase):
 
         self.assertLessEqual(abs(dummy_user._score - 1970), 6.1e-9, "plaintext score not properly updated in user")
 
+
 class EncryptionSTLTest(unittest.TestCase):
     def test_init(self):
 
@@ -2300,8 +2303,9 @@ class EncryptionSTLTest(unittest.TestCase):
                                 variance=7.)
 
         minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
 
-        test_stl = EncryptionSTL(movements_iterable=minute_gm,
+        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
                                  mo_count=10,
                                  risk_thr=5,
                                  area_sizes=(50, 50),
@@ -2312,4 +2316,58 @@ class EncryptionSTLTest(unittest.TestCase):
                                  scaling_factor=1 << 30
                                  )
 
+        loc_check = next(dual_minute_gm)
+
+        for i in range(100):
+            aux_movements = next(dual_minute_gm)
+            stl_movements = next(test_stl._movements_iterable)
+
+            for j in range(len(aux_movements):
+                self.assertEqual(aux_movements[j], stl_movements[j], "movements iterable in ESTL not proper")
+
+            self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
+
+            self.assertEqual(test_stl._max_x, 3652, "max x-axis dimension in ESTL not proper")
+
+            self.assertEqual(test_stl._max_y, 3652, "max y-axis dimension in ESTL not proper")
+
+            self.assertEqual(test_stl._area_size_x, 50, "area x-axis dimension in ESTL not proper")
+
+            self.assertEqual(test_stl._area_size_y, 50, "area y-axis dimension in ESTL not proper")
+
+            for i in range(len(loc_check)):
+                self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
+                                "initial locations not rounded to int")
+            self.assertTrue(isinstance(test_stl._current_locations[i][1], int), "initial locations not rounded to int")
+
+            self.assertLess(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 1,
+                            "initial locations not closest int to real locations")
+            self.assertLess(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 1,
+                            "initial locations not closest int to real locations")
+
+            self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
+
+            self.assertEqual(test_stl._ga._risk_threshold, 5, "GA risk threshold not initialized to proper value")
+            self.assertEqual(test_stl._ga._ckks_params.poly_degree, 2, "GA params not having proper degree")
+            self.assertEqual(test_stl._ga._ckks_params.ciph_modulus, 1 << 300,
+                             "GA params not having proper cipher modulus")
+            self.assertEqual(test_stl._ga._ckks_params.big_modulus, 1 << 1200,
+                             "GA params not having proper plain modulus")
+            self.assertEqual(test_stl._ga._ckks_params.scaling_factor, 1 << 30,
+                             "GA params not having proper scaling factor")
+
+            self.assertEqual(test_stl._mo_count, 10, "MO count not updated properly after construction")
+
+            self.assertEqual(len(test_stl._mos), 10, "MO list length not proper")
+            for i in range(10):
+                self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
+                                "object in MO list not MO type at " + str(i))
+                self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
+                self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
+                self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
+                self.assertEqual(test_stl._mos[i]._max_x, 3652, "MO x max not proper @ " + str(i))
+                self.assertEqual(test_stl._mos[i]._max_y, 3652, "MO y max not proper @ " + str(i))
+                for j in range(10):
+                    if j != i:
+                        self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos)
 unittest.main()
