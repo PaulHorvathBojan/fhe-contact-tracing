@@ -120,13 +120,13 @@ class EncryptionSTL:
 
         self._mos = []
         self._users = []
-        self._current_locations = next(movements_iterable)
-        for i in range(len(self._current_locations)):
-            tup = self._current_locations[i]
-            aux1 = int(np.rint(tup[0]))
-            aux2 = int(np.rint(tup[1]))
 
-            self._current_locations[i] = (aux1, aux2)
+        self._current_locations = next(movements_iterable)
+        int_locations = []
+        for i in range(len(self._current_locations)):
+            aux = tuple(map(lambda x: int(round(x)), self._current_locations[i]))
+            int_locations.append(aux)
+        self._current_locations = int_locations
 
         self._curr_time = 0
 

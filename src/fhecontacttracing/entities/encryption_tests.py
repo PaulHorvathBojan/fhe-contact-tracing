@@ -1,8 +1,7 @@
 # TODO:
-#  4. test EncryptionSTL:      -__init__
-#                               -getters
-#                               -user creation
-#                               -tick
+#  4. test EncryptionSTL:      -getters
+#                              -user creation
+#                              -tick
 import numpy as np
 import math
 import cmath
@@ -1147,13 +1146,13 @@ class EncryptionSTL:
 
         self._mos = []
         self._users = []
-        self._current_locations = next(movements_iterable)
-        for i in range(len(self._current_locations)):
-            tup = self._current_locations[i]
-            aux1 = int(np.rint(tup[0]))
-            aux2 = int(np.rint(tup[1]))
 
-            self._current_locations[i] = (aux1, aux2)
+        self._current_locations = next(movements_iterable)
+        int_locations = []
+        for i in range(len(self._current_locations)):
+            aux = tuple(map(lambda x: int(round(x)), self._current_locations[i]))
+            int_locations.append(aux)
+        self._current_locations = int_locations
 
         self._curr_time = 0
 
@@ -2322,8 +2321,9 @@ class EncryptionSTLTest(unittest.TestCase):
             aux_movements = next(dual_minute_gm)
             stl_movements = next(test_stl._movements_iterable)
 
-            for j in range(len(aux_movements):
-                self.assertEqual(aux_movements[j], stl_movements[j], "movements iterable in ESTL not proper")
+            for j in range(len(aux_movements)):
+                self.assertEqual(aux_movements[j][0], stl_movements[j][0], "movements iterable in ESTL not proper")
+                self.assertEqual(aux_movements[j][1], stl_movements[j][1], "movements iterable in ESTL not proper")
 
             self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
 
@@ -2338,36 +2338,38 @@ class EncryptionSTLTest(unittest.TestCase):
             for i in range(len(loc_check)):
                 self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
                                 "initial locations not rounded to int")
-            self.assertTrue(isinstance(test_stl._current_locations[i][1], int), "initial locations not rounded to int")
+                self.assertTrue(isinstance(test_stl._current_locations[i][1], int),
+                                "initial locations not rounded to int")
 
-            self.assertLess(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 1,
-                            "initial locations not closest int to real locations")
-            self.assertLess(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 1,
-                            "initial locations not closest int to real locations")
+                self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+                                     "initial locations not closest int to real locations")
+                self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+                                     "initial locations not closest int to real locations")
 
-            self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
+        self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
 
-            self.assertEqual(test_stl._ga._risk_threshold, 5, "GA risk threshold not initialized to proper value")
-            self.assertEqual(test_stl._ga._ckks_params.poly_degree, 2, "GA params not having proper degree")
-            self.assertEqual(test_stl._ga._ckks_params.ciph_modulus, 1 << 300,
-                             "GA params not having proper cipher modulus")
-            self.assertEqual(test_stl._ga._ckks_params.big_modulus, 1 << 1200,
-                             "GA params not having proper plain modulus")
-            self.assertEqual(test_stl._ga._ckks_params.scaling_factor, 1 << 30,
-                             "GA params not having proper scaling factor")
+        self.assertEqual(test_stl._ga._risk_threshold, 5, "GA risk threshold not initialized to proper value")
+        self.assertEqual(test_stl._ga._ckks_params.poly_degree, 4, "GA params not having proper degree")
+        self.assertEqual(test_stl._ga._ckks_params.ciph_modulus, 1 << 300,
+                         "GA params not having proper cipher modulus")
+        self.assertEqual(test_stl._ga._ckks_params.big_modulus, 1 << 1200,
+                         "GA params not having proper plain modulus")
+        self.assertEqual(test_stl._ga._ckks_params.scaling_factor, 1 << 30,
+                         "GA params not having proper scaling factor")
 
-            self.assertEqual(test_stl._mo_count, 10, "MO count not updated properly after construction")
+        self.assertEqual(test_stl._mo_count, 10, "MO count not updated properly after construction")
 
-            self.assertEqual(len(test_stl._mos), 10, "MO list length not proper")
-            for i in range(10):
-                self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
-                                "object in MO list not MO type at " + str(i))
-                self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
-                self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
-                self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
-                self.assertEqual(test_stl._mos[i]._max_x, 3652, "MO x max not proper @ " + str(i))
-                self.assertEqual(test_stl._mos[i]._max_y, 3652, "MO y max not proper @ " + str(i))
-                for j in range(10):
-                    if j != i:
-                        self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos)
+        self.assertEqual(len(test_stl._mos), 10, "MO list length not proper")
+        for i in range(10):
+            self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
+                            "object in MO list not MO type at " + str(i))
+        self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
+        self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
+        self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
+        for j in range(10):
+            if j != i:
+                self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos,
+                                "MO not registered properly within other MOs")
+
+
 unittest.main()
