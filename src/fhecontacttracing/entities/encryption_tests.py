@@ -1151,12 +1151,6 @@ class EncryptionSTL:
         self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
                                                               self._current_locations[y])),
                                            range(len(self._current_locations))))
-        # int_locations = []
-        #
-        # for i in range(len(self._current_locations)):
-        #     aux = tuple(map(lambda x: int(round(x)), self._current_locations[i]))
-        #     int_locations.append(aux)
-        # self._current_locations = int_locations
 
         self._curr_time = 0
 
@@ -2437,7 +2431,10 @@ class EncryptionSTLTest(unittest.TestCase):
         self.assertEqual(test_stl.get_mo_count(), 8, "MO count getter improper")
         self.assertEqual(test_stl.mo_count, 8, "MO count property improper")
 
-
+        self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
+        self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
+        for i in range(10):
+            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO), "MO list getter nor returning MO at "
 
 
 unittest.main()
