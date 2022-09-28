@@ -152,7 +152,6 @@ class EncryptionSTL:
             self.add_user(location=self._current_locations[i],
                           uid=i
                           )
-            self._usr_count += 1
 
     def add_user(self, location, uid):
         new_user = EncryptedUser(init_x=location[0],
@@ -163,6 +162,7 @@ class EncryptionSTL:
                                  )
 
         self._users.append(new_user)
+        self._usr_count += 1
 
     def get_current_locations(self):
         return self._current_locations

@@ -1178,7 +1178,6 @@ class EncryptionSTL:
             self.add_user(location=self._current_locations[i],
                           uid=i
                           )
-            self._usr_count += 1
 
     def add_user(self, location, uid):
         new_user = EncryptedUser(init_x=location[0],
@@ -1189,6 +1188,7 @@ class EncryptionSTL:
                                  )
 
         self._users.append(new_user)
+        self._usr_count += 1
 
     def get_current_locations(self):
         return self._current_locations
@@ -2434,7 +2434,38 @@ class EncryptionSTLTest(unittest.TestCase):
         self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
         self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
         for i in range(10):
-            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO), "MO list getter nor returning MO at "
+            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO),
+                            "MO list getter not returning MO type at " + str(i))
+            self.assertTrue(isinstance(test_stl.mos[i], EncryptionMO),
+                            "MO list property not returning MO type at " + str(i))
+            self.assertEqual(test_stl.get_mos()[i]._id, i, "MO list getter id improper at " + str(i))
+            self.assertEqual(test_stl.mos[i]._id, i, "MO list property id improper at " + str(i))
+        test_stl._mos.append(8)
+        self.assertEqual(test_stl.get_mos()[10], 8, "MO list getter improper")
+        self.assertEqual(test_stl.mos[10], 8, "MO list property improper")
+
+        for i in range(100):
+            self.assertTrue(isinstance(test_stl.get_users()[i], EncryptedUser),
+                            "User list getter not returning user type at " + str(i))
+            self.assertTrue(isinstance(test_stl.users[i], EncryptedUser),
+                            "User list property not returning user type at " + str(i))
+            self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
+            self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
+        test_stl._users.append(14)
+        self.assertEqual(test_stl.get_users()[100], 14, "User list getter improper")
+        self.assertEqual(test_stl.users[100], 14, "User list property improper")
+
+        self.assertEqual(test_stl.get_current_time(), 0, "time getter improper")
+        self.assertEqual(test_stl.current_time, 0, "time property improper")
+        test_stl._current_time = 1970
+        self.assertEqual(test_stl.get_current_time(), 14, "time getter improper")
+        self.assertEqual(test_stl.current_time, 14, "time property improper")
+
+        self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
+        self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
+        test_stl._ga = 13
+        self.assertEqual(test_stl.get_ga, 13, "GA getter improper")
+        self.assertEqual(test_stl.ga, 13, "GA property improper")
 
 
 unittest.main()
