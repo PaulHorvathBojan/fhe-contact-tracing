@@ -1,7 +1,7 @@
 # TODO:
-#  4. test EncryptionSTL:      -getters
-#                              -user creation
-#                              -tick
+#  4. test EncryptionSTL:       -getters
+#                               -user creation
+#                               -tick
 import numpy as np
 import math
 import cmath
@@ -1148,11 +1148,15 @@ class EncryptionSTL:
         self._users = []
 
         self._current_locations = next(movements_iterable)
-        int_locations = []
-        for i in range(len(self._current_locations)):
-            aux = tuple(map(lambda x: int(round(x)), self._current_locations[i]))
-            int_locations.append(aux)
-        self._current_locations = int_locations
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        # int_locations = []
+        #
+        # for i in range(len(self._current_locations)):
+        #     aux = tuple(map(lambda x: int(round(x)), self._current_locations[i]))
+        #     int_locations.append(aux)
+        # self._current_locations = int_locations
 
         self._curr_time = 0
 
@@ -2252,12 +2256,12 @@ class EncryptionGATest(unittest.TestCase):
                 aux_sts = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[it])
                 deco_sts = mos[i]._encoder.decode(plain=aux_sts)[0].real
                 if mos[i]._users[it].uID != 45:
-                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 6.1e-9,
+                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 7.1e-9,
                                          "status not updated properly in MO at " + str(i) + " " + str(
                                              mos[i]._users[it].uID))
 
         for i in range(len(users)):
-            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 6.1e-9,
+            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 7.1e-9,
                                  "score not updated properly in GA at " + str(i))
             self.assertEqual(users[i]._risk == 1, i == 45, "risk status not updated properly at " + str(i))
 
@@ -2283,13 +2287,13 @@ class EncryptionGATest(unittest.TestCase):
 
         self.assertEqual(dummy_user._score, 0, "initial score in user not 0")
         score_val = test_ga._encoder.decode(plain=test_ga._decryptor.decrypt(ciphertext=dummy_user._encr_score))[0].real
-        self.assertLessEqual(abs(score_val), 6.1e-9, "initial encrypted score not 0")
+        self.assertLessEqual(abs(score_val), 7.1e-9, "initial encrypted score not 0")
 
         nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
         dummy_user._encr_score = nineteenseventy
         dummy_user.decr_score_from_ga()
 
-        self.assertLessEqual(abs(dummy_user._score - 1970), 6.1e-9, "plaintext score not properly updated in user")
+        self.assertLessEqual(abs(dummy_user._score - 1970), 7.1e-9, "plaintext score not properly updated in user")
 
 
 class EncryptionSTLTest(unittest.TestCase):
@@ -2325,26 +2329,26 @@ class EncryptionSTLTest(unittest.TestCase):
                 self.assertEqual(aux_movements[j][0], stl_movements[j][0], "movements iterable in ESTL not proper")
                 self.assertEqual(aux_movements[j][1], stl_movements[j][1], "movements iterable in ESTL not proper")
 
-            self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
+        self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
 
-            self.assertEqual(test_stl._max_x, 3652, "max x-axis dimension in ESTL not proper")
+        self.assertEqual(test_stl._max_x, 3652, "max x-axis dimension in ESTL not proper")
 
-            self.assertEqual(test_stl._max_y, 3652, "max y-axis dimension in ESTL not proper")
+        self.assertEqual(test_stl._max_y, 3652, "max y-axis dimension in ESTL not proper")
 
-            self.assertEqual(test_stl._area_size_x, 50, "area x-axis dimension in ESTL not proper")
+        self.assertEqual(test_stl._area_size_x, 50, "area x-axis dimension in ESTL not proper")
 
-            self.assertEqual(test_stl._area_size_y, 50, "area y-axis dimension in ESTL not proper")
+        self.assertEqual(test_stl._area_size_y, 50, "area y-axis dimension in ESTL not proper")
 
-            for i in range(len(loc_check)):
-                self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
-                                "initial locations not rounded to int")
-                self.assertTrue(isinstance(test_stl._current_locations[i][1], int),
-                                "initial locations not rounded to int")
+        for i in range(len(loc_check)):
+            self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
+                            "initial locations not rounded to int")
+            self.assertTrue(isinstance(test_stl._current_locations[i][1], int),
+                            "initial locations not rounded to int")
 
-                self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
-                                     "initial locations not closest int to real locations")
-                self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
-                                     "initial locations not closest int to real locations")
+            self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+                                 "initial locations not closest int to real locations")
+            self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+                                 "initial locations not closest int to real locations")
 
         self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
 
@@ -2363,13 +2367,77 @@ class EncryptionSTLTest(unittest.TestCase):
         for i in range(10):
             self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
                             "object in MO list not MO type at " + str(i))
-        self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
-        self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
-        self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
-        for j in range(10):
-            if j != i:
-                self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos,
-                                "MO not registered properly within other MOs")
+            self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
+            self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
+            self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
+            for j in range(10):
+                if j != i:
+                    self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos,
+                                    "MO not registered properly within other MOs")
+
+        self.assertEqual(test_stl._usr_count, 100, "user count not properly incremented")
+
+        for i in range(100):
+            self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+                             "user x coordinate not appropriately initialized")
+            self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+                             "user y coordinate not appropriately initialized")
+            self.assertEqual(test_stl._users[i]._uID, i, "user ID not appropriately initialized")
+
+    def test_getters(self):
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 300,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30
+                                 )
+
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+        self.assertEqual(test_stl.get_current_locations(), mapmapcheck, "initial location getter not proper")
+        self.assertEqual(test_stl.current_locations, mapmapcheck, "initial location property not proper")
+
+        test_stl._current_locations[6][0] = 5
+        self.assertEqual(test_stl.get_current_locations()[6][0], 5, "location getter not proper")
+        self.assertEqual(test_stl.current_locations[6][0], 5, "location property not proper")
+
+        self.assertEqual(test_stl.get_area_sizes(), (50, 50), "area size getter not proper")
+        self.assertEqual(test_stl.area_sizes, (50, 50), "area size property not proper")
+
+        test_stl._area_size_x = 14
+        self.assertEqual(test_stl.get_area_sizes(), (14, 50), "area size getter not proper")
+        self.assertEqual(test_stl.area_sizes, (14, 50), "area size property not proper")
+
+        self.assertEqual(test_stl.get_user_count(), 100, "user count getter improper")
+        self.assertEqual(test_stl.user_count, 100, "user count property improper")
+        test_stl.add_user(location=(69, 69),
+                          uid=100)
+        self.assertEqual(test_stl.get_user_count(), 101, "user count getter improper after user addition")
+        self.assertEqual(test_stl.user_count, 101, "user count property improper after user addition")
+        test_stl._usr_count = 5
+        self.assertEqual(test_stl.get_user_count(), 5, "user count getter improper")
+        self.assertEqual(test_stl.user_count, 5, "user count property improper")
+
+        self.assertEqual(test_stl.get_mo_count(), 10, "MO count getter improper")
+        self.assertEqual(test_stl.mo_count, 10, "MO count property improper")
+        test_stl._mo_count = 8
+        self.assertEqual(test_stl.get_mo_count(), 8, "MO count getter improper")
+        self.assertEqual(test_stl.mo_count, 8, "MO count property improper")
+
+
 
 
 unittest.main()
