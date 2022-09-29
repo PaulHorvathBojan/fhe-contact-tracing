@@ -33,20 +33,18 @@ class SpaceTimeLord:
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
-            self.add_user(location=self._current_locations[i],
-                          uid=i
-                          )
-            self._usr_count += 1
+            self.add_user(location=self._current_locations[i])
 
-    def add_user(self, location, uid):
+    def add_user(self, location):
         new_user = ProtocolUser(init_x=location[0],
                                 init_y=location[1],
                                 mo=self._mos[uid % self._mo_count],
-                                uid=uid,
+                                uid=self._usr_count,
                                 ga=self._ga
                                 )
 
         self._users.append(new_user)
+        self._usr_count += 1
 
     def get_current_locations(self):
         return self._current_locations
@@ -204,12 +202,9 @@ class EncryptionSTL:
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
-        for i in range(len(self._current_locations)):
-            tup = self._current_locations[i]
-            aux1 = int(np.rint(tup[0]))
-            aux2 = int(np.rint(tup[1]))
-
-            self._current_locations[i] = (aux1, aux2)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time += 1
 
         for i in range(len(self._users)):

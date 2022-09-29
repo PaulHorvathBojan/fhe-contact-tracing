@@ -1,7 +1,7 @@
 # TODO:
-#  4. test EncryptionSTL:       -getters
-#                               -user creation
-#                               -tick
+#  4. test EncryptionSTL:       -tick
+#                                   - check on a zero iterator that status updates correctly
+#                                   - check on a regular iterator that locations update correctly
 import numpy as np
 import math
 import cmath
@@ -42,6 +42,16 @@ class DualIter:
         self._change = not self._change
 
         return self._next_val.copy()
+
+
+class ZeroLocIter():
+    def __init__(self, loc_ct):
+        self.val = []
+        for i in range(loc_ct):
+            self.val.append([0, 0])
+
+    def __next__(self):
+        return self.val.copy()
 
 
 class MinutelyMovement:
@@ -1230,12 +1240,9 @@ class EncryptionSTL:
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
-        for i in range(len(self._current_locations)):
-            tup = self._current_locations[i]
-            aux1 = int(np.rint(tup[0]))
-            aux2 = int(np.rint(tup[1]))
-
-            self._current_locations[i] = (aux1, aux2)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time += 1
 
         for i in range(len(self._users)):
@@ -2415,8 +2422,7 @@ class EncryptionSTLTest(unittest.TestCase):
 
         self.assertEqual(test_stl.get_user_count(), 100, "user count getter improper")
         self.assertEqual(test_stl.user_count, 100, "user count property improper")
-        test_stl.add_user(location=(69, 69),
-                          uid=100)
+        test_stl.add_user(location=(69, 69))
         self.assertEqual(test_stl.get_user_count(), 101, "user count getter improper after user addition")
         self.assertEqual(test_stl.user_count, 101, "user count property improper after user addition")
         test_stl._usr_count = 5
@@ -2487,9 +2493,53 @@ class EncryptionSTLTest(unittest.TestCase):
                                  )
 
         self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
-        test_stl.add_user(location=(14, 14),
-                          uid=1)
-        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improperly added")
-        self.assertEqual(test_stl._users[1].)
+        test_stl.add_user(location=(14, 14))
+        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improper class")
+        self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
+        for i in range(50):
+            test_stl.add_user(location=(i ** 2, i ** 2))
+            self.assertTrue(isinstance(test_stl._users[i + 2], EncryptedUser), "Additional user improper class")
+            self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
+            self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
+            self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
+
+    def test_tick(self):
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 300,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30)
+
+        plain_stl = SpaceTimeLord(movements_iterable=dual_minute_gm,
+                                  mo_count=10,
+                                  risk_thr=5,
+                                  area_sizes=(50, 50),
+                                  max_sizes=(3652, 3652))
+
+        for i in range(100):
+            self.assertEqual(test_stl._users[i]._x, plain_stl._users[i]._x, "initial x not same at " + str(i))
+            self.assertEqual(test_stl._users[i]._y, plain_stl._users[i]._y, "initial y not same at " + str(i))
+
+        test_stl.tick()
+        plain_stl.tick()
+
+        for i in range(100):
+            self.assertEqual(test_stl._users[i]._x, plain_stl._users[i]._x, "after tick x not same at " + str(i))
+            self.assertEqual(test_stl._users[i]._y, plain_stl._users[i]._y, "after tick y not same at " + str(i))
+        for i in range(10):
+
 
 unittest.main()

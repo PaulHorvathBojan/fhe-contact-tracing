@@ -599,7 +599,8 @@ class SpaceTimeLord:
                                     max_y=self._max_y
                                     )
             for prev_mo in self._mos:
-                new_mo.register_other_mo(prev_mo)
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
             self._mos.append(new_mo)
             self._mo_count += 1
 
@@ -686,6 +687,28 @@ class MinutelyMovement:
             self_next = next(self._move)
 
         return self_next
+
+class DualIter:
+
+    def __init__(self, init_iter):
+        self._iterator = init_iter
+        self._change = True
+        self._next_val = None
+
+    def __next__(self):
+        if self._change:
+            self._next_val = next(self._iterator)
+        self._change = not self._change
+
+        return self._next_val.copy()
+
+class ZeroLocIter():
+    def __init__(self, loc_ct):
+        self.val = []
+        for i in range(loc_ct):
+            self.val.append([0, 0])
+    def __next__(self):
+        return self.val.copy()
 
 
 # User test class
@@ -3133,6 +3156,94 @@ class STLTest(unittest.TestCase):
         self.assertEqual(len(test_stl.users), 10, "user count and length of user list incompatible")
 
         self.assertEqual(test_stl.mos[0].users, test_stl.users, "faulty user list in MO")
+
+    def test_getters(self):
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 300,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30
+                                 )
+
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+        self.assertEqual(test_stl.get_current_locations(), mapmapcheck, "initial location getter not proper")
+        self.assertEqual(test_stl.current_locations, mapmapcheck, "initial location property not proper")
+
+        test_stl._current_locations[6][0] = 5
+        self.assertEqual(test_stl.get_current_locations()[6][0], 5, "location getter not proper")
+        self.assertEqual(test_stl.current_locations[6][0], 5, "location property not proper")
+
+        self.assertEqual(test_stl.get_area_sizes(), (50, 50), "area size getter not proper")
+        self.assertEqual(test_stl.area_sizes, (50, 50), "area size property not proper")
+
+        test_stl._area_size_x = 14
+        self.assertEqual(test_stl.get_area_sizes(), (14, 50), "area size getter not proper")
+        self.assertEqual(test_stl.area_sizes, (14, 50), "area size property not proper")
+
+        self.assertEqual(test_stl.get_user_count(), 100, "user count getter improper")
+        self.assertEqual(test_stl.user_count, 100, "user count property improper")
+        test_stl.add_user(location=(69, 69))
+        self.assertEqual(test_stl.get_user_count(), 101, "user count getter improper after user addition")
+        self.assertEqual(test_stl.user_count, 101, "user count property improper after user addition")
+        test_stl._usr_count = 5
+        self.assertEqual(test_stl.get_user_count(), 5, "user count getter improper")
+        self.assertEqual(test_stl.user_count, 5, "user count property improper")
+
+        self.assertEqual(test_stl.get_mo_count(), 10, "MO count getter improper")
+        self.assertEqual(test_stl.mo_count, 10, "MO count property improper")
+        test_stl._mo_count = 8
+        self.assertEqual(test_stl.get_mo_count(), 8, "MO count getter improper")
+        self.assertEqual(test_stl.mo_count, 8, "MO count property improper")
+
+        self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
+        self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
+        for i in range(10):
+            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO),
+                            "MO list getter not returning MO type at " + str(i))
+            self.assertTrue(isinstance(test_stl.mos[i], EncryptionMO),
+                            "MO list property not returning MO type at " + str(i))
+            self.assertEqual(test_stl.get_mos()[i]._id, i, "MO list getter id improper at " + str(i))
+            self.assertEqual(test_stl.mos[i]._id, i, "MO list property id improper at " + str(i))
+        test_stl._mos.append(8)
+        self.assertEqual(test_stl.get_mos()[10], 8, "MO list getter improper")
+        self.assertEqual(test_stl.mos[10], 8, "MO list property improper")
+
+        for i in range(100):
+            self.assertTrue(isinstance(test_stl.get_users()[i], EncryptedUser),
+                            "User list getter not returning user type at " + str(i))
+            self.assertTrue(isinstance(test_stl.users[i], EncryptedUser),
+                            "User list property not returning user type at " + str(i))
+            self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
+            self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
+        test_stl._users.append(14)
+        self.assertEqual(test_stl.get_users()[101], 14, "User list getter improper")
+        self.assertEqual(test_stl.users[101], 14, "User list property improper")
+
+        self.assertEqual(test_stl.get_current_time(), 0, "time getter improper")
+        self.assertEqual(test_stl.current_time, 0, "time property improper")
+        test_stl._curr_time = 1970
+        self.assertEqual(test_stl.get_current_time(), 1970, "time getter improper")
+        self.assertEqual(test_stl.current_time, 1970, "time property improper")
+
+        self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
+        self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
+        test_stl._ga = 13
+        self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
+        self.assertEqual(test_stl.ga, 13, "GA property improper")
 
 
 unittest.main()
