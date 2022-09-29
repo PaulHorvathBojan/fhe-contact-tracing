@@ -41,7 +41,7 @@ class SpaceTimeLord:
     def add_user(self, location):
         new_user = ProtocolUser(init_x=location[0],
                                 init_y=location[1],
-                                mo=self._mos[uid % self._mo_count],
+                                mo=self._mos[self._usr_count % self._mo_count],
                                 uid=self._usr_count,
                                 ga=self._ga
                                 )

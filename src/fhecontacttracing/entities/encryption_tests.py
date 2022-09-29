@@ -1050,6 +1050,9 @@ class SpaceTimeLord:
         self._mos = []
         self._users = []
         self._current_locations = next(movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time = 0
 
         self._ga = GovAgent(risk_threshold=self._risk_threshold)
@@ -1069,20 +1072,18 @@ class SpaceTimeLord:
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
-            self.add_user(location=self._current_locations[i],
-                          uid=i
-                          )
-            self._usr_count += 1
+            self.add_user(location=self._current_locations[i])
 
-    def add_user(self, location, uid):
+    def add_user(self, location):
         new_user = ProtocolUser(init_x=location[0],
                                 init_y=location[1],
-                                mo=self._mos[uid % self._mo_count],
-                                uid=uid,
+                                mo=self._mos[self._usr_count % self._mo_count],
+                                uid=self._usr_count,
                                 ga=self._ga
                                 )
 
         self._users.append(new_user)
+        self._usr_count += 1
 
     def get_current_locations(self):
         return self._current_locations
@@ -1126,6 +1127,9 @@ class SpaceTimeLord:
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time += 1
 
         for i in range(len(self._users)):
@@ -1256,6 +1260,7 @@ class EncryptionSTL:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
 
 
 # class IterTest(unittest.TestCase):
@@ -2539,7 +2544,7 @@ class EncryptionSTLTest(unittest.TestCase):
         for i in range(100):
             self.assertEqual(test_stl._users[i]._x, plain_stl._users[i]._x, "after tick x not same at " + str(i))
             self.assertEqual(test_stl._users[i]._y, plain_stl._users[i]._y, "after tick y not same at " + str(i))
-        for i in range(10):
+        # for i in range(10):
 
 
 unittest.main()

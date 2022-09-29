@@ -3147,9 +3147,6 @@ class STLTest(unittest.TestCase):
                                  max_sizes=(3652, 3652))
 
         self.assertEqual(test_stl._movements_iterable, dummy_gm, "wrong movements iterable in STL class")
-        print(test_stl._current_locations)
-        print(len(test_stl._current_locations))
-        print(test_stl._users)
         self.assertEqual(test_stl.user_count, 10, "wrong initial user count in STL class")
         self.assertEqual(test_stl.mo_count, 1, "wrong MO count")
         self.assertEqual(len(test_stl.mos), 1, "MO count and length of MO list incompatible")
@@ -3218,9 +3215,9 @@ class STLTest(unittest.TestCase):
         self.assertEqual(test_stl.mos[10], 8, "MO list property improper")
 
         for i in range(100):
-            self.assertTrue(isinstance(test_stl.get_users()[i], EncryptedUser),
+            self.assertTrue(isinstance(test_stl.get_users()[i], ProtocolUser),
                             "User list getter not returning user type at " + str(i))
-            self.assertTrue(isinstance(test_stl.users[i], EncryptedUser),
+            self.assertTrue(isinstance(test_stl.users[i], ProtocolUser),
                             "User list property not returning user type at " + str(i))
             self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
             self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
@@ -3234,8 +3231,8 @@ class STLTest(unittest.TestCase):
         self.assertEqual(test_stl.get_current_time(), 1970, "time getter improper")
         self.assertEqual(test_stl.current_time, 1970, "time property improper")
 
-        self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
-        self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
+        self.assertTrue(isinstance(test_stl.get_ga(), GovAgent), "GA getter improper")
+        self.assertTrue(isinstance(test_stl.ga, GovAgent), "GA property improper")
         test_stl._ga = 13
         self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
         self.assertEqual(test_stl.ga, 13, "GA property improper")
