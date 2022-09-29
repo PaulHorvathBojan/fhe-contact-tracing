@@ -1175,15 +1175,13 @@ class EncryptionSTL:
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
-            self.add_user(location=self._current_locations[i],
-                          uid=i
-                          )
+            self.add_user(location=self._current_locations[i])
 
-    def add_user(self, location, uid):
+    def add_user(self, location):
         new_user = EncryptedUser(init_x=location[0],
                                  init_y=location[1],
-                                 mo=self._mos[uid % self._mo_count],
-                                 uid=uid,
+                                 mo=self._mos[self._usr_count % self._mo_count],
+                                 uid=self._usr_count,
                                  ga=self._ga
                                  )
 
@@ -2250,12 +2248,12 @@ class EncryptionGATest(unittest.TestCase):
                 aux_sts = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[it])
                 deco_sts = mos[i]._encoder.decode(plain=aux_sts)[0].real
                 if mos[i]._users[it].uID != 45:
-                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 7.1e-9,
+                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 7.9e-9,
                                          "status not updated properly in MO at " + str(i) + " " + str(
                                              mos[i]._users[it].uID))
 
         for i in range(len(users)):
-            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 7.1e-9,
+            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 7.9e-9,
                                  "score not updated properly in GA at " + str(i))
             self.assertEqual(users[i]._risk == 1, i == 45, "risk status not updated properly at " + str(i))
 
@@ -2281,13 +2279,13 @@ class EncryptionGATest(unittest.TestCase):
 
         self.assertEqual(dummy_user._score, 0, "initial score in user not 0")
         score_val = test_ga._encoder.decode(plain=test_ga._decryptor.decrypt(ciphertext=dummy_user._encr_score))[0].real
-        self.assertLessEqual(abs(score_val), 7.1e-9, "initial encrypted score not 0")
+        self.assertLessEqual(abs(score_val), 7.9e-9, "initial encrypted score not 0")
 
         nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
         dummy_user._encr_score = nineteenseventy
         dummy_user.decr_score_from_ga()
 
-        self.assertLessEqual(abs(dummy_user._score - 1970), 7.1e-9, "plaintext score not properly updated in user")
+        self.assertLessEqual(abs(dummy_user._score - 1970), 7.9e-9, "plaintext score not properly updated in user")
 
 
 class EncryptionSTLTest(unittest.TestCase):
@@ -2452,20 +2450,46 @@ class EncryptionSTLTest(unittest.TestCase):
             self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
             self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
         test_stl._users.append(14)
-        self.assertEqual(test_stl.get_users()[100], 14, "User list getter improper")
-        self.assertEqual(test_stl.users[100], 14, "User list property improper")
+        self.assertEqual(test_stl.get_users()[101], 14, "User list getter improper")
+        self.assertEqual(test_stl.users[101], 14, "User list property improper")
 
         self.assertEqual(test_stl.get_current_time(), 0, "time getter improper")
         self.assertEqual(test_stl.current_time, 0, "time property improper")
-        test_stl._current_time = 1970
-        self.assertEqual(test_stl.get_current_time(), 14, "time getter improper")
-        self.assertEqual(test_stl.current_time, 14, "time property improper")
+        test_stl._curr_time = 1970
+        self.assertEqual(test_stl.get_current_time(), 1970, "time getter improper")
+        self.assertEqual(test_stl.current_time, 1970, "time property improper")
 
         self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
         self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
         test_stl._ga = 13
-        self.assertEqual(test_stl.get_ga, 13, "GA getter improper")
+        self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
         self.assertEqual(test_stl.ga, 13, "GA property improper")
 
+    def test_adduser(self):
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = EncryptionSTL(movements_iterable=iter([[[1, 2]]]),
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 300,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30
+                                 )
+
+        self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
+        test_stl.add_user(location=(14, 14),
+                          uid=1)
+        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improperly added")
+        self.assertEqual(test_stl._users[1].)
 
 unittest.main()

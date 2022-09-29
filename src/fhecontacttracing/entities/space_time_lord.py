@@ -149,15 +149,13 @@ class EncryptionSTL:
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
-            self.add_user(location=self._current_locations[i],
-                          uid=i
-                          )
+            self.add_user(location=self._current_locations[i])
 
-    def add_user(self, location, uid):
+    def add_user(self, location):
         new_user = EncryptedUser(init_x=location[0],
                                  init_y=location[1],
-                                 mo=self._mos[uid % self._mo_count],
-                                 uid=uid,
+                                 mo=self._mos[self._usr_count % self._mo_count],
+                                 uid=self._usr_count,
                                  ga=self._ga
                                  )
 
