@@ -14,6 +14,9 @@ class SpaceTimeLord:
         self._mos = []
         self._users = []
         self._current_locations = next(movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time = 0
 
         self._ga = GovAgent(risk_threshold=self._risk_threshold)
@@ -88,6 +91,9 @@ class SpaceTimeLord:
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time += 1
 
         for i in range(len(self._users)):

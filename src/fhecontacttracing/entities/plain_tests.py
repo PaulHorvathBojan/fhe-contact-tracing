@@ -3167,16 +3167,11 @@ class STLTest(unittest.TestCase):
         minute_gm = MinutelyMovement(movement_iter=dummy_gm)
         dual_minute_gm = DualIter(init_iter=minute_gm)
 
-        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+        test_stl = SpaceTimeLord(movements_iterable=dual_minute_gm,
                                  mo_count=10,
                                  risk_thr=5,
                                  area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 300,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30
-                                 )
+                                 max_sizes=(3652, 3652))
 
         loc_check = next(dual_minute_gm)
         mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
