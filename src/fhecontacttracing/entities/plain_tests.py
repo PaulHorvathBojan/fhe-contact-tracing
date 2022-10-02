@@ -586,6 +586,9 @@ class SpaceTimeLord:
         self._mos = []
         self._users = []
         self._current_locations = next(movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time = 0
 
         self._ga = GovAgent(risk_threshold=self._risk_threshold)
@@ -605,20 +608,18 @@ class SpaceTimeLord:
             self._mo_count += 1
 
         for i in range(len(self._current_locations)):
-            self.add_user(location=self._current_locations[i],
-                          uid=i
-                          )
-            self._usr_count += 1
+            self.add_user(location=self._current_locations[i])
 
-    def add_user(self, location, uid):
+    def add_user(self, location):
         new_user = ProtocolUser(init_x=location[0],
                                 init_y=location[1],
-                                mo=self._mos[uid % self._mo_count],
-                                uid=uid,
+                                mo=self._mos[self._usr_count % self._mo_count],
+                                uid=self._usr_count,
                                 ga=self._ga
                                 )
 
         self._users.append(new_user)
+        self._usr_count += 1
 
     def get_current_locations(self):
         return self._current_locations
@@ -662,6 +663,9 @@ class SpaceTimeLord:
 
     def tick(self):
         self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
         self._curr_time += 1
 
         for i in range(len(self._users)):
@@ -688,6 +692,7 @@ class MinutelyMovement:
 
         return self_next
 
+
 class DualIter:
 
     def __init__(self, init_iter):
@@ -702,13 +707,36 @@ class DualIter:
 
         return self._next_val.copy()
 
-class ZeroLocIter():
-    def __init__(self, loc_ct):
-        self.val = []
+
+class IntLocIter:
+    def __init__(self, val, loc_ct):
+        self.vallist = []
         for i in range(loc_ct):
-            self.val.append([0, 0])
+            self.vallist.append([val, val])
+
     def __next__(self):
-        return self.val.copy()
+        return self.vallist.copy()
+
+
+class AlwaysFarIter:
+    def __init__(self, entrycount):
+        self.rez = []
+        for i in range(entrycount):
+            self.rez.append([100 * i, 100 * i])
+
+    def __next__(self):
+        return self.rez
+
+
+class BatchIter:
+    def __init__(self, batchsize, batchcount):
+        self.vallist = []
+        for i in range(batchcount):
+            for j in range(batchsize):
+                self.vallist.append([2 * j, 2 * j])
+
+    def __next__(self):
+        return self.vallist.copy()
 
 
 # User test class
@@ -3204,9 +3232,9 @@ class STLTest(unittest.TestCase):
         self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
         self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
         for i in range(10):
-            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO),
+            self.assertTrue(isinstance(test_stl.get_mos()[i], MobileOperator),
                             "MO list getter not returning MO type at " + str(i))
-            self.assertTrue(isinstance(test_stl.mos[i], EncryptionMO),
+            self.assertTrue(isinstance(test_stl.mos[i], MobileOperator),
                             "MO list property not returning MO type at " + str(i))
             self.assertEqual(test_stl.get_mos()[i]._id, i, "MO list getter id improper at " + str(i))
             self.assertEqual(test_stl.mos[i]._id, i, "MO list property id improper at " + str(i))
@@ -3237,6 +3265,99 @@ class STLTest(unittest.TestCase):
         self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
         self.assertEqual(test_stl.ga, 13, "GA property improper")
 
+    def test_tick(self):
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = SpaceTimeLord(movements_iterable=dual_minute_gm,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652))
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+        for i in range(100):
+            self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0], "initial x not same at " + str(i))
+            self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1], "initial y not same at " + str(i))
+
+        test_stl.tick()
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+
+        for i in range(100):
+            self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0], "after tick x not same at " + str(i))
+            self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1], "after tick y not same at " + str(i))
+        test_stl.tick()
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+        mapmapcheck[5] = 12
+        for i in range(100):
+            if i != 5:
+                self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0], "after tick x not same at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1], "after tick y not same at " + str(i))
+            else:
+                self.assertTrue(test_stl._current_locations[5] != 12, "iterators not deeply copied")
+
+        movement_iter = BatchIter(batchsize=10,
+                                  batchcount=10)
+        test_stl = SpaceTimeLord(movements_iterable=movement_iter,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652))
+
+        for mo in test_stl._mos:
+            for i in range(len(mo._status)):
+                mo._status[i] = 1
+
+        for i in range(12):
+            test_stl.tick()
+            for mo in test_stl._mos:
+                for jackson in mo._scores:
+                    self.assertGreaterEqual(jackson, (i + 1) * 9, "tick not updating inside scores correctly")
+
+        movement_iter = IntLocIter(val=0,
+                                   loc_ct=100)
+        test_stl = SpaceTimeLord(movements_iterable=movement_iter,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652))
+        test_stl._mos[0]._status[0] = 1
+        for i in range(12):
+            test_stl.tick()
+            for j in range(len(test_stl._mos)):
+                if j != 0:
+                    self.assertEqual(test_stl._mos[j]._scores[0], i + 1, "tick not updating outside scores correctly")
+                for k in range(1, len(test_stl._mos[j]._scores)):
+                    self.assertEqual(test_stl._mos[j]._scores[k], i + 1, "tick not updating outside scores correctly")
+
+        movement_iter = AlwaysFarIter(entrycount=30)
+        test_stl = SpaceTimeLord(movements_iterable=movement_iter,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652))
+        for mo in test_stl._mos:
+            for i in range(len(mo._users)):
+                mo._scores[i] = mo._users[i]._uID ** 2
+        for i in range(len(test_stl._ga._status)):
+            test_stl._ga._status[i] = i
+        test_stl._curr_time = 1439
+        test_stl.tick()
+        for i in range(len(test_stl._ga._scores)):
+            self.assertEqual(test_stl._ga._scores[i], i ** 2, "tick does not properly update scores daily at " + str(i))
+        for mo in test_stl._mos:
+            for i in range(len(mo._users)):
+                self.assertEqual(mo._status[i], mo._users[i]._uID,
+                                 "tick does not properly update status daily at " + str(mo._users[i]._uID))
+
 
 unittest.main()
 # Fill dummy_out.txt with traces of 10 users for 1440 iterations
@@ -3254,3 +3375,4 @@ unittest.main()
 #             int_rot.append(member)
 #         int_content.append(list(int_rot))
 #     dummy_outfile.write(str(int_content) + "\n")
+

@@ -1,7 +1,5 @@
 # TODO:
 #  4. test EncryptionSTL:       -tick
-#                                   - check on a zero iterator that status updates correctly
-#                                   - check on a regular iterator that locations update correctly
 import numpy as np
 import math
 import cmath
@@ -44,14 +42,14 @@ class DualIter:
         return self._next_val.copy()
 
 
-class ZeroLocIter():
-    def __init__(self, loc_ct):
-        self.val = []
+class SameLocIter:
+    def __init__(self, loc_val, loc_ct):
+        self.vallist = []
         for i in range(loc_ct):
-            self.val.append([0, 0])
+            self.vallist.append(loc_val)
 
     def __next__(self):
-        return self.val.copy()
+        return self.vallist.copy()
 
 
 class MinutelyMovement:
@@ -64,6 +62,16 @@ class MinutelyMovement:
 
         return self_next
 
+
+class BatchIter:
+    def __init__(self, batchsize, batchcount):
+        self.const_list = []
+        for i in range(batchcount):
+            for j in range(batchsize):
+                self.const_list.append([i * 100, i * 100])
+
+    def __next__(self):
+        return self.const_list.copy()
 
 class ProtocolUser:
     # Initialize user at a certain location with a certain MO, user ID and GA.
@@ -961,8 +969,7 @@ class EncryptionMO(MobileOperator):
                             encr_location=loc_list[i])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[
-                                                                                          i].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[i].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -1023,12 +1030,10 @@ class EncryptionMO(MobileOperator):
 
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,
-                                                                        division_factor=add_val.modulus // self._scores[
-                                                                            i].modulus)
+                                                                        division_factor=add_val.modulus // self._scores[i].modulus)
                             elif add_val.modulus < self._scores[i].modulus:
                                 self._scores[i] = self._evaluator.lower_modulus(ciph=self._scores[i],
-                                                                                division_factor=self._scores[
-                                                                                                    i].modulus // add_val.modulus)
+                                                                                division_factor=self._scores[i].modulus // add_val.modulus)
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
@@ -2213,7 +2218,7 @@ class EncryptionGATest(unittest.TestCase):
 
         for i in range(10):
             self.assertEqual(users[i]._risk, 1, "user risk not properly updated at " + str(i))
-            self.assertLessEqual(abs(test_ga._scores[i] - i - 14), 6e-9,
+            self.assertLessEqual(abs(test_ga._scores[i] - i - 14), 7.9e-9,
                                  "score not translated properly to GA at " + str(i))
 
     def test_daily(self):
@@ -2524,27 +2529,70 @@ class EncryptionSTLTest(unittest.TestCase):
                                  area_sizes=(50, 50),
                                  max_sizes=(3652, 3652),
                                  degree=4,
-                                 cipher_modulus=1 << 300,
+                                 cipher_modulus=1 << 600,
                                  big_modulus=1 << 1200,
                                  scaling_factor=1 << 30)
 
-        plain_stl = SpaceTimeLord(movements_iterable=dual_minute_gm,
-                                  mo_count=10,
-                                  risk_thr=5,
-                                  area_sizes=(50, 50),
-                                  max_sizes=(3652, 3652))
+        loc_check = next(dual_minute_gm)
+        for itercount in range(10):
+            test_stl.tick()
+            loc_check = next(dual_minute_gm)
+            mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+            for i in range(len(test_stl._users)):
+                self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
+                                 "user x coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
+                                 "user y coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+                                 "user x coordinate not consistent w/ STL location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+                                 "user y coordinate not consistent w/ STL location at " + str(i))
 
-        for i in range(100):
-            self.assertEqual(test_stl._users[i]._x, plain_stl._users[i]._x, "initial x not same at " + str(i))
-            self.assertEqual(test_stl._users[i]._y, plain_stl._users[i]._y, "initial y not same at " + str(i))
+        batchiter = BatchIter(batchsize=10,
+                              batchcount=2)
 
-        test_stl.tick()
-        plain_stl.tick()
+        test_stl = EncryptionSTL(movements_iterable=batchiter,
+                                 mo_count=2,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 600,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30)
+        for mo in test_stl._mos:
+            for i in range(len(mo._status)):
+                plain1 = mo._evaluator.create_constant_plain(const=1)
+                mo._status[i] = mo._encryptor.encrypt(plain=plain1)
+        for itercount in range(10):
+            test_stl.tick()
+            for mo in test_stl._mos:
+                for score in mo._scores:
+                    decr_score = mo._GA._decryptor.decrypt(ciphertext=score)
+                    deco_score = mo._encoder.decode(plain=decr_score)
+                    self.assertLessEqual(abs(deco_score[0].real - 9 * (itercount + 1)), 1/165, "inside scoring no good")
 
-        for i in range(100):
-            self.assertEqual(test_stl._users[i]._x, plain_stl._users[i]._x, "after tick x not same at " + str(i))
-            self.assertEqual(test_stl._users[i]._y, plain_stl._users[i]._y, "after tick y not same at " + str(i))
-        # for i in range(10):
+        sameloc = SameLocIter(loc_val=(1234, 1234),
+                              loc_ct=10)
+        test_stl = EncryptionSTL(movements_iterable=sameloc,
+                                 mo_count=10,
+                                 risk_thr=5,
+                                 area_sizes=(50, 50),
+                                 max_sizes=(3652, 3652),
+                                 degree=4,
+                                 cipher_modulus=1 << 600,
+                                 big_modulus=1 << 1200,
+                                 scaling_factor=1 << 30)
+        plain1 = test_stl._ga._evaluator.create_constant_plain(const=1)
+        test_stl._mos[0]._status[0] = test_stl._ga._encryptor.encrypt(plain=plain1)
+
+        for itercount in range(2):
+            test_stl.tick()
+            for mo in test_stl._mos[1:]:
+                for i in range(len(mo._scores)):
+                    decr_score = mo._GA._decryptor.decrypt(ciphertext=mo._scores[i])
+                    deco_score = mo._encoder.decode(plain=decr_score)
+                    self.assertLessEqual(abs(deco_score[0].real - (itercount + 1)), 1/165, "outside scoring no good")
 
 
 unittest.main()
