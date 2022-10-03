@@ -90,12 +90,6 @@ class SpaceTimeLord:
     ga = property(fget=get_ga)
 
     def tick(self):
-        for i in range(len(self._users)):
-            self._users[i].move_to(new_x=self._current_locations[i][0],
-                                   new_y=self._current_locations[i][1],
-                                   update_time=self._curr_time
-                                   )
-
         for i in range(self._mo_count):
             self._mos[i].tick()
 
@@ -107,6 +101,11 @@ class SpaceTimeLord:
                                                               self._current_locations[y])),
                                            range(len(self._current_locations))))
         self._curr_time += 1
+        for i in range(len(self._users)):
+            self._users[i].move_to(new_x=self._current_locations[i][0],
+                                   new_y=self._current_locations[i][1],
+                                   update_time=self._curr_time
+                                   )
 
 
 class EncryptionSTL:
@@ -207,12 +206,6 @@ class EncryptionSTL:
     ga = property(fget=get_ga)
 
     def tick(self):
-        for i in range(len(self._users)):
-            self._users[i].move_to(new_x=self._current_locations[i][0],
-                                   new_y=self._current_locations[i][1],
-                                   update_time=self._curr_time
-                                   )
-
         for i in range(self._mo_count):
             self._mos[i].tick()
 
@@ -224,3 +217,9 @@ class EncryptionSTL:
                                                               self._current_locations[y])),
                                            range(len(self._current_locations))))
         self._curr_time += 1
+        for i in range(self._usr_count):
+            self._users[i].move_to(new_x=self._current_locations[i][0],
+                                   new_y=self._current_locations[i][1],
+                                   update_time=self._curr_time
+                                   )
+
