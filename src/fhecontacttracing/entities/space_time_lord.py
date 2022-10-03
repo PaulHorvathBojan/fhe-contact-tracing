@@ -90,12 +90,6 @@ class SpaceTimeLord:
     ga = property(fget=get_ga)
 
     def tick(self):
-        self._current_locations = next(self._movements_iterable)
-        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
-                                                              self._current_locations[y])),
-                                           range(len(self._current_locations))))
-        self._curr_time += 1
-
         for i in range(len(self._users)):
             self._users[i].move_to(new_x=self._current_locations[i][0],
                                    new_y=self._current_locations[i][1],
@@ -107,6 +101,12 @@ class SpaceTimeLord:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+        self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time += 1
 
 
 class EncryptionSTL:
@@ -207,12 +207,6 @@ class EncryptionSTL:
     ga = property(fget=get_ga)
 
     def tick(self):
-        self._current_locations = next(self._movements_iterable)
-        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
-                                                              self._current_locations[y])),
-                                           range(len(self._current_locations))))
-        self._curr_time += 1
-
         for i in range(len(self._users)):
             self._users[i].move_to(new_x=self._current_locations[i][0],
                                    new_y=self._current_locations[i][1],
@@ -224,3 +218,9 @@ class EncryptionSTL:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+        self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time += 1

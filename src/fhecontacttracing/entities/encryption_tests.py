@@ -16,6 +16,7 @@ from ckks.ckks_evaluator import CKKSEvaluator
 from ckks.ckks_key_generator import CKKSKeyGenerator
 from ckks.ckks_parameters import CKKSParameters
 from gmpy2 import mpfr
+from numpy import random
 
 import util.matrix_operations as mat
 from tests.helper import check_complex_vector_approx_eq
@@ -1131,12 +1132,6 @@ class SpaceTimeLord:
     ga = property(fget=get_ga)
 
     def tick(self):
-        self._current_locations = next(self._movements_iterable)
-        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
-                                                              self._current_locations[y])),
-                                           range(len(self._current_locations))))
-        self._curr_time += 1
-
         for i in range(len(self._users)):
             self._users[i].move_to(new_x=self._current_locations[i][0],
                                    new_y=self._current_locations[i][1],
@@ -1148,6 +1143,12 @@ class SpaceTimeLord:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+        self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time += 1
 
 
 class EncryptionSTL:
@@ -1248,12 +1249,6 @@ class EncryptionSTL:
     ga = property(fget=get_ga)
 
     def tick(self):
-        self._current_locations = next(self._movements_iterable)
-        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
-                                                              self._current_locations[y])),
-                                           range(len(self._current_locations))))
-        self._curr_time += 1
-
         for i in range(len(self._users)):
             self._users[i].move_to(new_x=self._current_locations[i][0],
                                    new_y=self._current_locations[i][1],
@@ -1265,6 +1260,12 @@ class EncryptionSTL:
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+        self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time += 1
 
 
 
@@ -1367,1153 +1368,1264 @@ class EncryptionSTL:
 #             self.assertLessEqual(abs(eedd3[0].imag), 3e-9, "encode-encrypt-decrypt-decode pipeline no work")
 
 
-class EncryptedUserTest(unittest.TestCase):
-    def test_encodergetters(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        dummy_ga.new_encryption_suite()
-
-        dummy_mo = EncryptionMO(ga=dummy_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        test_user = EncryptedUser(init_x=12,
-                                  init_y=12,
-                                  mo=dummy_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        test_user._encoder = 5
-        self.assertEqual(test_user.get_encoder(), 5, "encoder getter not proper")
-        self.assertEqual(test_user.encoder, 5, "encoder property not proper")
-
-        test_user._encoder = dummy_ga.encoder
-        johnathan = dummy_ga.encoder
-        self.assertEqual(test_user.get_encoder(), johnathan, "encoder getter not proper")
-        self.assertEqual(test_user.encoder, johnathan, "encoder property not proper")
-
-        test_user._evaluator = 5
-        self.assertEqual(test_user.get_evaluator(), 5, "evaluator getter not proper")
-        self.assertEqual(test_user.evaluator, 5, "evaluator property not proper")
-
-        test_user._evaluator = dummy_ga.evaluator
-        johnathan = dummy_ga.evaluator
-        self.assertEqual(test_user.get_evaluator(), johnathan, "evaluator getter not proper")
-        self.assertEqual(test_user.evaluator, johnathan, "evaluator property not proper")
-
-        test_user._encryptor = 5
-        self.assertEqual(test_user.get_encryptor(), 5, "encryptor getter not proper")
-        self.assertEqual(test_user.encryptor, 5, "encryptor property not proper")
-
-        test_user._encryptor = dummy_ga.encryptor
-        johnathan = dummy_ga.encryptor
-        self.assertEqual(test_user.get_encryptor(), johnathan, "encryptor getter not proper")
-        self.assertEqual(test_user.encryptor, johnathan, "encryptor property not proper")
-
-        test_user._scaling_factor = 5
-        self.assertEqual(test_user.get_scaling_factor(), 5, "scaling_factor getter not proper")
-        self.assertEqual(test_user.scaling_factor, 5, "scaling_factor property not proper")
-
-        test_user._scaling_factor = dummy_ga.scaling_factor
-        johnathan = dummy_ga.scaling_factor
-        self.assertEqual(test_user.get_scaling_factor(), johnathan, "scaling_factor getter not proper")
-        self.assertEqual(test_user.scaling_factor, johnathan, "scaling_factor property not proper")
-
-        test_user._relin_key = 5
-        self.assertEqual(test_user.get_relin_key(), 5, "relin_key getter not proper")
-        self.assertEqual(test_user.relin_key, 5, "relin_key property not proper")
-
-        test_user._relin_key = dummy_ga.relin_key
-        johnathan = dummy_ga.relin_key
-        self.assertEqual(test_user.get_relin_key(), johnathan, "relin_key getter not proper")
-        self.assertEqual(test_user.relin_key, johnathan, "relin_key property not proper")
-
-        test_user._public_key = 5
-        self.assertEqual(test_user.get_public_key(), 5, "public_key getter not proper")
-        self.assertEqual(test_user.public_key, 5, "public_key property not proper")
-
-        test_user._public_key = dummy_ga.public_key
-        johnathan = dummy_ga.public_key
-        self.assertEqual(test_user.get_public_key(), johnathan, "public_key getter not proper")
-        self.assertEqual(test_user.public_key, johnathan, "public_key property not proper")
-
-    def test_scorefrommo(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        dummy_ga.new_encryption_suite()
-
-        dummy_mo = EncryptionMO(ga=dummy_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        test_user = EncryptedUser(init_x=12,
-                                  init_y=12,
-                                  mo=dummy_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        test_user.score_from_mo(score=dummy_mo._scores[0])
-        decr = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
-        deco = test_user._encoder.decode(plain=decr)
-        self.assertLessEqual(abs(deco[0].real), 3e-9, "score from mo no work")
-
-        test_user.score_from_mo(69)
-        self.assertEqual(test_user._encr_score, 69, "score from mo no work")
-
-    def test_decrscorefromga(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        dummy_ga.new_encryption_suite()
-
-        dummy_mo = EncryptionMO(ga=dummy_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        test_user = EncryptedUser(init_x=12,
-                                  init_y=12,
-                                  mo=dummy_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        plane = 1234.1234
-        encoplane = dummy_ga._encoder.encode(values=[complex(plane, 0)],
-                                             scaling_factor=dummy_ga._scaling_factor)
-        encrplane = dummy_ga._encryptor.encrypt(plain=encoplane)
-        test_user._encr_score = encrplane
-        test_user.decr_score_from_ga()
-        self.assertLessEqual(abs(plane - test_user._score), 3e-9, "decr score from ga no work")
-
-    def test_firsttimefhesetup(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        dummy_ga.new_encryption_suite()
-
-        dummy_mo = EncryptionMO(ga=dummy_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        test_user = EncryptedUser(init_x=12,
-                                  init_y=12,
-                                  mo=dummy_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
-        self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
-        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
-        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
-        self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
-        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
-        deco_score = dummy_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
-
-    def test_refreshkeys(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        dummy_ga.new_encryption_suite()
-
-        dummy_mo = EncryptionMO(ga=dummy_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        test_user = EncryptedUser(init_x=12,
-                                  init_y=12,
-                                  mo=dummy_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
-        self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
-        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
-        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
-        self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
-        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
-
-        dummy_ga.new_encryption_suite()
-
-        self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "refresh encryptor setter no work")
-        self.assertEqual(dummy_ga.encoder, test_user.encoder, "refresh encoder setter no work")
-        self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "refresh scaling_factor setter no work")
-        self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "refresh relin_key setter no work")
-        self.assertEqual(dummy_ga.public_key, test_user.public_key, "refresh public_key setter no work")
-        self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "refresh evaluator setter no work")
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
-        deco_score = dummy_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
-
-
-class EncryptionMOTest(unittest.TestCase):
-    def test_suitegetters(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
-        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
-
-        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
-        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
-
-        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
-        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
-
-        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
-        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
-
-        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
-        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
-
-        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
-        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
-
-    def test_firsttimesetup(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
-        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
-
-        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
-        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
-
-        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
-        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
-
-        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
-        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
-
-        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
-        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
-
-        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
-        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
-
-        self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
-        self.assertEqual(test_mo._status, [], "status list not initialized to empty")
-
-    def test_keyrefresh(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
-        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
-
-        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
-        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
-
-        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
-        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
-
-        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
-        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
-
-        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
-        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
-
-        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
-        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
-
-        dummy_ga.new_encryption_suite()
-
-        self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
-        self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
-
-        self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
-        self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
-
-        self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
-        self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
-
-        self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
-        self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
-
-        self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
-        self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
-
-        self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
-        self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
-
-        self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
-        self.assertEqual(test_mo._status, [], "status list not initialized to empty")
-
-    def test_useraddition(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 300,
-                                      big_modulus=1 << 1200,
-                                      scaling_factor=1 << 30)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        dummy_user = EncryptedUser(init_x=5,
-                                   init_y=5,
-                                   mo=test_mo,
-                                   uid=0,
-                                   ga=dummy_ga)
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
-        deco_score = dummy_ga._encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score not proper")
-
-        decr_status = dummy_ga._decryptor.decrypt(ciphertext=test_mo._status[0])
-        deco_status = dummy_ga._encoder.decode(plain=decr_status)
-        self.assertLessEqual(abs(deco_status[0].real), 3e-9, "initial status not proper")
-
-        test_mo._scores[0] = 14
-        self.assertNotEqual(test_mo._status[0], 14, "score and status lists pointwise same object")
-
-    # Commented because it takes a lot:
-    # def test_plainencrlocscore(self):
-    #     dummy_ga = EncryptionGovAgent(risk_threshold=5,
-    #                                   degree=2,
-    #                                   cipher_modulus=1 << 600,
-    #                                   big_modulus=1 << 2400,
-    #                                   scaling_factor=1 << 30)
-    #
-    #     test_mo = EncryptionMO(ga=dummy_ga,
-    #                            mo_id=0,
-    #                            area_side_x=50,
-    #                            area_side_y=50,
-    #                            max_x=3652,
-    #                            max_y=3652)
-    #
-    #     for x in range(test_mo._area_side_x):
-    #         for y in range(test_mo._area_side_y):
-    #             init_randx = random.randint(-test_mo._area_side_x, test_mo._area_side_x)
-    #             init_randy = random.randint(-test_mo._area_side_y, test_mo._area_side_y)
-    #
-    #             randareax = random.randint(0, 73)
-    #             randareay = random.randint(0, 73)
-    #
-    #             aux_x = x + test_mo._area_side_x * randareax
-    #             aux_y = y + test_mo._area_side_y * randareay
-    #             test_mo._curr_locations.append((aux_x, aux_y))
-    #
-    #             randx = test_mo._area_side_x * randareax + init_randx
-    #             randy = test_mo._area_side_y * randareay + init_randy
-    #
-    #             encox = test_mo._evaluator.create_constant_plain(const=randx)
-    #             encoy = test_mo._evaluator.create_constant_plain(const=randy)
-    #
-    #             encrx = test_mo._encryptor.encrypt(plain=encox)
-    #             encry = test_mo._encryptor.encrypt(plain=encoy)
-    #
-    #             actual = round((1 - ((aux_x - randx) ** 2 + (aux_y - randy) ** 2) / test_mo.L_max ** 2) ** 2048, 10)
-    #             encr_val = test_mo.plain_encr_location_pair_contact_score(plain_location=test_mo._curr_locations[-1],
-    #                                                                       encr_location=(encrx, encry))
-    #
-    #             decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
-    #             deco_val = dummy_ga._encoder.decode(plain=decr_val)
-    #
-    #             self.assertLessEqual(abs(deco_val[0].real - actual), 2.49e-6,
-    #                                  "plain encr location score routine no work " + str(x - init_randx) + " " + str(
-    #                                      y - init_randy))
-
-    def test_rcvdatafrommo(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 1200,
-                                      big_modulus=1 << 2400,
-                                      scaling_factor=1 << 20)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        status = [1, 1, 1, 1, 1, 1]
-        encr_status = []
-        for sts in status:
-            plain = test_mo._evaluator.create_constant_plain(const=sts)
-            aux_status = test_mo._encryptor.encrypt(plain=plain)
-            encr_status.append(aux_status)
-
-        locs = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
-        encr_locs = []
-        for loc in locs:
-            x = loc[0]
-            y = loc[1]
-
-            encox = test_mo._evaluator.create_constant_plain(const=x)
-            encoy = test_mo._evaluator.create_constant_plain(const=y)
-
-            encrx = test_mo._encryptor.encrypt(plain=encox)
-            encry = test_mo._encryptor.encrypt(plain=encoy)
-
-            encr_locs.append((encrx, encry))
-
-        areas = []
-        for loc in locs:
-            areas.append(test_mo.assign_area(loc_tuple=loc))
-
-        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
-        test_mo._curr_locations.append((0, 0))
-        test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
-        for area_tup in test_mo._curr_areas_by_user:
-            test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
-
-        test_mo.rcv_data_from_mo(loc_list=encr_locs,
-                                 area_list=areas,
-                                 sts_list=encr_status)
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
-        deco_score = dummy_ga._encoder.decode(plain=decr_score)
-
-        self.assertLessEqual(abs(deco_score[0].real - 6), 1 / 163, "rcv score from mo no work")
-
-    def test_datatomo(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 1200,
-                                      big_modulus=1 << 2400,
-                                      scaling_factor=1 << 20)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-
-        alt_mo = EncryptionMO(ga=dummy_ga,
-                              mo_id=1,
-                              area_side_x=50,
-                              area_side_y=50,
-                              max_x=3652,
-                              max_y=3652)
-
-        users = []
-        for i in range(6):
-            users.append(EncryptedUser(init_x=0,
-                                       init_y=0,
-                                       mo=alt_mo,
-                                       uid=i,
-                                       ga=dummy_ga)
-                         )
-
-        status = [1, 1, 1, 1, 1, 1]
-        for i in range(len(status)):
-            plain = alt_mo._evaluator.create_constant_plain(const=status[i])
-            aux_status = alt_mo._encryptor.encrypt(plain=plain)
-            alt_mo._status[i] = aux_status
-
-        test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
-        test_mo._curr_locations.append((0, 0))
-        test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
-        for area_tup in test_mo._curr_areas_by_user:
-            test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
-
-        alt_mo.send_data_to_mo(other_mo=test_mo)
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
-        deco_score = dummy_ga._encoder.decode(plain=decr_score)
-
-        self.assertLessEqual(abs(deco_score[0].real - 6), 1 / 163, "send data to mo no work")
-
-    def test_insidescoring(self):
-        dummy_ga = EncryptionGovAgent(risk_threshold=5,
-                                      degree=2,
-                                      cipher_modulus=1 << 1200,
-                                      big_modulus=1 << 2400,
-                                      scaling_factor=1 << 20)
-
-        test_mo = EncryptionMO(ga=dummy_ga,
-                               mo_id=0,
-                               area_side_x=50,
-                               area_side_y=50,
-                               max_x=3652,
-                               max_y=3652)
-        init_user = EncryptedUser(init_x=0,
-                                  init_y=0,
-                                  mo=test_mo,
-                                  uid=0,
-                                  ga=dummy_ga)
-
-        users = [init_user]
-        for i in range(6):
-            users.append(EncryptedUser(init_x=0,
-                                       init_y=0,
-                                       mo=test_mo,
-                                       uid=i + 1,
-                                       ga=dummy_ga)
-                         )
-
-        status = [1, 1, 1, 1, 1, 1]
-        for i in range(len(status)):
-            plain = test_mo._evaluator.create_constant_plain(const=status[i])
-            aux_status = test_mo._encryptor.encrypt(plain=plain)
-            test_mo._status[i + 1] = aux_status
-
-        test_mo.inside_scoring()
-
-        decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
-        deco_score = dummy_ga._encoder.decode(plain=decr_score)
-
-        # self.assertLessEqual(abs(deco_score[0].real - 6), 1/163, "inside scoring no work" + str(deco_score[0].real))
-
-        for i in range(6):
-            decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[i + 1])
-            deco_score = dummy_ga._encoder.decode(plain=decr_score)
-
-            self.assertLessEqual(abs(deco_score[0].real - 5), 1 / 163, "inside scoring no work" + str(i + 1))
-
-
-class EncryptionGATest(unittest.TestCase):
-
-    def test_init(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=2,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        self.assertEqual(test_ga._users, [], "init user list no good")
-
-        self.assertEqual(test_ga._scaling_factor, 1 << 30, "init scaling factor no good")
-
-        self.assertEqual(test_ga._ckks_params.poly_degree, 2, "init params poly degree no good")
-        self.assertEqual(test_ga._ckks_params.ciph_modulus, 1 << 300, "init params cipher modulus no good")
-        self.assertEqual(test_ga._ckks_params.big_modulus, 1 << 1200, "init params big modulus no good")
-        self.assertEqual(test_ga._ckks_params.scaling_factor, 1 << 30, "init params scaling factor no good")
-        self.assertEqual(test_ga._ckks_params.num_taylor_iterations, 6, "init params num taylor iterations no good")
-        self.assertEqual(test_ga._ckks_params.hamming_weight, 0, "init params hamming weight no good")
-
-        self.assertEqual(test_ga._key_generator.params, test_ga._ckks_params, "init keygen params no good")
-
-        self.assertEqual(test_ga._public_key, test_ga._key_generator.public_key, "init pk no good")
-
-        self.assertEqual(test_ga._secret_key, test_ga._key_generator.secret_key, "init sk no good")
-
-        self.assertEqual(test_ga._relin_key, test_ga._key_generator.relin_key, "init relin key no good")
-
-        self.assertEqual(test_ga._encoder.degree, 2, "init encoder degree no good")
-
-        self.assertEqual(test_ga._encryptor.poly_degree, 2, "init encryptor poly degree no good")
-        self.assertEqual(test_ga._encryptor.coeff_modulus, 1 << 300, "init encryptor coeff mod no good")
-        self.assertEqual(test_ga._encryptor.big_modulus, 1 << 1200, "init encryptor big modulus no good")
-        self.assertEqual(test_ga._encryptor.crt_context, test_ga._ckks_params.crt_context,
-                         "init encryptor crt context no good")
-        self.assertEqual(test_ga._encryptor.public_key, test_ga._public_key, "init encryptor pk no good")
-        self.assertEqual(test_ga._encryptor.secret_key, test_ga._secret_key, "init encryptor sk no good")
-
-        self.assertEqual(test_ga._decryptor.poly_degree, 2, "init decryptor poly degree no good")
-        self.assertEqual(test_ga._decryptor.crt_context, test_ga._ckks_params.crt_context,
-                         "init decryptor crt context no good")
-        self.assertEqual(test_ga._decryptor.secret_key, test_ga._secret_key, "init decryptor secret key no good")
-
-        self.assertEqual(test_ga._evaluator.degree, 2, "init evaluator poly degree no good")
-        self.assertEqual(test_ga._evaluator.big_modulus, 1 << 1200, "init evaluator big modulus no good")
-        self.assertEqual(test_ga._evaluator.scaling_factor, 1 << 30, "init evaluator scaling factor no good")
-        self.assertEqual(test_ga._evaluator.crt_context, test_ga._ckks_params.crt_context,
-                         "init evaluator crt context no good")
-
-    def test_getters(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=2,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        self.assertEqual(test_ga.get_scaling_factor(), 1 << 30, "init scaling factor getter no good")
-        self.assertEqual(test_ga.scaling_factor, 1 << 30, "init scaling factor property no good")
-
-        self.assertTrue(isinstance(test_ga.get_public_key(), PublicKey), "init public key getter no good")
-        self.assertTrue(isinstance(test_ga.public_key, PublicKey), "init public key property no good")
-
-        self.assertTrue(isinstance(test_ga.get_relin_key(), PublicKey), "init relin key getter no good")
-        self.assertTrue(isinstance(test_ga.relin_key, PublicKey), "init relin key property no good")
-
-        self.assertTrue(isinstance(test_ga.get_encoder(), CKKSEncoder), "init encoder getter wrong type")
-        self.assertTrue(isinstance(test_ga.encoder, CKKSEncoder), "init encoder property wrong type")
-
-        self.assertTrue(isinstance(test_ga.get_encryptor(), CKKSEncryptor), "init encryptor getter wrong type")
-        self.assertTrue(isinstance(test_ga.encryptor, CKKSEncryptor), "init encryptor property wrong type")
-
-        self.assertTrue(isinstance(test_ga.get_evaluator(), CKKSEvaluator), "init evaluator getter wrong type")
-        self.assertTrue(isinstance(test_ga.evaluator, CKKSEvaluator), "init evaluator property wrong type")
-
-        test_ga._scaling_factor = 5
-        self.assertEqual(test_ga.get_scaling_factor(), 5, "scaling factor getter no good")
-        self.assertEqual(test_ga.scaling_factor, 5, "scaling factor property no good")
-
-        test_ga._public_key = 5
-        self.assertEqual(test_ga.get_public_key(), 5, "pk getter no good")
-        self.assertEqual(test_ga.public_key, 5, "pk property no good")
-
-        test_ga._relin_key = 5
-        self.assertEqual(test_ga.get_relin_key(), 5, "relin key getter no good")
-        self.assertEqual(test_ga.relin_key, 5, "relin key property no good")
-
-        test_ga._encoder = 5
-        self.assertEqual(test_ga.get_encoder(), 5, "encoder getter no good")
-        self.assertEqual(test_ga.encoder, 5, "encoder property no good")
-
-        test_ga._encryptor = 5
-        self.assertEqual(test_ga.get_encryptor(), 5, "encryptor getter no good")
-        self.assertEqual(test_ga.encryptor, 5, "encryptor property no good")
-
-        test_ga._evaluator = 5
-        self.assertEqual(test_ga.get_evaluator(), 5, "evaluator getter no good")
-        self.assertEqual(test_ga.evaluator, 5, "evaluator property no good")
-
-    def test_addmo(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=2,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        dummy_mo = EncryptionMO(ga=test_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        self.assertEqual(test_ga._MOs, [dummy_mo], "add mo not properly accessing super class")
-
-        self.assertEqual(dummy_mo.get_encryptor(), test_ga._encryptor, "encryptor getter no work")
-        self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor property no work")
-
-        self.assertEqual(dummy_mo.get_encoder(), test_ga._encoder, "encoder getter no work")
-        self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder property no work")
-
-        self.assertEqual(dummy_mo.get_scaling_factor(), test_ga._scaling_factor, "scaling factor getter no work")
-        self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor, "scaling factor property no work")
-
-        self.assertEqual(dummy_mo.get_relin_key(), test_ga._relin_key, "relin key getter no work")
-        self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key property no work")
-
-        self.assertEqual(dummy_mo.get_public_key(), test_ga._public_key, "public key getter no work")
-        self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key property no work")
-
-        self.assertEqual(dummy_mo.get_evaluator(), test_ga._evaluator, "evaluator getter no work")
-        self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator property no work")
-
-        self.assertEqual(dummy_mo._scores, [], "score list not initialized to empty")
-        self.assertEqual(dummy_mo._status, [], "status list not initialized to empty")
-
-    def test_adduser(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=2,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        dummy_mo = EncryptionMO(ga=test_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        dummy_user = EncryptedUser(init_x=0,
-                                   init_y=0,
-                                   mo=dummy_mo,
-                                   uid=0,
-                                   ga=test_ga)
-
-        self.assertEqual(test_ga._users, [dummy_user], "add user not properly calling method in super class")
-
-        self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "first time encryptor setter no work")
-        self.assertEqual(test_ga.encoder, dummy_user.encoder, "first time encoder setter no work")
-        self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor, "first time scaling_factor setter no work")
-        self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "first time relin_key setter no work")
-        self.assertEqual(test_ga.public_key, dummy_user.public_key, "first time public_key setter no work")
-        self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "first time evaluator setter no work")
-
-        decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
-        deco_score = test_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
-
-    def test_fhesuitedistrib(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=2,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        dummy_mo = EncryptionMO(ga=test_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        dummy_user = EncryptedUser(init_x=0,
-                                   init_y=0,
-                                   mo=dummy_mo,
-                                   uid=0,
-                                   ga=test_ga)
-
-        self.assertEqual(test_ga._MOs, [dummy_mo], "add mo not properly accessing GA super class")
-        self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor not initialized properly in MO")
-        self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder not initialized properly in MO")
-        self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor,
-                         "scaling factor not initialized properly in MO")
-        self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key not initialized properly in MO")
-        self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key not initialized properly in MO")
-        self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator not initialized properly in MO")
-        self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._scores[0]))[0].real),
-                             3e-9,
-                             "score of initial user not properly encrypted and appended to list in MO")
-        self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._status[0]))[0].real),
-                             3e-9,
-                             "status of initial user not properly encrypted and appended to list in MO")
-
-        self.assertEqual(test_ga._users, [dummy_user], "add user not properly calling method in super class")
-        self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "first time encryptor setter no work in user")
-        self.assertEqual(test_ga.encoder, dummy_user.encoder, "first time encoder setter no work in user")
-        self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor,
-                         "first time scaling_factor setter no work in user")
-        self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "first time relin_key setter no work in user")
-        self.assertEqual(test_ga.public_key, dummy_user.public_key, "first time public_key setter no work in user")
-        self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "first time evaluator setter no work in user")
-
-        decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
-        deco_score = test_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "improper initial score encryption in user")
-
-        test_ga.new_encryption_suite()
-
-        self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor in MO not proper after suite change")
-        self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder in MO not proper after suite change")
-        self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor,
-                         "scaling factor in MO not proper after suite change")
-        self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key in MO not proper after suite change")
-        self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key in MO not proper after suite change")
-        self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator in MO not proper after suite change")
-        self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._scores[0]))[0].real),
-                             3e-9,
-                             "scores after suite change not proper in MO")
-        self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._status[0]))[0].real),
-                             3e-9,
-                             "status after suite change not proper in MO")
-
-        self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "encryptor in user not proper after suite change")
-        self.assertEqual(test_ga.encoder, dummy_user.encoder, "encoder in user not proper after suite change")
-        self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor,
-                         "scaling_factor in user not proper after suite change")
-        self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "relin_key in user not proper after suite change")
-        self.assertEqual(test_ga.public_key, dummy_user.public_key, "public_key in user not proper after suite change")
-        self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "evaluator in user not proper after suite change")
-
-        decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
-        deco_score = test_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real), 3e-9, "encrypted score in user not proper after suite change")
-
-        nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
-        dummy_user._encr_score = nineteenseventy
-
-        test_ga.new_encryption_suite()
-        decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
-        deco_score = test_ga.encoder.decode(plain=decr_score)
-        self.assertLessEqual(abs(deco_score[0].real - 1970),
-                             3e-9,
-                             "encrypted nonzero score in user not proper after suite change")
-
-    def test_rcvscores(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=4,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        dummy_mo = EncryptionMO(ga=test_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        users = []
-        for i in range(10):
-            users.append(EncryptedUser(init_x=0,
-                                       init_y=0,
-                                       mo=dummy_mo,
-                                       uid=i,
-                                       ga=test_ga))
-
-            enco_score = dummy_mo._evaluator.create_constant_plain(const=14 + i)
-            aux_score = dummy_mo._encryptor.encrypt(plain=enco_score)
-            dummy_mo._scores[i] = aux_score
-
-        dummy_mo.to_ga_comm()
-
-        self.assertEqual(len(test_ga._users), 10, "users not properly added to GA user list on creation")
-
-        for i in range(10):
-            self.assertEqual(users[i]._risk, 1, "user risk not properly updated at " + str(i))
-            self.assertLessEqual(abs(test_ga._scores[i] - i - 14), 7.9e-9,
-                                 "score not translated properly to GA at " + str(i))
-
-    def test_daily(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=4,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        mos = []
-
-        for i in range(10):
-            mos.append(EncryptionMO(ga=test_ga,
-                                    mo_id=i,
-                                    area_side_x=50,
-                                    area_side_y=50,
-                                    max_x=3652,
-                                    max_y=3652)
-                       )
-
-        users = []
-
-        for i in range(100):
-            users.append(EncryptedUser(init_x=0,
-                                       init_y=0,
-                                       mo=mos[i % 10],
-                                       uid=i,
-                                       ga=test_ga))
-
-        for i in range(len(mos)):
-            for it in range(len(mos[i]._scores)):
-                aux_score = mos[i]._evaluator.create_constant_plain(const=math.sqrt(mos[i]._users[it]._uID))
-                mos[i]._scores[it] = mos[i]._encryptor.encrypt(plain=aux_score)
-
-        for i in range(len(users)):
-            test_ga._status[i] = users[i].uID
-
-        test_ga._status[45] = 0
-
-        test_ga.daily()
-
-        for i in range(len(mos)):
-            for it in range(len(mos[i]._status)):
-                aux_sts = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[it])
-                deco_sts = mos[i]._encoder.decode(plain=aux_sts)[0].real
-                if mos[i]._users[it].uID != 45:
-                    self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 7.9e-9,
-                                         "status not updated properly in MO at " + str(i) + " " + str(
-                                             mos[i]._users[it].uID))
-
-        for i in range(len(users)):
-            self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 7.9e-9,
-                                 "score not updated properly in GA at " + str(i))
-            self.assertEqual(users[i]._risk == 1, i == 45, "risk status not updated properly at " + str(i))
-
-    def test_scorereq(self):
-        test_ga = EncryptionGovAgent(risk_threshold=5,
-                                     degree=4,
-                                     cipher_modulus=1 << 300,
-                                     big_modulus=1 << 1200,
-                                     scaling_factor=1 << 30)
-
-        dummy_mo = EncryptionMO(ga=test_ga,
-                                mo_id=0,
-                                area_side_x=50,
-                                area_side_y=50,
-                                max_x=3652,
-                                max_y=3652)
-
-        dummy_user = EncryptedUser(init_x=0,
-                                   init_y=0,
-                                   mo=dummy_mo,
-                                   uid=0,
-                                   ga=test_ga)
-
-        self.assertEqual(dummy_user._score, 0, "initial score in user not 0")
-        score_val = test_ga._encoder.decode(plain=test_ga._decryptor.decrypt(ciphertext=dummy_user._encr_score))[0].real
-        self.assertLessEqual(abs(score_val), 7.9e-9, "initial encrypted score not 0")
-
-        nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
-        dummy_user._encr_score = nineteenseventy
-        dummy_user.decr_score_from_ga()
-
-        self.assertLessEqual(abs(dummy_user._score - 1970), 7.9e-9, "plaintext score not properly updated in user")
+# class EncryptedUserTest(unittest.TestCase):
+#     def test_encodergetters(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         dummy_mo = EncryptionMO(ga=dummy_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         test_user = EncryptedUser(init_x=12,
+#                                   init_y=12,
+#                                   mo=dummy_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         test_user._encoder = 5
+#         self.assertEqual(test_user.get_encoder(), 5, "encoder getter not proper")
+#         self.assertEqual(test_user.encoder, 5, "encoder property not proper")
+#
+#         test_user._encoder = dummy_ga.encoder
+#         johnathan = dummy_ga.encoder
+#         self.assertEqual(test_user.get_encoder(), johnathan, "encoder getter not proper")
+#         self.assertEqual(test_user.encoder, johnathan, "encoder property not proper")
+#
+#         test_user._evaluator = 5
+#         self.assertEqual(test_user.get_evaluator(), 5, "evaluator getter not proper")
+#         self.assertEqual(test_user.evaluator, 5, "evaluator property not proper")
+#
+#         test_user._evaluator = dummy_ga.evaluator
+#         johnathan = dummy_ga.evaluator
+#         self.assertEqual(test_user.get_evaluator(), johnathan, "evaluator getter not proper")
+#         self.assertEqual(test_user.evaluator, johnathan, "evaluator property not proper")
+#
+#         test_user._encryptor = 5
+#         self.assertEqual(test_user.get_encryptor(), 5, "encryptor getter not proper")
+#         self.assertEqual(test_user.encryptor, 5, "encryptor property not proper")
+#
+#         test_user._encryptor = dummy_ga.encryptor
+#         johnathan = dummy_ga.encryptor
+#         self.assertEqual(test_user.get_encryptor(), johnathan, "encryptor getter not proper")
+#         self.assertEqual(test_user.encryptor, johnathan, "encryptor property not proper")
+#
+#         test_user._scaling_factor = 5
+#         self.assertEqual(test_user.get_scaling_factor(), 5, "scaling_factor getter not proper")
+#         self.assertEqual(test_user.scaling_factor, 5, "scaling_factor property not proper")
+#
+#         test_user._scaling_factor = dummy_ga.scaling_factor
+#         johnathan = dummy_ga.scaling_factor
+#         self.assertEqual(test_user.get_scaling_factor(), johnathan, "scaling_factor getter not proper")
+#         self.assertEqual(test_user.scaling_factor, johnathan, "scaling_factor property not proper")
+#
+#         test_user._relin_key = 5
+#         self.assertEqual(test_user.get_relin_key(), 5, "relin_key getter not proper")
+#         self.assertEqual(test_user.relin_key, 5, "relin_key property not proper")
+#
+#         test_user._relin_key = dummy_ga.relin_key
+#         johnathan = dummy_ga.relin_key
+#         self.assertEqual(test_user.get_relin_key(), johnathan, "relin_key getter not proper")
+#         self.assertEqual(test_user.relin_key, johnathan, "relin_key property not proper")
+#
+#         test_user._public_key = 5
+#         self.assertEqual(test_user.get_public_key(), 5, "public_key getter not proper")
+#         self.assertEqual(test_user.public_key, 5, "public_key property not proper")
+#
+#         test_user._public_key = dummy_ga.public_key
+#         johnathan = dummy_ga.public_key
+#         self.assertEqual(test_user.get_public_key(), johnathan, "public_key getter not proper")
+#         self.assertEqual(test_user.public_key, johnathan, "public_key property not proper")
+#
+#     def test_scorefrommo(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         dummy_mo = EncryptionMO(ga=dummy_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         test_user = EncryptedUser(init_x=12,
+#                                   init_y=12,
+#                                   mo=dummy_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         test_user.score_from_mo(score=dummy_mo._scores[0])
+#         decr = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+#         deco = test_user._encoder.decode(plain=decr)
+#         self.assertLessEqual(abs(deco[0].real), 3e-9, "score from mo no work")
+#
+#         test_user.score_from_mo(69)
+#         self.assertEqual(test_user._encr_score, 69, "score from mo no work")
+#
+#     def test_decrscorefromga(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         dummy_mo = EncryptionMO(ga=dummy_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         test_user = EncryptedUser(init_x=12,
+#                                   init_y=12,
+#                                   mo=dummy_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         plane = 1234.1234
+#         encoplane = dummy_ga._encoder.encode(values=[complex(plane, 0)],
+#                                              scaling_factor=dummy_ga._scaling_factor)
+#         encrplane = dummy_ga._encryptor.encrypt(plain=encoplane)
+#         test_user._encr_score = encrplane
+#         test_user.decr_score_from_ga()
+#         self.assertLessEqual(abs(plane - test_user._score), 3e-9, "decr score from ga no work")
+#
+#     def test_firsttimefhesetup(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         dummy_mo = EncryptionMO(ga=dummy_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         test_user = EncryptedUser(init_x=12,
+#                                   init_y=12,
+#                                   mo=dummy_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
+#         self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
+#         self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
+#         self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
+#         self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
+#         self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+#         deco_score = dummy_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
+#
+#     def test_refreshkeys(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         dummy_mo = EncryptionMO(ga=dummy_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         test_user = EncryptedUser(init_x=12,
+#                                   init_y=12,
+#                                   mo=dummy_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "first time encryptor setter no work")
+#         self.assertEqual(dummy_ga.encoder, test_user.encoder, "first time encoder setter no work")
+#         self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "first time scaling_factor setter no work")
+#         self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "first time relin_key setter no work")
+#         self.assertEqual(dummy_ga.public_key, test_user.public_key, "first time public_key setter no work")
+#         self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "first time evaluator setter no work")
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         self.assertEqual(dummy_ga.encryptor, test_user.encryptor, "refresh encryptor setter no work")
+#         self.assertEqual(dummy_ga.encoder, test_user.encoder, "refresh encoder setter no work")
+#         self.assertEqual(dummy_ga.scaling_factor, test_user.scaling_factor, "refresh scaling_factor setter no work")
+#         self.assertEqual(dummy_ga.relin_key, test_user.relin_key, "refresh relin_key setter no work")
+#         self.assertEqual(dummy_ga.public_key, test_user.public_key, "refresh public_key setter no work")
+#         self.assertEqual(dummy_ga.evaluator, test_user.evaluator, "refresh evaluator setter no work")
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_user.encr_score)
+#         deco_score = dummy_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
+#
+#
+# class EncryptionMOTest(unittest.TestCase):
+#     def test_suitegetters(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+#         self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+#
+#         self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+#         self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+#
+#         self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+#         self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+#
+#         self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+#         self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+#
+#         self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+#         self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+#
+#         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+#         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+#
+#     def test_firsttimesetup(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+#         self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+#
+#         self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+#         self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+#
+#         self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+#         self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+#
+#         self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+#         self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+#
+#         self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+#         self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+#
+#         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+#         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+#
+#         self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
+#         self.assertEqual(test_mo._status, [], "status list not initialized to empty")
+#
+#     def test_keyrefresh(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+#         self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+#
+#         self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+#         self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+#
+#         self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+#         self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+#
+#         self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+#         self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+#
+#         self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+#         self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+#
+#         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+#         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+#
+#         dummy_ga.new_encryption_suite()
+#
+#         self.assertEqual(test_mo.get_encryptor(), dummy_ga._encryptor, "encryptor getter no work")
+#         self.assertEqual(test_mo.encryptor, dummy_ga._encryptor, "encryptor property no work")
+#
+#         self.assertEqual(test_mo.get_encoder(), dummy_ga._encoder, "encoder getter no work")
+#         self.assertEqual(test_mo.encoder, dummy_ga._encoder, "encoder property no work")
+#
+#         self.assertEqual(test_mo.get_scaling_factor(), dummy_ga._scaling_factor, "scaling factor getter no work")
+#         self.assertEqual(test_mo.scaling_factor, dummy_ga._scaling_factor, "scaling factor property no work")
+#
+#         self.assertEqual(test_mo.get_relin_key(), dummy_ga._relin_key, "relin key getter no work")
+#         self.assertEqual(test_mo.relin_key, dummy_ga._relin_key, "relin key property no work")
+#
+#         self.assertEqual(test_mo.get_public_key(), dummy_ga._public_key, "public key getter no work")
+#         self.assertEqual(test_mo.public_key, dummy_ga._public_key, "public key property no work")
+#
+#         self.assertEqual(test_mo.get_evaluator(), dummy_ga._evaluator, "evaluator getter no work")
+#         self.assertEqual(test_mo.evaluator, dummy_ga._evaluator, "evaluator property no work")
+#
+#         self.assertEqual(test_mo._scores, [], "score list not initialized to empty")
+#         self.assertEqual(test_mo._status, [], "status list not initialized to empty")
+#
+#     def test_useraddition(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 300,
+#                                       big_modulus=1 << 1200,
+#                                       scaling_factor=1 << 30)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         dummy_user = EncryptedUser(init_x=5,
+#                                    init_y=5,
+#                                    mo=test_mo,
+#                                    uid=0,
+#                                    ga=dummy_ga)
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+#         deco_score = dummy_ga._encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score not proper")
+#
+#         decr_status = dummy_ga._decryptor.decrypt(ciphertext=test_mo._status[0])
+#         deco_status = dummy_ga._encoder.decode(plain=decr_status)
+#         self.assertLessEqual(abs(deco_status[0].real), 3e-9, "initial status not proper")
+#
+#         test_mo._scores[0] = 14
+#         self.assertNotEqual(test_mo._status[0], 14, "score and status lists pointwise same object")
+#
+#     # Commented because it takes a lot:
+#     # def test_plainencrlocscore(self):
+#     #     dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#     #                                   degree=2,
+#     #                                   cipher_modulus=1 << 600,
+#     #                                   big_modulus=1 << 2400,
+#     #                                   scaling_factor=1 << 30)
+#     #
+#     #     test_mo = EncryptionMO(ga=dummy_ga,
+#     #                            mo_id=0,
+#     #                            area_side_x=50,
+#     #                            area_side_y=50,
+#     #                            max_x=3652,
+#     #                            max_y=3652)
+#     #
+#     #     for x in range(test_mo._area_side_x):
+#     #         for y in range(test_mo._area_side_y):
+#     #             init_randx = random.randint(-test_mo._area_side_x, test_mo._area_side_x)
+#     #             init_randy = random.randint(-test_mo._area_side_y, test_mo._area_side_y)
+#     #
+#     #             randareax = random.randint(0, 73)
+#     #             randareay = random.randint(0, 73)
+#     #
+#     #             aux_x = x + test_mo._area_side_x * randareax
+#     #             aux_y = y + test_mo._area_side_y * randareay
+#     #             test_mo._curr_locations.append((aux_x, aux_y))
+#     #
+#     #             randx = test_mo._area_side_x * randareax + init_randx
+#     #             randy = test_mo._area_side_y * randareay + init_randy
+#     #
+#     #             encox = test_mo._evaluator.create_constant_plain(const=randx)
+#     #             encoy = test_mo._evaluator.create_constant_plain(const=randy)
+#     #
+#     #             encrx = test_mo._encryptor.encrypt(plain=encox)
+#     #             encry = test_mo._encryptor.encrypt(plain=encoy)
+#     #
+#     #             actual = round((1 - ((aux_x - randx) ** 2 + (aux_y - randy) ** 2) / test_mo.L_max ** 2) ** 2048, 10)
+#     #             encr_val = test_mo.plain_encr_location_pair_contact_score(plain_location=test_mo._curr_locations[-1],
+#     #                                                                       encr_location=(encrx, encry))
+#     #
+#     #             decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
+#     #             deco_val = dummy_ga._encoder.decode(plain=decr_val)
+#     #
+#     #             self.assertLessEqual(abs(deco_val[0].real - actual), 2.49e-6,
+#     #                                  "plain encr location score routine no work " + str(x - init_randx) + " " + str(
+#     #                                      y - init_randy))
+#
+#     def test_rcvdatafrommo(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 1200,
+#                                       big_modulus=1 << 2400,
+#                                       scaling_factor=1 << 20)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         status = [1, 1, 1, 1, 1, 1]
+#         encr_status = []
+#         for sts in status:
+#             plain = test_mo._evaluator.create_constant_plain(const=sts)
+#             aux_status = test_mo._encryptor.encrypt(plain=plain)
+#             encr_status.append(aux_status)
+#
+#         locs = [(0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0)]
+#         encr_locs = []
+#         for loc in locs:
+#             x = loc[0]
+#             y = loc[1]
+#
+#             encox = test_mo._evaluator.create_constant_plain(const=x)
+#             encoy = test_mo._evaluator.create_constant_plain(const=y)
+#
+#             encrx = test_mo._encryptor.encrypt(plain=encox)
+#             encry = test_mo._encryptor.encrypt(plain=encoy)
+#
+#             encr_locs.append((encrx, encry))
+#
+#         areas = []
+#         for loc in locs:
+#             areas.append(test_mo.assign_area(loc_tuple=loc))
+#
+#         test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
+#         test_mo._curr_locations.append((0, 0))
+#         test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
+#         for area_tup in test_mo._curr_areas_by_user:
+#             test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
+#
+#         test_mo.rcv_data_from_mo(loc_list=encr_locs,
+#                                  area_list=areas,
+#                                  sts_list=encr_status)
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+#         deco_score = dummy_ga._encoder.decode(plain=decr_score)
+#
+#         self.assertLessEqual(abs(deco_score[0].real - 6), 1 / 163, "rcv score from mo no work")
+#
+#     def test_datatomo(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 1200,
+#                                       big_modulus=1 << 2400,
+#                                       scaling_factor=1 << 20)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#
+#         alt_mo = EncryptionMO(ga=dummy_ga,
+#                               mo_id=1,
+#                               area_side_x=50,
+#                               area_side_y=50,
+#                               max_x=3652,
+#                               max_y=3652)
+#
+#         users = []
+#         for i in range(6):
+#             users.append(EncryptedUser(init_x=0,
+#                                        init_y=0,
+#                                        mo=alt_mo,
+#                                        uid=i,
+#                                        ga=dummy_ga)
+#                          )
+#
+#         status = [1, 1, 1, 1, 1, 1]
+#         for i in range(len(status)):
+#             plain = alt_mo._evaluator.create_constant_plain(const=status[i])
+#             aux_status = alt_mo._encryptor.encrypt(plain=plain)
+#             alt_mo._status[i] = aux_status
+#
+#         test_mo._scores.append(test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=0)))
+#         test_mo._curr_locations.append((0, 0))
+#         test_mo._curr_areas_by_user.append(test_mo.assign_area(loc_tuple=test_mo._curr_locations[-1]))
+#         for area_tup in test_mo._curr_areas_by_user:
+#             test_mo._area_array[area_tup[0]][area_tup[1]].add(0)
+#
+#         alt_mo.send_data_to_mo(other_mo=test_mo)
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+#         deco_score = dummy_ga._encoder.decode(plain=decr_score)
+#
+#         self.assertLessEqual(abs(deco_score[0].real - 6), 1 / 163, "send data to mo no work")
+#
+#     def test_insidescoring(self):
+#         dummy_ga = EncryptionGovAgent(risk_threshold=5,
+#                                       degree=2,
+#                                       cipher_modulus=1 << 1200,
+#                                       big_modulus=1 << 2400,
+#                                       scaling_factor=1 << 20)
+#
+#         test_mo = EncryptionMO(ga=dummy_ga,
+#                                mo_id=0,
+#                                area_side_x=50,
+#                                area_side_y=50,
+#                                max_x=3652,
+#                                max_y=3652)
+#         init_user = EncryptedUser(init_x=0,
+#                                   init_y=0,
+#                                   mo=test_mo,
+#                                   uid=0,
+#                                   ga=dummy_ga)
+#
+#         users = [init_user]
+#         for i in range(6):
+#             users.append(EncryptedUser(init_x=0,
+#                                        init_y=0,
+#                                        mo=test_mo,
+#                                        uid=i + 1,
+#                                        ga=dummy_ga)
+#                          )
+#
+#         status = [1, 1, 1, 1, 1, 1]
+#         for i in range(len(status)):
+#             plain = test_mo._evaluator.create_constant_plain(const=status[i])
+#             aux_status = test_mo._encryptor.encrypt(plain=plain)
+#             test_mo._status[i + 1] = aux_status
+#
+#         test_mo.inside_scoring()
+#
+#         decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[0])
+#         deco_score = dummy_ga._encoder.decode(plain=decr_score)
+#
+#         # self.assertLessEqual(abs(deco_score[0].real - 6), 1/163, "inside scoring no work" + str(deco_score[0].real))
+#
+#         for i in range(6):
+#             decr_score = dummy_ga._decryptor.decrypt(ciphertext=test_mo._scores[i + 1])
+#             deco_score = dummy_ga._encoder.decode(plain=decr_score)
+#
+#             self.assertLessEqual(abs(deco_score[0].real - 5), 1 / 163, "inside scoring no work" + str(i + 1))
+#
+#
+# class EncryptionGATest(unittest.TestCase):
+#
+#     def test_init(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=2,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         self.assertEqual(test_ga._users, [], "init user list no good")
+#
+#         self.assertEqual(test_ga._scaling_factor, 1 << 30, "init scaling factor no good")
+#
+#         self.assertEqual(test_ga._ckks_params.poly_degree, 2, "init params poly degree no good")
+#         self.assertEqual(test_ga._ckks_params.ciph_modulus, 1 << 300, "init params cipher modulus no good")
+#         self.assertEqual(test_ga._ckks_params.big_modulus, 1 << 1200, "init params big modulus no good")
+#         self.assertEqual(test_ga._ckks_params.scaling_factor, 1 << 30, "init params scaling factor no good")
+#         self.assertEqual(test_ga._ckks_params.num_taylor_iterations, 6, "init params num taylor iterations no good")
+#         self.assertEqual(test_ga._ckks_params.hamming_weight, 0, "init params hamming weight no good")
+#
+#         self.assertEqual(test_ga._key_generator.params, test_ga._ckks_params, "init keygen params no good")
+#
+#         self.assertEqual(test_ga._public_key, test_ga._key_generator.public_key, "init pk no good")
+#
+#         self.assertEqual(test_ga._secret_key, test_ga._key_generator.secret_key, "init sk no good")
+#
+#         self.assertEqual(test_ga._relin_key, test_ga._key_generator.relin_key, "init relin key no good")
+#
+#         self.assertEqual(test_ga._encoder.degree, 2, "init encoder degree no good")
+#
+#         self.assertEqual(test_ga._encryptor.poly_degree, 2, "init encryptor poly degree no good")
+#         self.assertEqual(test_ga._encryptor.coeff_modulus, 1 << 300, "init encryptor coeff mod no good")
+#         self.assertEqual(test_ga._encryptor.big_modulus, 1 << 1200, "init encryptor big modulus no good")
+#         self.assertEqual(test_ga._encryptor.crt_context, test_ga._ckks_params.crt_context,
+#                          "init encryptor crt context no good")
+#         self.assertEqual(test_ga._encryptor.public_key, test_ga._public_key, "init encryptor pk no good")
+#         self.assertEqual(test_ga._encryptor.secret_key, test_ga._secret_key, "init encryptor sk no good")
+#
+#         self.assertEqual(test_ga._decryptor.poly_degree, 2, "init decryptor poly degree no good")
+#         self.assertEqual(test_ga._decryptor.crt_context, test_ga._ckks_params.crt_context,
+#                          "init decryptor crt context no good")
+#         self.assertEqual(test_ga._decryptor.secret_key, test_ga._secret_key, "init decryptor secret key no good")
+#
+#         self.assertEqual(test_ga._evaluator.degree, 2, "init evaluator poly degree no good")
+#         self.assertEqual(test_ga._evaluator.big_modulus, 1 << 1200, "init evaluator big modulus no good")
+#         self.assertEqual(test_ga._evaluator.scaling_factor, 1 << 30, "init evaluator scaling factor no good")
+#         self.assertEqual(test_ga._evaluator.crt_context, test_ga._ckks_params.crt_context,
+#                          "init evaluator crt context no good")
+#
+#     def test_getters(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=2,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         self.assertEqual(test_ga.get_scaling_factor(), 1 << 30, "init scaling factor getter no good")
+#         self.assertEqual(test_ga.scaling_factor, 1 << 30, "init scaling factor property no good")
+#
+#         self.assertTrue(isinstance(test_ga.get_public_key(), PublicKey), "init public key getter no good")
+#         self.assertTrue(isinstance(test_ga.public_key, PublicKey), "init public key property no good")
+#
+#         self.assertTrue(isinstance(test_ga.get_relin_key(), PublicKey), "init relin key getter no good")
+#         self.assertTrue(isinstance(test_ga.relin_key, PublicKey), "init relin key property no good")
+#
+#         self.assertTrue(isinstance(test_ga.get_encoder(), CKKSEncoder), "init encoder getter wrong type")
+#         self.assertTrue(isinstance(test_ga.encoder, CKKSEncoder), "init encoder property wrong type")
+#
+#         self.assertTrue(isinstance(test_ga.get_encryptor(), CKKSEncryptor), "init encryptor getter wrong type")
+#         self.assertTrue(isinstance(test_ga.encryptor, CKKSEncryptor), "init encryptor property wrong type")
+#
+#         self.assertTrue(isinstance(test_ga.get_evaluator(), CKKSEvaluator), "init evaluator getter wrong type")
+#         self.assertTrue(isinstance(test_ga.evaluator, CKKSEvaluator), "init evaluator property wrong type")
+#
+#         test_ga._scaling_factor = 5
+#         self.assertEqual(test_ga.get_scaling_factor(), 5, "scaling factor getter no good")
+#         self.assertEqual(test_ga.scaling_factor, 5, "scaling factor property no good")
+#
+#         test_ga._public_key = 5
+#         self.assertEqual(test_ga.get_public_key(), 5, "pk getter no good")
+#         self.assertEqual(test_ga.public_key, 5, "pk property no good")
+#
+#         test_ga._relin_key = 5
+#         self.assertEqual(test_ga.get_relin_key(), 5, "relin key getter no good")
+#         self.assertEqual(test_ga.relin_key, 5, "relin key property no good")
+#
+#         test_ga._encoder = 5
+#         self.assertEqual(test_ga.get_encoder(), 5, "encoder getter no good")
+#         self.assertEqual(test_ga.encoder, 5, "encoder property no good")
+#
+#         test_ga._encryptor = 5
+#         self.assertEqual(test_ga.get_encryptor(), 5, "encryptor getter no good")
+#         self.assertEqual(test_ga.encryptor, 5, "encryptor property no good")
+#
+#         test_ga._evaluator = 5
+#         self.assertEqual(test_ga.get_evaluator(), 5, "evaluator getter no good")
+#         self.assertEqual(test_ga.evaluator, 5, "evaluator property no good")
+#
+#     def test_addmo(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=2,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         dummy_mo = EncryptionMO(ga=test_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         self.assertEqual(test_ga._MOs, [dummy_mo], "add mo not properly accessing super class")
+#
+#         self.assertEqual(dummy_mo.get_encryptor(), test_ga._encryptor, "encryptor getter no work")
+#         self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor property no work")
+#
+#         self.assertEqual(dummy_mo.get_encoder(), test_ga._encoder, "encoder getter no work")
+#         self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder property no work")
+#
+#         self.assertEqual(dummy_mo.get_scaling_factor(), test_ga._scaling_factor, "scaling factor getter no work")
+#         self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor, "scaling factor property no work")
+#
+#         self.assertEqual(dummy_mo.get_relin_key(), test_ga._relin_key, "relin key getter no work")
+#         self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key property no work")
+#
+#         self.assertEqual(dummy_mo.get_public_key(), test_ga._public_key, "public key getter no work")
+#         self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key property no work")
+#
+#         self.assertEqual(dummy_mo.get_evaluator(), test_ga._evaluator, "evaluator getter no work")
+#         self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator property no work")
+#
+#         self.assertEqual(dummy_mo._scores, [], "score list not initialized to empty")
+#         self.assertEqual(dummy_mo._status, [], "status list not initialized to empty")
+#
+#     def test_adduser(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=2,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         dummy_mo = EncryptionMO(ga=test_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         dummy_user = EncryptedUser(init_x=0,
+#                                    init_y=0,
+#                                    mo=dummy_mo,
+#                                    uid=0,
+#                                    ga=test_ga)
+#
+#         self.assertEqual(test_ga._users, [dummy_user], "add user not properly calling method in super class")
+#
+#         self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "first time encryptor setter no work")
+#         self.assertEqual(test_ga.encoder, dummy_user.encoder, "first time encoder setter no work")
+#         self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor, "first time scaling_factor setter no work")
+#         self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "first time relin_key setter no work")
+#         self.assertEqual(test_ga.public_key, dummy_user.public_key, "first time public_key setter no work")
+#         self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "first time evaluator setter no work")
+#
+#         decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
+#         deco_score = test_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "initial score encryption no good")
+#
+#     def test_fhesuitedistrib(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=2,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         dummy_mo = EncryptionMO(ga=test_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         dummy_user = EncryptedUser(init_x=0,
+#                                    init_y=0,
+#                                    mo=dummy_mo,
+#                                    uid=0,
+#                                    ga=test_ga)
+#
+#         self.assertEqual(test_ga._MOs, [dummy_mo], "add mo not properly accessing GA super class")
+#         self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor not initialized properly in MO")
+#         self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder not initialized properly in MO")
+#         self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor,
+#                          "scaling factor not initialized properly in MO")
+#         self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key not initialized properly in MO")
+#         self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key not initialized properly in MO")
+#         self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator not initialized properly in MO")
+#         self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._scores[0]))[0].real),
+#                              3e-9,
+#                              "score of initial user not properly encrypted and appended to list in MO")
+#         self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._status[0]))[0].real),
+#                              3e-9,
+#                              "status of initial user not properly encrypted and appended to list in MO")
+#
+#         self.assertEqual(test_ga._users, [dummy_user], "add user not properly calling method in super class")
+#         self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "first time encryptor setter no work in user")
+#         self.assertEqual(test_ga.encoder, dummy_user.encoder, "first time encoder setter no work in user")
+#         self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor,
+#                          "first time scaling_factor setter no work in user")
+#         self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "first time relin_key setter no work in user")
+#         self.assertEqual(test_ga.public_key, dummy_user.public_key, "first time public_key setter no work in user")
+#         self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "first time evaluator setter no work in user")
+#
+#         decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
+#         deco_score = test_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "improper initial score encryption in user")
+#
+#         test_ga.new_encryption_suite()
+#
+#         self.assertEqual(dummy_mo.encryptor, test_ga._encryptor, "encryptor in MO not proper after suite change")
+#         self.assertEqual(dummy_mo.encoder, test_ga._encoder, "encoder in MO not proper after suite change")
+#         self.assertEqual(dummy_mo.scaling_factor, test_ga._scaling_factor,
+#                          "scaling factor in MO not proper after suite change")
+#         self.assertEqual(dummy_mo.relin_key, test_ga._relin_key, "relin key in MO not proper after suite change")
+#         self.assertEqual(dummy_mo.public_key, test_ga._public_key, "public key in MO not proper after suite change")
+#         self.assertEqual(dummy_mo.evaluator, test_ga._evaluator, "evaluator in MO not proper after suite change")
+#         self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._scores[0]))[0].real),
+#                              3e-9,
+#                              "scores after suite change not proper in MO")
+#         self.assertLessEqual(abs(test_ga._encoder.decode(test_ga._decryptor.decrypt(dummy_mo._status[0]))[0].real),
+#                              3e-9,
+#                              "status after suite change not proper in MO")
+#
+#         self.assertEqual(test_ga.encryptor, dummy_user.encryptor, "encryptor in user not proper after suite change")
+#         self.assertEqual(test_ga.encoder, dummy_user.encoder, "encoder in user not proper after suite change")
+#         self.assertEqual(test_ga.scaling_factor, dummy_user.scaling_factor,
+#                          "scaling_factor in user not proper after suite change")
+#         self.assertEqual(test_ga.relin_key, dummy_user.relin_key, "relin_key in user not proper after suite change")
+#         self.assertEqual(test_ga.public_key, dummy_user.public_key, "public_key in user not proper after suite change")
+#         self.assertEqual(test_ga.evaluator, dummy_user.evaluator, "evaluator in user not proper after suite change")
+#
+#         decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
+#         deco_score = test_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real), 3e-9, "encrypted score in user not proper after suite change")
+#
+#         nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
+#         dummy_user._encr_score = nineteenseventy
+#
+#         test_ga.new_encryption_suite()
+#         decr_score = test_ga._decryptor.decrypt(ciphertext=dummy_user.encr_score)
+#         deco_score = test_ga.encoder.decode(plain=decr_score)
+#         self.assertLessEqual(abs(deco_score[0].real - 1970),
+#                              3e-9,
+#                              "encrypted nonzero score in user not proper after suite change")
+#
+#     def test_rcvscores(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=4,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         dummy_mo = EncryptionMO(ga=test_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         users = []
+#         for i in range(10):
+#             users.append(EncryptedUser(init_x=0,
+#                                        init_y=0,
+#                                        mo=dummy_mo,
+#                                        uid=i,
+#                                        ga=test_ga))
+#
+#             enco_score = dummy_mo._evaluator.create_constant_plain(const=14 + i)
+#             aux_score = dummy_mo._encryptor.encrypt(plain=enco_score)
+#             dummy_mo._scores[i] = aux_score
+#
+#         dummy_mo.to_ga_comm()
+#
+#         self.assertEqual(len(test_ga._users), 10, "users not properly added to GA user list on creation")
+#
+#         for i in range(10):
+#             self.assertEqual(users[i]._risk, 1, "user risk not properly updated at " + str(i))
+#             self.assertLessEqual(abs(test_ga._scores[i] - i - 14), 7.9e-9,
+#                                  "score not translated properly to GA at " + str(i))
+#
+#     def test_daily(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=4,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         mos = []
+#
+#         for i in range(10):
+#             mos.append(EncryptionMO(ga=test_ga,
+#                                     mo_id=i,
+#                                     area_side_x=50,
+#                                     area_side_y=50,
+#                                     max_x=3652,
+#                                     max_y=3652)
+#                        )
+#
+#         users = []
+#
+#         for i in range(100):
+#             users.append(EncryptedUser(init_x=0,
+#                                        init_y=0,
+#                                        mo=mos[i % 10],
+#                                        uid=i,
+#                                        ga=test_ga))
+#
+#         for i in range(len(mos)):
+#             for it in range(len(mos[i]._scores)):
+#                 aux_score = mos[i]._evaluator.create_constant_plain(const=math.sqrt(mos[i]._users[it]._uID))
+#                 mos[i]._scores[it] = mos[i]._encryptor.encrypt(plain=aux_score)
+#
+#         for i in range(len(users)):
+#             test_ga._status[i] = users[i].uID
+#
+#         test_ga._status[45] = 0
+#
+#         test_ga.daily()
+#
+#         for i in range(len(mos)):
+#             for it in range(len(mos[i]._status)):
+#                 aux_sts = test_ga._decryptor.decrypt(ciphertext=mos[i]._status[it])
+#                 deco_sts = mos[i]._encoder.decode(plain=aux_sts)[0].real
+#                 if mos[i]._users[it].uID != 45:
+#                     self.assertLessEqual(abs(deco_sts - mos[i]._users[it].uID), 7.9e-9,
+#                                          "status not updated properly in MO at " + str(i) + " " + str(
+#                                              mos[i]._users[it].uID))
+#
+#         for i in range(len(users)):
+#             self.assertLessEqual(abs(test_ga._scores[i] - math.sqrt(i)), 7.9e-9,
+#                                  "score not updated properly in GA at " + str(i))
+#             self.assertEqual(users[i]._risk == 1, i == 45, "risk status not updated properly at " + str(i))
+#
+#     def test_scorereq(self):
+#         test_ga = EncryptionGovAgent(risk_threshold=5,
+#                                      degree=4,
+#                                      cipher_modulus=1 << 300,
+#                                      big_modulus=1 << 1200,
+#                                      scaling_factor=1 << 30)
+#
+#         dummy_mo = EncryptionMO(ga=test_ga,
+#                                 mo_id=0,
+#                                 area_side_x=50,
+#                                 area_side_y=50,
+#                                 max_x=3652,
+#                                 max_y=3652)
+#
+#         dummy_user = EncryptedUser(init_x=0,
+#                                    init_y=0,
+#                                    mo=dummy_mo,
+#                                    uid=0,
+#                                    ga=test_ga)
+#
+#         self.assertEqual(dummy_user._score, 0, "initial score in user not 0")
+#         score_val = test_ga._encoder.decode(plain=test_ga._decryptor.decrypt(ciphertext=dummy_user._encr_score))[0].real
+#         self.assertLessEqual(abs(score_val), 7.9e-9, "initial encrypted score not 0")
+#
+#         nineteenseventy = test_ga._encryptor.encrypt(plain=test_ga._evaluator.create_constant_plain(const=1970))
+#         dummy_user._encr_score = nineteenseventy
+#         dummy_user.decr_score_from_ga()
+#
+#         self.assertLessEqual(abs(dummy_user._score - 1970), 7.9e-9, "plaintext score not properly updated in user")
 
 
 class EncryptionSTLTest(unittest.TestCase):
-    def test_init(self):
-
-        dummy_gm = gauss_markov(nr_nodes=100,
-                                dimensions=(3652, 3652),
-                                velocity_mean=7.,
-                                alpha=.5,
-                                variance=7.)
-
-        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
-        dual_minute_gm = DualIter(init_iter=minute_gm)
-
-        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
-                                 mo_count=10,
-                                 risk_thr=5,
-                                 area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 300,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30
-                                 )
-
-        loc_check = next(dual_minute_gm)
-
-        for i in range(100):
-            aux_movements = next(dual_minute_gm)
-            stl_movements = next(test_stl._movements_iterable)
-
-            for j in range(len(aux_movements)):
-                self.assertEqual(aux_movements[j][0], stl_movements[j][0], "movements iterable in ESTL not proper")
-                self.assertEqual(aux_movements[j][1], stl_movements[j][1], "movements iterable in ESTL not proper")
-
-        self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
-
-        self.assertEqual(test_stl._max_x, 3652, "max x-axis dimension in ESTL not proper")
-
-        self.assertEqual(test_stl._max_y, 3652, "max y-axis dimension in ESTL not proper")
-
-        self.assertEqual(test_stl._area_size_x, 50, "area x-axis dimension in ESTL not proper")
-
-        self.assertEqual(test_stl._area_size_y, 50, "area y-axis dimension in ESTL not proper")
-
-        for i in range(len(loc_check)):
-            self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
-                            "initial locations not rounded to int")
-            self.assertTrue(isinstance(test_stl._current_locations[i][1], int),
-                            "initial locations not rounded to int")
-
-            self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
-                                 "initial locations not closest int to real locations")
-            self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
-                                 "initial locations not closest int to real locations")
-
-        self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
-
-        self.assertEqual(test_stl._ga._risk_threshold, 5, "GA risk threshold not initialized to proper value")
-        self.assertEqual(test_stl._ga._ckks_params.poly_degree, 4, "GA params not having proper degree")
-        self.assertEqual(test_stl._ga._ckks_params.ciph_modulus, 1 << 300,
-                         "GA params not having proper cipher modulus")
-        self.assertEqual(test_stl._ga._ckks_params.big_modulus, 1 << 1200,
-                         "GA params not having proper plain modulus")
-        self.assertEqual(test_stl._ga._ckks_params.scaling_factor, 1 << 30,
-                         "GA params not having proper scaling factor")
-
-        self.assertEqual(test_stl._mo_count, 10, "MO count not updated properly after construction")
-
-        self.assertEqual(len(test_stl._mos), 10, "MO list length not proper")
-        for i in range(10):
-            self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
-                            "object in MO list not MO type at " + str(i))
-            self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
-            self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
-            self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
-            for j in range(10):
-                if j != i:
-                    self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos,
-                                    "MO not registered properly within other MOs")
-
-        self.assertEqual(test_stl._usr_count, 100, "user count not properly incremented")
-
-        for i in range(100):
-            self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
-                             "user x coordinate not appropriately initialized")
-            self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
-                             "user y coordinate not appropriately initialized")
-            self.assertEqual(test_stl._users[i]._uID, i, "user ID not appropriately initialized")
-
-    def test_getters(self):
-        dummy_gm = gauss_markov(nr_nodes=100,
-                                dimensions=(3652, 3652),
-                                velocity_mean=7.,
-                                alpha=.5,
-                                variance=7.)
-
-        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
-        dual_minute_gm = DualIter(init_iter=minute_gm)
-
-        test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
-                                 mo_count=10,
-                                 risk_thr=5,
-                                 area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 300,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30
-                                 )
-
-        loc_check = next(dual_minute_gm)
-        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
-        self.assertEqual(test_stl.get_current_locations(), mapmapcheck, "initial location getter not proper")
-        self.assertEqual(test_stl.current_locations, mapmapcheck, "initial location property not proper")
-
-        test_stl._current_locations[6][0] = 5
-        self.assertEqual(test_stl.get_current_locations()[6][0], 5, "location getter not proper")
-        self.assertEqual(test_stl.current_locations[6][0], 5, "location property not proper")
-
-        self.assertEqual(test_stl.get_area_sizes(), (50, 50), "area size getter not proper")
-        self.assertEqual(test_stl.area_sizes, (50, 50), "area size property not proper")
-
-        test_stl._area_size_x = 14
-        self.assertEqual(test_stl.get_area_sizes(), (14, 50), "area size getter not proper")
-        self.assertEqual(test_stl.area_sizes, (14, 50), "area size property not proper")
-
-        self.assertEqual(test_stl.get_user_count(), 100, "user count getter improper")
-        self.assertEqual(test_stl.user_count, 100, "user count property improper")
-        test_stl.add_user(location=(69, 69))
-        self.assertEqual(test_stl.get_user_count(), 101, "user count getter improper after user addition")
-        self.assertEqual(test_stl.user_count, 101, "user count property improper after user addition")
-        test_stl._usr_count = 5
-        self.assertEqual(test_stl.get_user_count(), 5, "user count getter improper")
-        self.assertEqual(test_stl.user_count, 5, "user count property improper")
-
-        self.assertEqual(test_stl.get_mo_count(), 10, "MO count getter improper")
-        self.assertEqual(test_stl.mo_count, 10, "MO count property improper")
-        test_stl._mo_count = 8
-        self.assertEqual(test_stl.get_mo_count(), 8, "MO count getter improper")
-        self.assertEqual(test_stl.mo_count, 8, "MO count property improper")
-
-        self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
-        self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
-        for i in range(10):
-            self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO),
-                            "MO list getter not returning MO type at " + str(i))
-            self.assertTrue(isinstance(test_stl.mos[i], EncryptionMO),
-                            "MO list property not returning MO type at " + str(i))
-            self.assertEqual(test_stl.get_mos()[i]._id, i, "MO list getter id improper at " + str(i))
-            self.assertEqual(test_stl.mos[i]._id, i, "MO list property id improper at " + str(i))
-        test_stl._mos.append(8)
-        self.assertEqual(test_stl.get_mos()[10], 8, "MO list getter improper")
-        self.assertEqual(test_stl.mos[10], 8, "MO list property improper")
-
-        for i in range(100):
-            self.assertTrue(isinstance(test_stl.get_users()[i], EncryptedUser),
-                            "User list getter not returning user type at " + str(i))
-            self.assertTrue(isinstance(test_stl.users[i], EncryptedUser),
-                            "User list property not returning user type at " + str(i))
-            self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
-            self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
-        test_stl._users.append(14)
-        self.assertEqual(test_stl.get_users()[101], 14, "User list getter improper")
-        self.assertEqual(test_stl.users[101], 14, "User list property improper")
-
-        self.assertEqual(test_stl.get_current_time(), 0, "time getter improper")
-        self.assertEqual(test_stl.current_time, 0, "time property improper")
-        test_stl._curr_time = 1970
-        self.assertEqual(test_stl.get_current_time(), 1970, "time getter improper")
-        self.assertEqual(test_stl.current_time, 1970, "time property improper")
-
-        self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
-        self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
-        test_stl._ga = 13
-        self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
-        self.assertEqual(test_stl.ga, 13, "GA property improper")
-
-    def test_adduser(self):
-        dummy_gm = gauss_markov(nr_nodes=100,
-                                dimensions=(3652, 3652),
-                                velocity_mean=7.,
-                                alpha=.5,
-                                variance=7.)
-
-        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
-        dual_minute_gm = DualIter(init_iter=minute_gm)
-
-        test_stl = EncryptionSTL(movements_iterable=iter([[[1, 2]]]),
-                                 mo_count=10,
-                                 risk_thr=5,
-                                 area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 300,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30
-                                 )
-
-        self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
-        test_stl.add_user(location=(14, 14))
-        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improper class")
-        self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
-        for i in range(50):
-            test_stl.add_user(location=(i ** 2, i ** 2))
-            self.assertTrue(isinstance(test_stl._users[i + 2], EncryptedUser), "Additional user improper class")
-            self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
-            self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
-            self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
+    # def test_init(self):
+    #
+    #     dummy_gm = gauss_markov(nr_nodes=100,
+    #                             dimensions=(3652, 3652),
+    #                             velocity_mean=7.,
+    #                             alpha=.5,
+    #                             variance=7.)
+    #
+    #     minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+    #     dual_minute_gm = DualIter(init_iter=minute_gm)
+    #
+    #     test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+    #                              mo_count=10,
+    #                              risk_thr=5,
+    #                              area_sizes=(50, 50),
+    #                              max_sizes=(3652, 3652),
+    #                              degree=4,
+    #                              cipher_modulus=1 << 300,
+    #                              big_modulus=1 << 1200,
+    #                              scaling_factor=1 << 30
+    #                              )
+    #
+    #     loc_check = next(dual_minute_gm)
+    #
+    #     for i in range(100):
+    #         aux_movements = next(dual_minute_gm)
+    #         stl_movements = next(test_stl._movements_iterable)
+    #
+    #         for j in range(len(aux_movements)):
+    #             self.assertEqual(aux_movements[j][0], stl_movements[j][0], "movements iterable in ESTL not proper")
+    #             self.assertEqual(aux_movements[j][1], stl_movements[j][1], "movements iterable in ESTL not proper")
+    #
+    #     self.assertEqual(test_stl._risk_threshold, 5, "risk threshold in ESTL not proper")
+    #
+    #     self.assertEqual(test_stl._max_x, 3652, "max x-axis dimension in ESTL not proper")
+    #
+    #     self.assertEqual(test_stl._max_y, 3652, "max y-axis dimension in ESTL not proper")
+    #
+    #     self.assertEqual(test_stl._area_size_x, 50, "area x-axis dimension in ESTL not proper")
+    #
+    #     self.assertEqual(test_stl._area_size_y, 50, "area y-axis dimension in ESTL not proper")
+    #
+    #     for i in range(len(loc_check)):
+    #         self.assertTrue(isinstance(test_stl._current_locations[i][0], int),
+    #                         "initial locations not rounded to int")
+    #         self.assertTrue(isinstance(test_stl._current_locations[i][1], int),
+    #                         "initial locations not rounded to int")
+    #
+    #         self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+    #                              "initial locations not closest int to real locations")
+    #         self.assertLessEqual(abs(loc_check[i][0] - test_stl._current_locations[i][0]), 0.5,
+    #                              "initial locations not closest int to real locations")
+    #
+    #     self.assertEqual(test_stl._curr_time, 0, "initial time not set to 0 in ESTL")
+    #
+    #     self.assertEqual(test_stl._ga._risk_threshold, 5, "GA risk threshold not initialized to proper value")
+    #     self.assertEqual(test_stl._ga._ckks_params.poly_degree, 4, "GA params not having proper degree")
+    #     self.assertEqual(test_stl._ga._ckks_params.ciph_modulus, 1 << 300,
+    #                      "GA params not having proper cipher modulus")
+    #     self.assertEqual(test_stl._ga._ckks_params.big_modulus, 1 << 1200,
+    #                      "GA params not having proper plain modulus")
+    #     self.assertEqual(test_stl._ga._ckks_params.scaling_factor, 1 << 30,
+    #                      "GA params not having proper scaling factor")
+    #
+    #     self.assertEqual(test_stl._mo_count, 10, "MO count not updated properly after construction")
+    #
+    #     self.assertEqual(len(test_stl._mos), 10, "MO list length not proper")
+    #     for i in range(10):
+    #         self.assertTrue(isinstance(test_stl._mos[i], EncryptionMO),
+    #                         "object in MO list not MO type at " + str(i))
+    #         self.assertEqual(test_stl._mos[i]._id, i, "MO id not proper")
+    #         self.assertEqual(test_stl._mos[i]._area_side_x, 50, "MO x area side not proper @ " + str(i))
+    #         self.assertEqual(test_stl._mos[i]._area_side_y, 50, "MO y area side not proper @ " + str(i))
+    #         for j in range(10):
+    #             if j != i:
+    #                 self.assertTrue(test_stl._mos[j] in test_stl._mos[i]._other_mos,
+    #                                 "MO not registered properly within other MOs")
+    #
+    #     self.assertEqual(test_stl._usr_count, 100, "user count not properly incremented")
+    #
+    #     for i in range(100):
+    #         self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+    #                          "user x coordinate not appropriately initialized")
+    #         self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+    #                          "user y coordinate not appropriately initialized")
+    #         self.assertEqual(test_stl._users[i]._uID, i, "user ID not appropriately initialized")
+    #
+    # def test_getters(self):
+    #     dummy_gm = gauss_markov(nr_nodes=100,
+    #                             dimensions=(3652, 3652),
+    #                             velocity_mean=7.,
+    #                             alpha=.5,
+    #                             variance=7.)
+    #
+    #     minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+    #     dual_minute_gm = DualIter(init_iter=minute_gm)
+    #
+    #     test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+    #                              mo_count=10,
+    #                              risk_thr=5,
+    #                              area_sizes=(50, 50),
+    #                              max_sizes=(3652, 3652),
+    #                              degree=4,
+    #                              cipher_modulus=1 << 300,
+    #                              big_modulus=1 << 1200,
+    #                              scaling_factor=1 << 30
+    #                              )
+    #
+    #     loc_check = next(dual_minute_gm)
+    #     mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+    #     self.assertEqual(test_stl.get_current_locations(), mapmapcheck, "initial location getter not proper")
+    #     self.assertEqual(test_stl.current_locations, mapmapcheck, "initial location property not proper")
+    #
+    #     test_stl._current_locations[6][0] = 5
+    #     self.assertEqual(test_stl.get_current_locations()[6][0], 5, "location getter not proper")
+    #     self.assertEqual(test_stl.current_locations[6][0], 5, "location property not proper")
+    #
+    #     self.assertEqual(test_stl.get_area_sizes(), (50, 50), "area size getter not proper")
+    #     self.assertEqual(test_stl.area_sizes, (50, 50), "area size property not proper")
+    #
+    #     test_stl._area_size_x = 14
+    #     self.assertEqual(test_stl.get_area_sizes(), (14, 50), "area size getter not proper")
+    #     self.assertEqual(test_stl.area_sizes, (14, 50), "area size property not proper")
+    #
+    #     self.assertEqual(test_stl.get_user_count(), 100, "user count getter improper")
+    #     self.assertEqual(test_stl.user_count, 100, "user count property improper")
+    #     test_stl.add_user(location=(69, 69))
+    #     self.assertEqual(test_stl.get_user_count(), 101, "user count getter improper after user addition")
+    #     self.assertEqual(test_stl.user_count, 101, "user count property improper after user addition")
+    #     test_stl._usr_count = 5
+    #     self.assertEqual(test_stl.get_user_count(), 5, "user count getter improper")
+    #     self.assertEqual(test_stl.user_count, 5, "user count property improper")
+    #
+    #     self.assertEqual(test_stl.get_mo_count(), 10, "MO count getter improper")
+    #     self.assertEqual(test_stl.mo_count, 10, "MO count property improper")
+    #     test_stl._mo_count = 8
+    #     self.assertEqual(test_stl.get_mo_count(), 8, "MO count getter improper")
+    #     self.assertEqual(test_stl.mo_count, 8, "MO count property improper")
+    #
+    #     self.assertEqual(len(test_stl.get_mos()), 10, "MO list getter wrong length")
+    #     self.assertEqual(len(test_stl.mos), 10, "MO list property wrong length")
+    #     for i in range(10):
+    #         self.assertTrue(isinstance(test_stl.get_mos()[i], EncryptionMO),
+    #                         "MO list getter not returning MO type at " + str(i))
+    #         self.assertTrue(isinstance(test_stl.mos[i], EncryptionMO),
+    #                         "MO list property not returning MO type at " + str(i))
+    #         self.assertEqual(test_stl.get_mos()[i]._id, i, "MO list getter id improper at " + str(i))
+    #         self.assertEqual(test_stl.mos[i]._id, i, "MO list property id improper at " + str(i))
+    #     test_stl._mos.append(8)
+    #     self.assertEqual(test_stl.get_mos()[10], 8, "MO list getter improper")
+    #     self.assertEqual(test_stl.mos[10], 8, "MO list property improper")
+    #
+    #     for i in range(100):
+    #         self.assertTrue(isinstance(test_stl.get_users()[i], EncryptedUser),
+    #                         "User list getter not returning user type at " + str(i))
+    #         self.assertTrue(isinstance(test_stl.users[i], EncryptedUser),
+    #                         "User list property not returning user type at " + str(i))
+    #         self.assertEqual(test_stl.get_users()[i]._uID, i, "User list getter id improper at " + str(i))
+    #         self.assertEqual(test_stl.users[i]._uID, i, "User list property id improper at " + str(i))
+    #     test_stl._users.append(14)
+    #     self.assertEqual(test_stl.get_users()[101], 14, "User list getter improper")
+    #     self.assertEqual(test_stl.users[101], 14, "User list property improper")
+    #
+    #     self.assertEqual(test_stl.get_current_time(), 0, "time getter improper")
+    #     self.assertEqual(test_stl.current_time, 0, "time property improper")
+    #     test_stl._curr_time = 1970
+    #     self.assertEqual(test_stl.get_current_time(), 1970, "time getter improper")
+    #     self.assertEqual(test_stl.current_time, 1970, "time property improper")
+    #
+    #     self.assertTrue(isinstance(test_stl.get_ga(), EncryptionGovAgent), "GA getter improper")
+    #     self.assertTrue(isinstance(test_stl.ga, EncryptionGovAgent), "GA property improper")
+    #     test_stl._ga = 13
+    #     self.assertEqual(test_stl.get_ga(), 13, "GA getter improper")
+    #     self.assertEqual(test_stl.ga, 13, "GA property improper")
+    #
+    # def test_adduser(self):
+    #     dummy_gm = gauss_markov(nr_nodes=100,
+    #                             dimensions=(3652, 3652),
+    #                             velocity_mean=7.,
+    #                             alpha=.5,
+    #                             variance=7.)
+    #
+    #     minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+    #     dual_minute_gm = DualIter(init_iter=minute_gm)
+    #
+    #     test_stl = EncryptionSTL(movements_iterable=iter([[[1, 2]]]),
+    #                              mo_count=10,
+    #                              risk_thr=5,
+    #                              area_sizes=(50, 50),
+    #                              max_sizes=(3652, 3652),
+    #                              degree=4,
+    #                              cipher_modulus=1 << 300,
+    #                              big_modulus=1 << 1200,
+    #                              scaling_factor=1 << 30
+    #                              )
+    #
+    #     self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
+    #     test_stl.add_user(location=(14, 14))
+    #     self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improper class")
+    #     self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
+    #     for i in range(50):
+    #         test_stl.add_user(location=(i ** 2, i ** 2))
+    #         self.assertTrue(isinstance(test_stl._users[i + 2], EncryptedUser), "Additional user improper class")
+    #         self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
+    #         self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
+    #         self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
 
     def test_tick(self):
+        # # dummy_gm = gauss_markov(nr_nodes=100,
+        # #                         dimensions=(3652, 3652),
+        # #                         velocity_mean=7.,
+        # #                         alpha=.5,
+        # #                         variance=7.)
+        # #
+        # # minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        # # dual_minute_gm = DualIter(init_iter=minute_gm)
+        # #
+        # # test_stl = EncryptionSTL(movements_iterable=dual_minute_gm,
+        # #                          mo_count=10,
+        # #                          risk_thr=5,
+        # #                          area_sizes=(50, 50),
+        # #                          max_sizes=(3652, 3652),
+        # #                          degree=4,
+        # #                          cipher_modulus=1 << 600,
+        # #                          big_modulus=1 << 1200,
+        # #                          scaling_factor=1 << 30)
+        # #
+        # # loc_check = next(dual_minute_gm)
+        # # for itercount in range(10):
+        # #     test_stl.tick()
+        # #     loc_check = next(dual_minute_gm)
+        # #     mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+        # #     for i in range(len(test_stl._users)):
+        # #         self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
+        # #                          "user x coordinate not consistent w/ check location at " + str(i))
+        # #         self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
+        # #                          "user y coordinate not consistent w/ check location at " + str(i))
+        # #         self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+        # #                          "user x coordinate not consistent w/ STL location at " + str(i))
+        # #         self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+        # #                          "user y coordinate not consistent w/ STL location at " + str(i))
+        # #
+        # # batchiter = BatchIter(batchsize=10,
+        # #                       batchcount=2)
+        # #
+        # # test_stl = EncryptionSTL(movements_iterable=batchiter,
+        # #                          mo_count=2,
+        # #                          risk_thr=5,
+        # #                          area_sizes=(50, 50),
+        # #                          max_sizes=(3652, 3652),
+        # #                          degree=4,
+        # #                          cipher_modulus=1 << 600,
+        # #                          big_modulus=1 << 1200,
+        # #                          scaling_factor=1 << 30)
+        # # for mo in test_stl._mos:
+        # #     for i in range(len(mo._status)):
+        # #         plain1 = mo._evaluator.create_constant_plain(const=1)
+        # #         mo._status[i] = mo._encryptor.encrypt(plain=plain1)
+        # # for itercount in range(10):
+        # #     test_stl.tick()
+        # #     for mo in test_stl._mos:
+        # #         for score in mo._scores:
+        # #             decr_score = mo._GA._decryptor.decrypt(ciphertext=score)
+        # #             deco_score = mo._encoder.decode(plain=decr_score)
+        # #             self.assertLessEqual(abs(deco_score[0].real - 9 * (itercount + 1)), 1/165, "inside scoring no good")
+        # #
+        # # sameloc = SameLocIter(loc_val=(1234, 1234),
+        # #                       loc_ct=30)
+        # # test_stl = EncryptionSTL(movements_iterable=sameloc,
+        # #                          mo_count=10,
+        # #                          risk_thr=5,
+        # #                          area_sizes=(50, 50),
+        # #                          max_sizes=(3652, 3652),
+        # #                          degree=4,
+        # #                          cipher_modulus=1 << 600,
+        # #                          big_modulus=1 << 1200,
+        # #                          scaling_factor=1 << 30)
+        # # plain1 = test_stl._ga._evaluator.create_constant_plain(const=1)
+        # # test_stl._mos[0]._status[0] = test_stl._ga._encryptor.encrypt(plain=plain1)
+        # #
+        # # for itercount in range(2):
+        # #     test_stl.tick()
+        # #     for mo in test_stl._mos[1:]:
+        # #         for i in range(len(mo._scores)):
+        # #             decr_score = mo._GA._decryptor.decrypt(ciphertext=mo._scores[i])
+        # #             deco_score = mo._encoder.decode(plain=decr_score)
+        # #             self.assertLessEqual(abs(deco_score[0].real - (itercount + 1)), 1/165, "outside scoring no good")
+        #
+        # apartlocs = BatchIter(batchsize=1,
+        #                       batchcount=37)
+        # test_stl = EncryptionSTL(movements_iterable=apartlocs,
+        #                          mo_count=10,
+        #                          risk_thr=5,
+        #                          area_sizes=(50, 50),
+        #                          max_sizes=(3652, 3652),
+        #                          degree=4,
+        #                          cipher_modulus=1 << 600,
+        #                          big_modulus=1 << 1200,
+        #                          scaling_factor=1 << 30)
+        #
+        # for mo in test_stl._mos:
+        #     for i in range(len(mo._users)):
+        #         plain = mo._evaluator.create_constant_plain(const=mo._users[i]._uID ** 2)
+        #         encr = mo._encryptor.encrypt(plain=plain)
+        #         mo._scores[i] = encr
+        # for i in range(len(test_stl._ga._users)):
+        #     test_stl._ga._status[i] = test_stl._ga._users[i]._uID
+        # test_stl.tick()
+        # for i in range(len(test_stl._ga._scores)):
+        #     self.assertLessEqual(abs(test_stl._ga._scores[i] - i ** 2), 1/165,
+        #                          "score in GA not properly updated at " + str(i))
+        # for i in range(len(test_stl._mos)):
+        #     for j in range(len(test_stl._mos[i]._status)):
+        #         decr = test_stl._ga._decryptor.decrypt(ciphertext=test_stl._mos[i]._status[j])
+        #         deco = test_stl._mos[i]._encoder.decode(plain=decr)
+        #         val = deco[0].real
+        #         self.assertLessEqual(abs(val - test_stl._mos[i]._users[j]._uID), 7.1e-9,
+        #                              "status not properly updated in MO " + str(i) + " for user " + str(test_stl._mos[i]._users[j]._uID))
+
         dummy_gm = gauss_markov(nr_nodes=100,
                                 dimensions=(3652, 3652),
                                 velocity_mean=7.,
@@ -2532,67 +2644,51 @@ class EncryptionSTLTest(unittest.TestCase):
                                  cipher_modulus=1 << 600,
                                  big_modulus=1 << 1200,
                                  scaling_factor=1 << 30)
+        plain_stl = SpaceTimeLord(movements_iterable=dual_minute_gm,
+                                  mo_count=10,
+                                  risk_thr=5,
+                                  area_sizes=(50, 50),
+                                  max_sizes=(3652, 3652))
 
-        loc_check = next(dual_minute_gm)
+        infected_indices = np.random.permutation(range(100))[:10]
+        for i in infected_indices:
+            test_stl._ga._status[i] = 1
+            plain_stl._ga._status[i] = 1
+
         for itercount in range(10):
             test_stl.tick()
-            loc_check = next(dual_minute_gm)
-            mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
-            for i in range(len(test_stl._users)):
-                self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
-                                 "user x coordinate not consistent w/ check location at " + str(i))
-                self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
-                                 "user y coordinate not consistent w/ check location at " + str(i))
-                self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
-                                 "user x coordinate not consistent w/ STL location at " + str(i))
-                self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
-                                 "user y coordinate not consistent w/ STL location at " + str(i))
+            plain_stl.tick()
 
-        batchiter = BatchIter(batchsize=10,
-                              batchcount=2)
+            if itercount == 0: # only check GA equalities after daily
+                for i in range(100):
+                    decr = test_stl._ga._decryptor.decrypt(ciphertext=test_stl._ga._status[i])
+                    deco = test_stl._ga._encoder.decode(plain=decr)
+                    val = deco[0].real
+                    self.assertLessEqual(abs(val - plain_stl._ga._status[i]), 7.1e-9,
+                                         "status in GA not same at " + str(test_stl._ga._users[i]._uID))
+                    decr = test_stl._ga._decryptor.decrypt(ciphertext=test_stl._ga._scores[i])
+                    deco = test_stl._ga._encoder.decode(plain=decr)
+                    val = deco[0].real
+                    self.assertLessEqual(abs(val - plain_stl._ga._scores[i]), 1/165,
+                                         "score in GA not same at " + str(test_stl._ga._users[i]._uID))
 
-        test_stl = EncryptionSTL(movements_iterable=batchiter,
-                                 mo_count=2,
-                                 risk_thr=5,
-                                 area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 600,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30)
-        for mo in test_stl._mos:
-            for i in range(len(mo._status)):
-                plain1 = mo._evaluator.create_constant_plain(const=1)
-                mo._status[i] = mo._encryptor.encrypt(plain=plain1)
-        for itercount in range(10):
-            test_stl.tick()
-            for mo in test_stl._mos:
-                for score in mo._scores:
-                    decr_score = mo._GA._decryptor.decrypt(ciphertext=score)
-                    deco_score = mo._encoder.decode(plain=decr_score)
-                    self.assertLessEqual(abs(deco_score[0].real - 9 * (itercount + 1)), 1/165, "inside scoring no good")
-
-        sameloc = SameLocIter(loc_val=(1234, 1234),
-                              loc_ct=10)
-        test_stl = EncryptionSTL(movements_iterable=sameloc,
-                                 mo_count=10,
-                                 risk_thr=5,
-                                 area_sizes=(50, 50),
-                                 max_sizes=(3652, 3652),
-                                 degree=4,
-                                 cipher_modulus=1 << 600,
-                                 big_modulus=1 << 1200,
-                                 scaling_factor=1 << 30)
-        plain1 = test_stl._ga._evaluator.create_constant_plain(const=1)
-        test_stl._mos[0]._status[0] = test_stl._ga._encryptor.encrypt(plain=plain1)
-
-        for itercount in range(2):
-            test_stl.tick()
-            for mo in test_stl._mos[1:]:
-                for i in range(len(mo._scores)):
-                    decr_score = mo._GA._decryptor.decrypt(ciphertext=mo._scores[i])
-                    deco_score = mo._encoder.decode(plain=decr_score)
-                    self.assertLessEqual(abs(deco_score[0].real - (itercount + 1)), 1/165, "outside scoring no good")
+            for i in range(test_stl._mo_count):
+                for j in range(len(test_stl._mos[i]._users)):
+                    if itercount == 0: # only check status equality after daily
+                        decr = test_stl._ga._decryptor.decrypt(ciphertext=test_stl._mos[i]._status[j])
+                        deco = test_stl._mos[i]._encoder.decode(plain=decr)
+                        val = deco[0].real
+                        self.assertLessEqual(abs(val - plain_stl._mos[i]._status[j]), 7.1e-9,
+                                             "status in MO not same at " + str(test_stl._mos[i]._users[j]._uID))
+                    self.assertEqual(test_stl._mos[i]._users[j]._x, plain_stl._mos[i]._users[j]._x,
+                                     "not same x coord at " + str(test_stl._mos[i]._users[j]._uID))
+                    self.assertEqual(test_stl._mos[i]._users[j]._y, plain_stl._mos[i]._users[j]._y,
+                                     "not same y coord at " + str(test_stl._mos[i]._users[j]._uID))
+                    decr = test_stl._ga._decryptor.decrypt(ciphertext=test_stl._mos[i]._scores[j])
+                    deco = test_stl._mos[i]._encoder.decode(plain=decr)
+                    val = deco[0].real
+                    self.assertLessEqual(abs(val - plain_stl._mos[i]._scores[j]), 1/165,
+                                         "score not same at " + str(test_stl._mos[i]._users[j]._uID))
 
 
 unittest.main()
