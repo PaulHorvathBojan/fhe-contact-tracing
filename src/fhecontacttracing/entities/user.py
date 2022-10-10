@@ -262,6 +262,7 @@ class EncryptionUserUntrustedGA:
                                         secret_key=self._sk)
         self._decryptor = CKKSDecryptor(params=self._CKKSParams,
                                         secret_key=self._sk)
+        self._encoder = CKKSEncoder(params=self._CKKSParams)
 
         self._MO.add_user(self)
         self._GA.add_user(self)

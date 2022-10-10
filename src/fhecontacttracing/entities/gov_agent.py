@@ -1,3 +1,32 @@
+import time
+import numpy as np
+import math
+import cmath
+import os
+import unittest
+import random
+import gmpy2
+
+from numpy import random
+from scipy.stats import bernoulli
+from gmpy2 import mpfr
+
+from ckks.ckks_decryptor import CKKSDecryptor
+from ckks.ckks_encoder import CKKSEncoder
+from ckks.ckks_encryptor import CKKSEncryptor
+from ckks.ckks_evaluator import CKKSEvaluator
+from ckks.ckks_key_generator import CKKSKeyGenerator
+from ckks.ckks_parameters import CKKSParameters
+import util.matrix_operations as mat
+from tests.helper import check_complex_vector_approx_eq
+from util.plaintext import Plaintext
+from util.random_sample import sample_random_complex_vector
+from util.ciphertext import Ciphertext
+from util.public_key import PublicKey
+
+from pymobility.models.mobility import gauss_markov
+
+
 class GovAgent:
 
     # initialise the class with empty user list, MO list, infected list, status list, score list
@@ -221,3 +250,42 @@ class EncryptionGovAgent(GovAgent):
         plain_score = deco_score[0].real
 
         user.score_from_ga(plain_score)
+
+
+class EncryptionUntrustedGA:
+    def __init__(self, encryption_params):
+        self._CKKSParams = encryption_params
+        self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
+        self._pk = self._keygen.public_key
+        self._sk = self._keygen.secret_key
+        self._relin_key = self._keygen.relin_key
+        self._evaluator = CKKSEvaluator(params=self._CKKSParams)
+        self._encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                        public_key=self._pk,
+                                        secret_key=self._sk)
+        self._decryptor = CKKSDecryptor(params=self._CKKSParams,
+                                        secret_key=self._sk)
+
+        self._mos = []
+        self._users = []
+        self._infect_list = []
+        self._status = []
+        self._user_count = 0
+        self._mo_count = 0
+
+
+    @property
+    def ckks_params(self):
+        return self._CKKSParams
+
+    @property
+    def pk(self):
+        return self._pk
+
+    def add_mo(self, new_mo):
+        self._mos.append(new_mo)
+        self._mo_count += 1
+
+    def add_user(self, new_user):
+        self._users.append(new_user)
+        self._user_count += 1

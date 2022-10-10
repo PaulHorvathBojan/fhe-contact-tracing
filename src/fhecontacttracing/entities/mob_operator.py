@@ -582,7 +582,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                         secret_key=self._sk)
         self._decryptor = CKKSDecryptor(params=self._CKKSParams,
                                         secret_key=self._sk)
-        self._user_pks = []
+        self._encoder = CKKSEncoder(params=self._CKKSParams)
 
         super(EncryptionMOUntrustedGA, self).__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
 
@@ -591,8 +591,10 @@ class EncryptionMOUntrustedGA(MobileOperator):
         return self._pk
 
     def add_user(self, user):
+        # difference between previous methods:
+        #       - encryption done with user's personal public key
+        #       - status not initialized as 0, but will get initialized from GA when specific method is called
         self._users.append(user)
-        self._user_pks.append(user.pk)
 
         self._curr_locations.append((user.x, user.y))
 
@@ -609,10 +611,6 @@ class EncryptionMOUntrustedGA(MobileOperator):
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
 
-        enco_02 = self._evaluator.create_constant_plain(const=0)
-        encr_02 = aux_encryptor.encrypt(plain=enco_02)
-        self._status.append(encr_02)
-
         self._usr_count += 1
 
-    
+    def
