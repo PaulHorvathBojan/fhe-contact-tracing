@@ -1,3 +1,32 @@
+import time
+import numpy as np
+import math
+import cmath
+import os
+import unittest
+import random
+import gmpy2
+
+from numpy import random
+from scipy.stats import bernoulli
+from gmpy2 import mpfr
+
+from ckks.ckks_decryptor import CKKSDecryptor
+from ckks.ckks_encoder import CKKSEncoder
+from ckks.ckks_encryptor import CKKSEncryptor
+from ckks.ckks_evaluator import CKKSEvaluator
+from ckks.ckks_key_generator import CKKSKeyGenerator
+from ckks.ckks_parameters import CKKSParameters
+import util.matrix_operations as mat
+from tests.helper import check_complex_vector_approx_eq
+from util.plaintext import Plaintext
+from util.random_sample import sample_random_complex_vector
+from util.ciphertext import Ciphertext
+from util.public_key import PublicKey
+
+from pymobility.models.mobility import gauss_markov
+
+
 class ProtocolUser:
     # Initialize user at a certain location with a certain MO, user ID and GA.
     # After initializing class fields to the parameter and default values respectively, call add_user in the
@@ -203,3 +232,79 @@ class EncryptedUser(ProtocolUser):
         self._public_key = new_public_key
         self._encr_score = self._evaluator.switch_key(ciph=self._encr_score,
                                                       key=self._public_key)
+
+
+class EncryptionUserUntrustedGA:
+    def __init__(self, x, y, mo, uid, ga, encryption_params):
+        self._MO = mo
+        self._uID = uid
+        self._GA = ga
+        self._threshold = self._GA.risk_threshold
+
+        self._x = x
+        self._y = y
+        self._last_update = 0
+
+        # intuitively going for a Susceptible(0)-Infected(1) model;
+        # recovery is beyond the scope of this project
+        self._score = 0
+        self._nonce = 0
+        self._risk = 0
+
+        self._CKKSParams = encryption_params
+        self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
+        self._pk = self._keygen.public_key
+        self._sk = self._keygen.secret_key
+        self._relin_key = self._keygen.relin_key
+        self._evaluator = CKKSEvaluator(params=self._CKKSParams)
+        self._encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                        public_key=self._pk,
+                                        secret_key=self._sk)
+        self._decryptor = CKKSDecryptor(params=self._CKKSParams,
+                                        secret_key=self._sk)
+
+        self._MO.add_user(self)
+        self._GA.add_user(self)
+
+    @property
+    def mo(self):
+        return self._MO
+
+    @property
+    def id(self):
+        return self._uID
+
+    @property
+    def ga(self):
+        return self._GA
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def last_update(self):
+        return self._last_update
+
+    @@property
+    def pk(self):
+        return self._pk
+
+    def move_to(self, new_x, new_y):
+        self._x = new_x
+        self._y = new_y
+        self._last_update += 1
+
+    def upd_to_mo(self):
+        self._MO.upd_user_data(user=self,
+                               new_x=self.x,
+                               new_y=self.y
+                               )
+
+    def score_from_mo(self, encr_score):
+        self._score = encr_score
+        #TODO: depending on how methods in other classes develop, implement decrypt-decode routine appropriately

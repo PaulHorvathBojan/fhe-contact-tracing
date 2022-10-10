@@ -1,3 +1,32 @@
+import time
+import numpy as np
+import math
+import cmath
+import os
+import unittest
+import random
+import gmpy2
+
+from numpy import random
+from scipy.stats import bernoulli
+from gmpy2 import mpfr
+
+from ckks.ckks_decryptor import CKKSDecryptor
+from ckks.ckks_encoder import CKKSEncoder
+from ckks.ckks_encryptor import CKKSEncryptor
+from ckks.ckks_evaluator import CKKSEvaluator
+from ckks.ckks_key_generator import CKKSKeyGenerator
+from ckks.ckks_parameters import CKKSParameters
+import util.matrix_operations as mat
+from tests.helper import check_complex_vector_approx_eq
+from util.plaintext import Plaintext
+from util.random_sample import sample_random_complex_vector
+from util.ciphertext import Ciphertext
+from util.public_key import PublicKey
+
+from pymobility.models.mobility import gauss_markov
+
+
 class MobileOperator:
     # Dictionary for edge case adjacency.
     # Used in det_adj_area_ranges.
@@ -531,3 +560,59 @@ class EncryptionMO(MobileOperator):
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
+
+
+class EncryptionMOUntrustedGA(MobileOperator):
+    # TODO: - user addition
+    #       - user movement
+    #       - inside scoring
+    #       - outside scoring
+    #       - GA comms (for status)
+
+    def __init__(self, ga, id, area_side_x, area_side_y, max_x, max_y, encryption_params):
+
+        self._CKKSParams = encryption_params
+        self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
+        self._pk = self._keygen.public_key
+        self._sk = self._keygen.secret_key
+        self._relin_key = self._keygen.relin_key
+        self._evaluator = CKKSEvaluator(params=self._CKKSParams)
+        self._encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                        public_key=self._pk,
+                                        secret_key=self._sk)
+        self._decryptor = CKKSDecryptor(params=self._CKKSParams,
+                                        secret_key=self._sk)
+        self._user_pks = []
+
+        super(EncryptionMOUntrustedGA, self).__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
+
+    @property
+    def pk(self):
+        return self._pk
+
+    def add_user(self, user):
+        self._users.append(user)
+        self._user_pks.append(user.pk)
+
+        self._curr_locations.append((user.x, user.y))
+
+        area_aux = self.assign_area(loc_tuple=self._curr_locations[-1])
+        loc_bucket = self._area_array[area_aux[0]][area_aux[1]]
+        loc_bucket.add(self.usr_count)
+
+        self._curr_areas_by_user.append(area_aux)
+
+        aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                      public_key=self._user_pks[-1])
+
+        enco_01 = self._evaluator.create_constant_plain(const=0)
+        encr_01 = aux_encryptor.encrypt(plain=enco_01)
+        self._scores.append(encr_01)
+
+        enco_02 = self._evaluator.create_constant_plain(const=0)
+        encr_02 = aux_encryptor.encrypt(plain=enco_02)
+        self._status.append(encr_02)
+
+        self._usr_count += 1
+
+    
