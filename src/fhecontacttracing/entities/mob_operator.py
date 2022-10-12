@@ -563,10 +563,9 @@ class EncryptionMO(MobileOperator):
 
 
 class EncryptionMOUntrustedGA(MobileOperator):
-    # TODO: - user addition
-    #       - user movement
-    #       - inside scoring
+    # TODO: - new scoring method for encrypted + plain locations
     #       - outside scoring
+    #           - new mo-to-mo package shape
     #       - GA comms (for status)
 
     def __init__(self, ga, id, area_side_x, area_side_y, max_x, max_y, encryption_params):
@@ -584,11 +583,19 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                         secret_key=self._sk)
         self._encoder = CKKSEncoder(params=self._CKKSParams)
 
+        self._user_pks = []
+
+        self._other_mo_user_pks = []
+
         super(EncryptionMOUntrustedGA, self).__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
 
     @property
     def pk(self):
         return self._pk
+
+    @property
+    def user_pks(self):
+        return self._user_pks
 
     def add_user(self, user):
         # difference between previous methods:
@@ -611,6 +618,9 @@ class EncryptionMOUntrustedGA(MobileOperator):
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
 
+        self._user_pks.append(user.pk)
+
         self._usr_count += 1
 
-    def
+    def register_other_mo(self, new_mo):
+        self._other_mo_user_pks.append(new_mo.user_pks)
