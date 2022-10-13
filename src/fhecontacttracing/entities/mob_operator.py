@@ -50,8 +50,7 @@ class MobileOperator:
     #   - _scores keeps a list of user risk scores respectively --- same order as _users (init empty)
     #   - _area_sides keep the sizes of the considered tesselation area
     #   - _curr_time is 0
-    #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
-    #       divided into 50 x 50 m squares
+    #   - _area_array is a list of lists of empty sets
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._GA = ga
         self._id = mo_id
@@ -553,10 +552,12 @@ class EncryptionMO(MobileOperator):
 
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,
-                                                                        division_factor=add_val.modulus // self._scores[i].modulus)
+                                                                        division_factor=add_val.modulus // self._scores[
+                                                                            i].modulus)
                             elif add_val.modulus < self._scores[i].modulus:
                                 self._scores[i] = self._evaluator.lower_modulus(ciph=self._scores[i],
-                                                                                division_factor=self._scores[i].modulus // add_val.modulus)
+                                                                                division_factor=self._scores[
+                                                                                                    i].modulus // add_val.modulus)
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
@@ -618,9 +619,28 @@ class EncryptionMOUntrustedGA(MobileOperator):
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
 
-        self._user_pks.append(user.pk)
+        self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
 
         self._usr_count += 1
 
     def register_other_mo(self, new_mo):
         self._other_mo_user_pks.append(new_mo.user_pks)
+        super(EncryptionMOUntrustedGA, self).register_other_mo(new_mo=new_mo)
+
+    def send_data_to_mo(self, other_mo):
+        aux_locs = []
+        for i in range(other_mo.usr_count):
+            aux_pk = other_mo.user_pks[i]
+            aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                          public_key=aux_pk)
+            local_locs = []
+            for j in range(len(self._curr_locations)):
+                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[0]),
+                                   aux_encryptor.encrypt(plain=self._curr_locations[1])))
+            aux_locs.append(local_locs)
+
+        other_mo.rcv_data_from_mo(loc_list=aux_locs,
+                                  area_list=self._curr_areas_by_user,
+                                  sts_list=self._status
+                                  )
+    def 
