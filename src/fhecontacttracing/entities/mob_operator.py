@@ -564,10 +564,8 @@ class EncryptionMO(MobileOperator):
 
 
 class EncryptionMOUntrustedGA(MobileOperator):
-    # TODO: - new scoring method for encrypted + plain locations
-    #       - outside scoring
-    #           - new mo-to-mo package shape
-    #       - GA comms (for status)
+    # TODO: - GA comms (for status)
+    #       - inside scoring with encrypted status
 
     def __init__(self, ga, id, area_side_x, area_side_y, max_x, max_y, encryption_params):
 
@@ -677,4 +675,5 @@ class EncryptionMOUntrustedGA(MobileOperator):
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
 
-    def 
+    def from_ga_comm(self, new_status):
+        self._status = new_status   

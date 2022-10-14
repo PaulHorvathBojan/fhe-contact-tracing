@@ -253,6 +253,7 @@ class EncryptionGovAgent(GovAgent):
 
 
 class EncryptionUntrustedGA:
+    # TODO: - status transfer to MO
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
@@ -270,6 +271,7 @@ class EncryptionUntrustedGA:
         self._users = []
         self._infect_list = []
         self._status = []
+        self._user_pks = []
         self._user_count = 0
         self._mo_count = 0
 
@@ -288,4 +290,21 @@ class EncryptionUntrustedGA:
 
     def add_user(self, new_user):
         self._users.append(new_user)
+        self._user_pks.append(new_user.pk)
         self._user_count += 1
+
+    def sts_to_MO(self, mo):
+        # NB:   **either** index by status index, then by pk index **or** the other way around
+        #       In this construction, OUTER is PK, INNER is STATUS
+        #       This way should be quicker because no persistent encryptor for users is kept inside GA class.
+        sts_list = []
+        for user in mo.users:
+            aux_encr = CKKSEncryptor(params=self._CKKSParams,
+                                     public_key=user.pk)
+
+            aux_list = []
+            for sts in self._status:
+                aux_list.append(aux_encr.encrypt(sts))
+            sts_list.append(aux_list)
+
+        mo.from_ga_comm(new_status=sts_list)
