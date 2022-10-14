@@ -643,4 +643,38 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                   area_list=self._curr_areas_by_user,
                                   sts_list=self._status
                                   )
+    def rcv_data_from_mo(self, loc_list, area_list, sts_list):
+        for i in range(len(area_list)):
+            adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
+
+            for j in adj_indices[0]:
+                for k in adj_indices[1]:
+                    curr_bucket = self._area_array[area_list[i][0] + j][area_list[i][1] + k]
+                    for user_index in curr_bucket:
+                        dist_score = self.plain_encr_location_pair_contact_score(
+                            plain_location=self._curr_locations[user_index],
+                            encr_location=loc_list[user_index][i])
+
+                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
+                                                                      division_factor=sts_list[
+                                                                                          i].modulus // dist_score.modulus)
+
+                        add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
+                                                           ciph2=dist_score,
+                                                           relin_key=self._relin_key)
+
+                        add_val = self._evaluator.rescale(ciph=add_val,
+                                                          division_factor=self._scaling_factor)
+
+                        if self._scores[user_index].modulus > add_val.modulus:
+                            self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
+                                                                                     division_factor=self._scores[
+                                                                                                         user_index].modulus // add_val.modulus)
+                        elif self._scores[user_index].modulus != add_val.modulus:
+                            add_val = self._evaluator.lower_modulus(ciph=add_val,
+                                                                    division_factor=add_val.modulus // self._scores[
+                                                                        user_index].modulus)
+                        self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
+                                                                       ciph2=add_val)
+
     def 

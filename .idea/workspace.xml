@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BookmarksViewState">
+    <option name="proportionPopup" value="0.1" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
@@ -85,7 +88,8 @@
       <workItem from="1665506959736" duration="3576000" />
       <workItem from="1665558267257" duration="3144000" />
       <workItem from="1665591610640" duration="2863000" />
-      <workItem from="1665639973920" duration="6663000" />
+      <workItem from="1665639973920" duration="11555000" />
+      <workItem from="1665728004695" duration="2441000" />
     </task>
     <servers />
   </component>
