@@ -307,5 +307,7 @@ class EncryptionUserUntrustedGA:
                                )
 
     def score_from_mo(self, encr_score):
-        self._score = encr_score
-        #TODO: depending on how methods in other classes develop, implement decrypt-decode routine appropriately
+        plain_score = self._decryptor.decrypt(ciphertext=encr_score)
+        self._score = self._encoder.decode(plain=plain_score)[0].real
+        # in case all the 128 positions are filled up with actual values, this might be subject to change
+

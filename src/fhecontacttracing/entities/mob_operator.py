@@ -676,4 +676,5 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                                                        ciph2=add_val)
 
     def from_ga_comm(self, new_status):
-        self._status = new_status   
+        # No reflected comm as of right now
+        self._status = new_status
