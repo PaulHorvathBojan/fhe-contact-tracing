@@ -349,7 +349,6 @@ class SpaceTimeLordUntrustedGA:
     ga = property(fget=get_ga)
 
     def tick(self):
-        
         for i in range(self._mo_count):
             self._mos[i].tick()
 

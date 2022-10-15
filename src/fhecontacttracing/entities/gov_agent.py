@@ -307,3 +307,7 @@ class EncryptionUntrustedGA:
             sts_list.append(aux_list)
 
         mo.from_ga_comm(new_status=sts_list)
+
+    def daily(self):
+        for mo in self._mos:
+            self.sts_to_MO(mo=mo)
