@@ -253,7 +253,6 @@ class EncryptionGovAgent(GovAgent):
 
 
 class EncryptionUntrustedGA:
-    # TODO: - status transfer to MO
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)

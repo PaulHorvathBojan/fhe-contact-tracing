@@ -564,8 +564,6 @@ class EncryptionMO(MobileOperator):
 
 
 class EncryptionMOUntrustedGA(MobileOperator):
-    # TODO: - GA comms (for status)
-    #       - inside scoring with encrypted status
 
     def __init__(self, ga, id, area_side_x, area_side_y, max_x, max_y, encryption_params):
 
@@ -641,6 +639,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                   area_list=self._curr_areas_by_user,
                                   sts_list=self._status
                                   )
+
     def rcv_data_from_mo(self, loc_list, area_list, sts_list):
         for i in range(len(area_list)):
             adj_indices = self.det_adj_area_ranges(area_tuple=area_list[i])
@@ -678,3 +677,38 @@ class EncryptionMOUntrustedGA(MobileOperator):
     def from_ga_comm(self, new_status):
         # No reflected comm as of right now
         self._status = new_status
+
+    def inside_scoring(self):
+        for i in range(len(self._users)):
+            area = self._curr_areas_by_user[i]
+            adj_indices = self.det_adj_area_ranges(area_tuple=area)
+
+            for j in adj_indices[0]:
+                for k in adj_indices[1]:
+                    curr_bucket = self._area_array[area[0] + j][area[1] + k]
+
+                    for user_index in curr_bucket:
+                        if not user_index == i:
+                            contact_score = self.location_pair_contact_score(
+                                location1=self._curr_locations[i],
+                                location2=self._curr_locations[user_index])
+
+                            enco_score = self._evaluator.create_constant_plain(const=contact_score)
+
+                            add_val = self._evaluator.multiply_plain(ciph=self._status[i][user_index],
+                                                                     plain=enco_score)
+                            add_val = self._evaluator.rescale(ciph=add_val,
+                                                              division_factor=self._scaling_factor)
+
+                            if add_val.modulus > self._scores[i].modulus:
+                                add_val = self._evaluator.lower_modulus(ciph=add_val,
+                                                                        division_factor=add_val.modulus //
+                                                                                        self._scores[
+                                                                                            i].modulus)
+                            elif add_val.modulus < self._scores[i].modulus:
+                                self._scores[i] = self._evaluator.lower_modulus(ciph=self._scores[i],
+                                                                                division_factor=self._scores[
+                                                                                                    i].modulus // add_val.modulus)
+
+                            self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
+                                                                  ciph2=add_val)
