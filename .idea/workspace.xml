@@ -6,13 +6,19 @@
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/gov_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/gov_agent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/user.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -24,6 +30,9 @@
     <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectId" id="2Fb6vV9Q31JEsXAAfYAuSzIY4tp" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -91,7 +100,7 @@
       <workItem from="1665591610640" duration="2863000" />
       <workItem from="1665639973920" duration="11555000" />
       <workItem from="1665728004695" duration="10562000" />
-      <workItem from="1665840326310" duration="5424000" />
+      <workItem from="1665840326310" duration="12377000" />
     </task>
     <servers />
   </component>

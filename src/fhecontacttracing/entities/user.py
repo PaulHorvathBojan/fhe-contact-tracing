@@ -291,7 +291,7 @@ class EncryptionUserUntrustedGA:
     def last_update(self):
         return self._last_update
 
-    @@property
+    @property
     def pk(self):
         return self._pk
 
@@ -299,6 +299,8 @@ class EncryptionUserUntrustedGA:
         self._x = new_x
         self._y = new_y
         self._last_update += 1
+
+        self.upd_to_mo()
 
     def upd_to_mo(self):
         self._MO.upd_user_data(user=self,
@@ -310,4 +312,3 @@ class EncryptionUserUntrustedGA:
         plain_score = self._decryptor.decrypt(ciphertext=encr_score)
         self._score = self._encoder.decode(plain=plain_score)[0].real
         # in case all the 128 positions are filled up with actual values, this might be subject to change
-
