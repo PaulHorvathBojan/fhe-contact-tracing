@@ -272,7 +272,7 @@ class EncryptionUserUntrustedGA:
         return self._MO
 
     @property
-    def id(self):
+    def uID(self):
         return self._uID
 
     @property

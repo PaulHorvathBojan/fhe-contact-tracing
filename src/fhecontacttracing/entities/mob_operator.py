@@ -608,14 +608,14 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
+        self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
+
         aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                       public_key=self._user_pks[-1])
 
         enco_01 = self._evaluator.create_constant_plain(const=0)
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
-
-        self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
 
         self._usr_count += 1
 

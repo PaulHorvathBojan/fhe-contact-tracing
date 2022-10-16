@@ -329,7 +329,7 @@ class EncryptionUserUntrustedGA:
         return self._MO
 
     @property
-    def id(self):
+    def uID(self):
         return self._uID
 
     @property
@@ -356,6 +356,8 @@ class EncryptionUserUntrustedGA:
         self._x = new_x
         self._y = new_y
         self._last_update += 1
+
+        self.upd_to_mo()
 
     def upd_to_mo(self):
         self._MO.upd_user_data(user=self,
@@ -950,14 +952,14 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._curr_areas_by_user.append(area_aux)
 
+        self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
+
         aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                       public_key=self._user_pks[-1])
 
         enco_01 = self._evaluator.create_constant_plain(const=0)
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
-
-        self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
 
         self._usr_count += 1
 
@@ -1282,6 +1284,8 @@ class EncryptionGovAgent(GovAgent):
 
 
 class EncryptionUntrustedGA:
+    risk_threshold = None
+
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
@@ -1712,17 +1716,103 @@ class UserTest(unittest.TestCase):
 
         self.assertEqual(test_user.mo, dummy_mo, "MO property no work")
 
-        self.assertEqual(test_user.id, 0, "id property no work")
+        self.assertEqual(test_user.uID, 0, "id property no work")
 
         self.assertEqual(test_user.ga, dummy_ga, "GA property no work")
 
         self.assertEqual(test_user.x, 12, "x property no work")
 
-        self.assertEqual(test_user.x, 13, "y property no work")
+        self.assertEqual(test_user.y, 13, "y property no work")
 
         self.assertEqual(test_user.last_update, 0, "last update property no work")
 
     def test_moveto(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        dummy_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                           id=0,
+                                           area_side_x=50,
+                                           area_side_y=50,
+                                           max_x=3652,
+                                           max_y=3652,
+                                           encryption_params=params)
+
+        test_user = EncryptionUserUntrustedGA(x=12,
+                                              y=13,
+                                              mo=dummy_mo,
+                                              uid=0,
+                                              ga=dummy_ga,
+                                              encryption_params=params)
+
+        test_user.move_to(new_x=14,
+                          new_y=15)
+
+        self.assertEqual(test_user.x, 14, "move_to does not properly set x")
+
+        self.assertEqual(test_user.y, 15, "move_to does not properly set y")
+
+        self.assertEqual(test_user.last_update, 1, "move_to does not properly increment local time")
+
+        self.assertEqual(dummy_mo._curr_locations[0][0], 14, "move_to does not properly update location in MO")
+
+    def test_scorefrommo(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        dummy_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                           id=0,
+                                           area_side_x=50,
+                                           area_side_y=50,
+                                           max_x=3652,
+                                           max_y=3652,
+                                           encryption_params=params)
+
+        test_user = EncryptionUserUntrustedGA(x=12,
+                                              y=13,
+                                              mo=dummy_mo,
+                                              uid=0,
+                                              ga=dummy_ga,
+                                              encryption_params=params)
+
+        aux_encryptor = CKKSEncryptor(params=params,
+                                      public_key=test_user.pk)
+        aux_evaluator = CKKSEvaluator(params=params)
+        encode1234 = aux_evaluator.create_constant_plain(const=1234)
+        encrypt1234 = aux_encryptor.encrypt(plain=encode1234)
+        test_user.score_from_mo(encr_score=encrypt1234)
+
+        self.assertLessEqual(abs(test_user._score - 1234), 7.9e-9, "score_from_mo no work")
+
+
+class MOTest(unittest.TestCase):
+    def test_getters(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
 
 
 unittest.main()

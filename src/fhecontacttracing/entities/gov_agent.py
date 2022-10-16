@@ -253,6 +253,7 @@ class EncryptionGovAgent(GovAgent):
 
 
 class EncryptionUntrustedGA:
+    risk_threshold = None
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
