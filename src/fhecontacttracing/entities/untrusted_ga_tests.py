@@ -1813,6 +1813,93 @@ class MOTest(unittest.TestCase):
                                           max_y=3652,
                                           encryption_params=params)
 
+        self.assertEqual(dummy_ga._mos, [test_mo], "MO not properly added in GA")
+
+        self.assertIsNotNone(test_mo.pk, "pk property no work")
+
+        self.assertEqual(test_mo.user_pks, [], "user pks not properly initialized as empty")
+
+        dummy_user = EncryptionUserUntrustedGA(x=12,
+                                               y=13,
+                                               mo=test_mo,
+                                               uid=0,
+                                               ga=dummy_ga,
+                                               encryption_params=params)
+
+        self.assertEqual(test_mo.user_pks, [dummy_user.pk], "user pks property no work")
+
+    def test_useraddition(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
+        self.assertEqual(test_mo.user_pks, [], "user pks not properly initialized as empty")
+
+        self.assertEqual(test_mo._scores, [], "score list not properly initialized as empty")
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=2 * i,
+                                                   y=2 * i + 1,
+                                                   mo=test_mo,
+                                                   uid=i,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+
+            self.assertEqual(test_mo.user_pks[i], users[i].pk, "pk property no work @ " + str(i))
+
+            aux_decr = users[-1]._decryptor.decrypt(ciphertext=test_mo._scores[i])
+            aux_deco = users[-1]._encoder.decode(plain=aux_decr)[0].real
+            self.assertLessEqual(abs(aux_deco), 7.9e-9, "score not properly update upon user addition")
+
+            self.assertEqual(test_mo._usr_count, i + 1, "user count not properly updated upon user addition")
+
+    def test_registerothermo(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
+        mos = []
+        for i in range(5):
+            mos.append(EncryptionMOUntrustedGA(ga=dummy_ga,
+                                               id=i + 1,
+                                               area_side_x=50,
+                                               area_side_y=50,
+                                               max_x=3652,
+                                               max_y=3652,
+                                               encryption_params=params))
+            test_mo.register_other_mo(new_mo=mos[-1])
+
+        iter = 0
+        for j in range(len(mos)):
+            self.assertEqual(test_mo._other_mo_user_pks[iter], mos[j].user_pks, "other MO user pks not updated upon MO addition")
+            iter += 1
+        # TODO: 
+
 
 
 unittest.main()

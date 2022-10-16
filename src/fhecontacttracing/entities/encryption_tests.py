@@ -539,8 +539,7 @@ class MobileOperator:
     #   - _scores keeps a list of user risk scores respectively --- same order as _users (init empty)
     #   - _area_sides keep the sizes of the considered tesselation area
     #   - _curr_time is 0
-    #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
-    #       divided into 50 x 50 m squares
+    #   - _area_array is a list of lists of empty sets
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._GA = ga
         self._id = mo_id
@@ -723,7 +722,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -1788,7 +1787,7 @@ class EncryptionMOTest(unittest.TestCase):
                 decr_val = dummy_ga._decryptor.decrypt(ciphertext=encr_val)
                 deco_val = dummy_ga._encoder.decode(plain=decr_val)
 
-                self.assertLessEqual(abs(deco_val[0].real - actual), 1 / 156,
+                self.assertLessEqual(abs(deco_val[0].real - actual), 1/156,
                                      "plain encr location score routine no work " + str(x - init_randx) + " " + str(
                                          y - init_randy))
 

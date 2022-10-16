@@ -130,8 +130,7 @@ class MobileOperator:
     #   - _scores keeps a list of user risk scores respectively --- same order as _users (init empty)
     #   - _area_sides keep the sizes of the considered tesselation area
     #   - _curr_time is 0
-    #   - _area_array is a 23000 x 19000 list of lists of empty sets --- roughly the size of Italy if
-    #       divided into 50 x 50 m squares
+    #   - _area_array is a list of lists of empty sets
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
         self._GA = ga
         self._id = mo_id
@@ -662,23 +661,22 @@ class SpaceTimeLord:
     ga = property(fget=get_ga)
 
     def tick(self):
-        self._current_locations = next(self._movements_iterable)
-        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
-                                                              self._current_locations[y])),
-                                           range(len(self._current_locations))))
-        self._curr_time += 1
-
-        for i in range(len(self._users)):
-            self._users[i].move_to(new_x=self._current_locations[i][0],
-                                   new_y=self._current_locations[i][1],
-                                   update_time=self._curr_time
-                                   )
-
         for i in range(self._mo_count):
             self._mos[i].tick()
 
         if self._curr_time % 1440 == 0:
             self._ga.daily()
+
+        self._current_locations = next(self._movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time += 1
+        for i in range(len(self._users)):
+            self._users[i].move_to(new_x=self._current_locations[i][0],
+                                   new_y=self._current_locations[i][1],
+                                   update_time=self._curr_time
+                                   )
 
 
 # Class to produce iterators that return every 60th iteration from given iterator
@@ -730,13 +728,13 @@ class AlwaysFarIter:
 
 class BatchIter:
     def __init__(self, batchsize, batchcount):
-        self.vallist = []
+        self.const_list = []
         for i in range(batchcount):
             for j in range(batchsize):
-                self.vallist.append([2 * j, 2 * j])
+                self.const_list.append([i * 100, i * 100])
 
     def __next__(self):
-        return self.vallist.copy()
+        return self.const_list.copy()
 
 
 # User test class
@@ -3312,15 +3310,14 @@ class STLTest(unittest.TestCase):
                                  area_sizes=(50, 50),
                                  max_sizes=(3652, 3652))
 
-        for mo in test_stl._mos:
-            for i in range(len(mo._status)):
-                mo._status[i] = 1
+        for i in range(len(test_stl._ga._status)):
+            test_stl._ga._status[i] = 1
 
         for i in range(12):
             test_stl.tick()
             for mo in test_stl._mos:
                 for jackson in mo._scores:
-                    self.assertGreaterEqual(jackson, (i + 1) * 9, "tick not updating inside scores correctly")
+                    self.assertGreaterEqual(jackson, i * 9, "tick not updating inside scores correctly")
 
         movement_iter = IntLocIter(val=0,
                                    loc_ct=100)
@@ -3329,14 +3326,15 @@ class STLTest(unittest.TestCase):
                                  risk_thr=5,
                                  area_sizes=(50, 50),
                                  max_sizes=(3652, 3652))
-        test_stl._mos[0]._status[0] = 1
+        test_stl._ga._status[0] = 1
         for i in range(12):
             test_stl.tick()
             for j in range(len(test_stl._mos)):
                 if j != 0:
-                    self.assertEqual(test_stl._mos[j]._scores[0], i + 1, "tick not updating outside scores correctly")
-                for k in range(1, len(test_stl._mos[j]._scores)):
-                    self.assertEqual(test_stl._mos[j]._scores[k], i + 1, "tick not updating outside scores correctly")
+                    self.assertEqual(test_stl._mos[j]._scores[0], i, "tick not updating outside scores correctly")
+                if i != 0:
+                    for k in range(1, len(test_stl._mos[j]._scores)):
+                        self.assertEqual(test_stl._mos[j]._scores[k], i, "tick not updating outside scores correctly")
 
         movement_iter = AlwaysFarIter(entrycount=30)
         test_stl = SpaceTimeLord(movements_iterable=movement_iter,
@@ -3349,7 +3347,6 @@ class STLTest(unittest.TestCase):
                 mo._scores[i] = mo._users[i]._uID ** 2
         for i in range(len(test_stl._ga._status)):
             test_stl._ga._status[i] = i
-        test_stl._curr_time = 1439
         test_stl.tick()
         for i in range(len(test_stl._ga._scores)):
             self.assertEqual(test_stl._ga._scores[i], i ** 2, "tick does not properly update scores daily at " + str(i))
