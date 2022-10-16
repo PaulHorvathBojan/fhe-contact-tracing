@@ -617,6 +617,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
 
+        self.transmit_pk(pk=user.pk)
+
         self._usr_count += 1
 
     def register_other_mo(self, new_mo):
@@ -712,3 +714,13 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
+
+    def transmit_pk(self, pk):
+        for other_mo in self.other_MOs:
+            other_mo.add_user_pk(mo=self,
+                                 pk=pk)
+
+    def add_user_pk(self, mo, pk):
+        mo_index = self.search_mo_db(mo=mo)
+
+        self._other_mo_user_pks[mo_index].append(pk)

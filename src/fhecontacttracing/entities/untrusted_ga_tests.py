@@ -961,6 +961,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
         encr_01 = aux_encryptor.encrypt(plain=enco_01)
         self._scores.append(encr_01)
 
+        self.transmit_pk(pk=user.pk)
+
         self._usr_count += 1
 
     def register_other_mo(self, new_mo):
@@ -1056,6 +1058,16 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
                             self._scores[i] = self._evaluator.add(ciph1=self._scores[i],
                                                                   ciph2=add_val)
+
+    def transmit_pk(self, pk):
+        for other_mo in self.other_MOs:
+            other_mo.add_user_pk(mo=self,
+                                 pk=pk)
+
+    def add_user_pk(self, mo, pk):
+        mo_index = self.search_mo_db(mo=mo)
+
+        self._other_mo_user_pks[mo_index].append(pk)
 
 
 class GovAgent:
@@ -1845,10 +1857,22 @@ class MOTest(unittest.TestCase):
                                           max_y=3652,
                                           encryption_params=params)
 
+        dummy_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                           id=1,
+                                           area_side_x=50,
+                                           area_side_y=50,
+                                           max_x=3652,
+                                           max_y=3652,
+                                           encryption_params=params)
+
+        test_mo.register_other_mo(new_mo=dummy_mo)
+        dummy_mo.register_other_mo(new_mo=test_mo)
+
         self.assertEqual(test_mo.user_pks, [], "user pks not properly initialized as empty")
 
         self.assertEqual(test_mo._scores, [], "score list not properly initialized as empty")
 
+        self.
         users = []
         for i in range(10):
             users.append(EncryptionUserUntrustedGA(x=2 * i,
@@ -1896,10 +1920,10 @@ class MOTest(unittest.TestCase):
 
         iter = 0
         for j in range(len(mos)):
-            self.assertEqual(test_mo._other_mo_user_pks[iter], mos[j].user_pks, "other MO user pks not updated upon MO addition")
+            self.assertEqual(test_mo._other_mo_user_pks[iter], mos[j].user_pks,
+                             "other MO user pks not updated upon MO addition")
             iter += 1
-        # TODO: 
-
+        # TODO: update pk databases in all MOs upon user creation
 
 
 unittest.main()
