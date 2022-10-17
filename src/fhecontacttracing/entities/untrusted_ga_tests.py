@@ -977,8 +977,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                           public_key=aux_pk)
             local_locs = []
             for j in range(len(self._curr_locations)):
-                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[0]),
-                                   aux_encryptor.encrypt(plain=self._curr_locations[1])))
+                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[j][0]),
+                                   aux_encryptor.encrypt(plain=self._curr_locations[j][1])))
             aux_locs.append(local_locs)
 
         other_mo.rcv_data_from_mo(loc_list=aux_locs,
@@ -1872,7 +1872,7 @@ class MOTest(unittest.TestCase):
 
         self.assertEqual(test_mo._scores, [], "score list not properly initialized as empty")
 
-        self.
+        self.assertEqual(dummy_mo._other_mo_user_pks, [[]], "pks in other MO not properly initialized")
         users = []
         for i in range(10):
             users.append(EncryptionUserUntrustedGA(x=2 * i,
@@ -1882,7 +1882,10 @@ class MOTest(unittest.TestCase):
                                                    ga=dummy_ga,
                                                    encryption_params=params))
 
-            self.assertEqual(test_mo.user_pks[i], users[i].pk, "pk property no work @ " + str(i))
+            self.assertEqual(test_mo.user_pks[-1], users[-1].pk, "pk property no work @ " + str(i))
+
+            self.assertEqual(dummy_mo._other_mo_user_pks[0][-1], users[i].pk,
+                             "pk not properly transmitted to other MO @ " + str(i))
 
             aux_decr = users[-1]._decryptor.decrypt(ciphertext=test_mo._scores[i])
             aux_deco = users[-1]._encoder.decode(plain=aux_decr)[0].real
@@ -1923,7 +1926,48 @@ class MOTest(unittest.TestCase):
             self.assertEqual(test_mo._other_mo_user_pks[iter], mos[j].user_pks,
                              "other MO user pks not updated upon MO addition")
             iter += 1
-        # TODO: update pk databases in all MOs upon user creation
+
+    def test_rcvdatafrommo(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 1200,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=0,
+                                                   y=0,
+                                                   mo=test_mo,
+                                                   uid=i,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+
+        aux_evaluator = CKKSEvaluator(params=params)
+        aux_encoder = CKKSEncoder(params=params)
+
+        loc_list = []
+        sts_list = []
+        for user in users:
+            aux_lox = []
+            aux_encryptor = CKKSEncryptor(params=params,
+                                          public_key=user.pk)
+            
+
+        test_mo.rcv_data_from_mo(loc_list=,
+                                 area_list=,
+                                 sts_list=)
+
 
 
 unittest.main()

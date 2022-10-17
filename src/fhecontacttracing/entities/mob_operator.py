@@ -633,8 +633,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                           public_key=aux_pk)
             local_locs = []
             for j in range(len(self._curr_locations)):
-                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[0]),
-                                   aux_encryptor.encrypt(plain=self._curr_locations[1])))
+                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[j][0]),
+                                   aux_encryptor.encrypt(plain=self._curr_locations[j][1])))
             aux_locs.append(local_locs)
 
         other_mo.rcv_data_from_mo(loc_list=aux_locs,
