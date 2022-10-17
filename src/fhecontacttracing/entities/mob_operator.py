@@ -724,3 +724,42 @@ class EncryptionMOUntrustedGA(MobileOperator):
         mo_index = self.search_mo_db(mo=mo)
 
         self._other_mo_user_pks[mo_index].append(pk)
+
+    def plain_encr_location_pair_contact_score(self, plain_location, encr_location):
+        diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
+        sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
+                                              ciph2=diff_xs,
+                                              relin_key=self._relin_key)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
+
+        diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
+        sq_diff_ys = self._evaluator.multiply(ciph1=diff_ys,
+                                              ciph2=diff_ys,
+                                              relin_key=self._relin_key)
+        sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
+                                             division_factor=self._scaling_factor)
+
+        sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
+                                      ciph2=sq_diff_ys)
+
+        const = -1 / (self._L_max ** 2)
+        const = self._evaluator.create_constant_plain(const=const)
+
+        fraction = self._evaluator.multiply_plain(ciph=sq_dist,
+                                                  plain=const)
+        fraction = self._evaluator.rescale(ciph=fraction,
+                                           division_factor=self._scaling_factor)
+
+        base = self._evaluator.add_plain(ciph=fraction,
+                                         plain=self._evaluator.create_constant_plain(const=1))
+
+        for i in range(10):
+            base = self._evaluator.multiply(ciph1=base,
+                                            ciph2=base,
+                                            relin_key=self._relin_key)
+            base = self._evaluator.rescale(ciph=base,
+                                           division_factor=self._scaling_factor)
+
+        return base

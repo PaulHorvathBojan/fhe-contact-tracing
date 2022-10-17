@@ -1007,7 +1007,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                                            relin_key=self._relin_key)
 
                         add_val = self._evaluator.rescale(ciph=add_val,
-                                                          division_factor=self._scaling_factor)
+                                                          division_factor=self._CKKSParams.scaling_factor)
 
                         if self._scores[user_index].modulus > add_val.modulus:
                             self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
@@ -1044,7 +1044,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             add_val = self._evaluator.multiply_plain(ciph=self._status[i][user_index],
                                                                      plain=enco_score)
                             add_val = self._evaluator.rescale(ciph=add_val,
-                                                              division_factor=self._scaling_factor)
+                                                              division_factor=self._CKKSParams.scaling_factor)
 
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,
@@ -1068,6 +1068,46 @@ class EncryptionMOUntrustedGA(MobileOperator):
         mo_index = self.search_mo_db(mo=mo)
 
         self._other_mo_user_pks[mo_index].append(pk)
+
+    def plain_encr_location_pair_contact_score(self, plain_location, encr_location):
+        diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
+        sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
+                                              ciph2=diff_xs,
+                                              relin_key=self._relin_key)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._CKKSParams.scaling_factor)
+
+        diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
+                                            plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
+        sq_diff_ys = self._evaluator.multiply(ciph1=diff_ys,
+                                              ciph2=diff_ys,
+                                              relin_key=self._relin_key)
+        sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
+                                             division_factor=self._CKKSParams.scaling_factor)
+
+        sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
+                                      ciph2=sq_diff_ys)
+
+        const = -1 / (self._L_max ** 2)
+        const = self._evaluator.create_constant_plain(const=const)
+
+        fraction = self._evaluator.multiply_plain(ciph=sq_dist,
+                                                  plain=const)
+        fraction = self._evaluator.rescale(ciph=fraction,
+                                           division_factor=self._CKKSParams.scaling_factor)
+
+        base = self._evaluator.add_plain(ciph=fraction,
+                                         plain=self._evaluator.create_constant_plain(const=1))
+
+        for i in range(10):
+            base = self._evaluator.multiply(ciph1=base,
+                                            ciph2=base,
+                                            relin_key=self._relin_key)
+            base = self._evaluator.rescale(ciph=base,
+                                           division_factor=self._CKKSParams.scaling_factor)
+
+        return base
+
 
 
 class GovAgent:
@@ -1928,9 +1968,9 @@ class MOTest(unittest.TestCase):
             iter += 1
 
     def test_rcvdatafrommo(self):
-        params = CKKSParameters(poly_degree=4,
-                                ciph_modulus=1 << 300,
-                                big_modulus=1 << 1200,
+        params = CKKSParameters(poly_degree=8,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 625,
                                 scaling_factor=1 << 30
                                 )
 
@@ -1954,20 +1994,28 @@ class MOTest(unittest.TestCase):
                                                    encryption_params=params))
 
         aux_evaluator = CKKSEvaluator(params=params)
-        aux_encoder = CKKSEncoder(params=params)
+        aux_plain00 = aux_evaluator.create_constant_plain(const=0)
+        aux_plain01 = aux_evaluator.create_constant_plain(const=0)
+        aux_plain1 = aux_evaluator.create_constant_plain(const=1)
 
         loc_list = []
         sts_list = []
+        area_list = [(0, 0)]
         for user in users:
-            aux_lox = []
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=user.pk)
-            
 
-        test_mo.rcv_data_from_mo(loc_list=,
-                                 area_list=,
-                                 sts_list=)
+            loc_list.append([(aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01))])
+            sts_list.append(aux_encryptor.encrypt(plain=aux_plain1))
 
+        test_mo.rcv_data_from_mo(loc_list=loc_list,
+                                 area_list=area_list,
+                                 sts_list=sts_list)
+
+        for i in range(len(test_mo._scores)):
+            decr = test_mo._users[i]._decryptor.decrypt(ciphertext=test_mo._scores[i])
+            deco = test_mo._users[i]._encoder.decode(plain=decr)
+            self.assertLessEqual(abs(deco[0].real - 1), 7.9e-9, "rcv data from mo no work")
 
 
 unittest.main()
