@@ -2005,7 +2005,7 @@ class MOTest(unittest.TestCase):
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=user.pk)
 
-            loc_list.append([(aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01))])
+            loc_list.append([(aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01))] )
             sts_list.append(aux_encryptor.encrypt(plain=aux_plain1))
 
         test_mo.rcv_data_from_mo(loc_list=loc_list,
