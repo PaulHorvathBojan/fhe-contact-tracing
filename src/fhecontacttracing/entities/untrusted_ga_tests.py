@@ -1968,7 +1968,7 @@ class MOTest(unittest.TestCase):
             iter += 1
 
     def test_rcvdatafrommo(self):
-        params = CKKSParameters(poly_degree=8,
+        params = CKKSParameters(poly_degree=256,
                                 ciph_modulus=1 << 500,
                                 big_modulus=1 << 625,
                                 scaling_factor=1 << 30

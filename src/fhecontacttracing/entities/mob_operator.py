@@ -663,7 +663,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                                            relin_key=self._relin_key)
 
                         add_val = self._evaluator.rescale(ciph=add_val,
-                                                          division_factor=self._scaling_factor)
+                                                          division_factor=self._CKKSParams.scaling_factor)
 
                         if self._scores[user_index].modulus > add_val.modulus:
                             self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
