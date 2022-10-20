@@ -310,7 +310,7 @@ class EncryptionUntrustedGA:
 
             for it in range(len(aux_sts)):
                 aux_encoded_sts = self._evaluator.create_constant_plain(const=aux_sts[it])
-                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts)
+                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
 
         mo.from_ga_comm(new_status=sts_list)
 

@@ -1003,9 +1003,9 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             plain_location=self._curr_locations[user_index],
                             encr_location=loc_list[i][user_index])
 
-                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[
-                                                                                          i].modulus // dist_score.modulus)
+                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
+                                                                      division_factor=sts_list[i][
+                                                                                          user_index].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -1342,7 +1342,6 @@ class EncryptionGovAgent(GovAgent):
 
 class EncryptionUntrustedGA:
     risk_threshold = None
-
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
@@ -1363,6 +1362,7 @@ class EncryptionUntrustedGA:
         self._user_pks = []
         self._user_count = 0
         self._mo_count = 0
+
 
     @property
     def ckks_params(self):
@@ -1386,14 +1386,19 @@ class EncryptionUntrustedGA:
         #       In this construction, OUTER is PK, INNER is STATUS
         #       This way should be quicker because no persistent encryptor for users is kept inside GA class.
         sts_list = []
+        aux_sts = []
         for user in mo.users:
-            aux_encr = CKKSEncryptor(params=self._CKKSParams,
-                                     public_key=user.pk)
+            aux_sts.append(self._status[user.uID])
+            sts_list.append([])
 
-            aux_list = []
-            for sts in self._status:
-                aux_list.append(aux_encr.encrypt(sts))
-            sts_list.append(aux_list)
+        for user in self._users:
+            aux_pk = user.pk
+            aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                          public_key=aux_pk)
+
+            for it in range(len(aux_sts)):
+                aux_encoded_sts = self._evaluator.create_constant_plain(const=aux_sts[it])
+                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
 
         mo.from_ga_comm(new_status=sts_list)
 
@@ -2002,7 +2007,6 @@ class MOTest(unittest.TestCase):
         aux_plain00 = aux_evaluator.create_constant_plain(const=0)
         aux_plain01 = aux_evaluator.create_constant_plain(const=0)
 
-        loc_list = [[]]
         area_list = [(0, 0)]
 
         sts_list = []
@@ -2020,12 +2024,12 @@ class MOTest(unittest.TestCase):
                 aux_encoded_sts = aux_evaluator.create_constant_plain(const=aux_sts[it])
                 sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
 
+        loc_list = [[]]
         for user in users:
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=user.pk)
 
             loc_list[0].append((aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01)))
-            sts_list.append(aux_encryptor.encrypt(plain=aux_plain1))
 
         test_mo.rcv_data_from_mo(loc_list=loc_list,
                                  area_list=area_list,
