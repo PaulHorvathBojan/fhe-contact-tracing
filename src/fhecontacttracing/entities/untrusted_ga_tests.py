@@ -2001,11 +2001,25 @@ class MOTest(unittest.TestCase):
         aux_evaluator = CKKSEvaluator(params=params)
         aux_plain00 = aux_evaluator.create_constant_plain(const=0)
         aux_plain01 = aux_evaluator.create_constant_plain(const=0)
-        aux_plain1 = aux_evaluator.create_constant_plain(const=1)
 
         loc_list = [[]]
-        sts_list = []
         area_list = [(0, 0)]
+
+        sts_list = []
+        aux_sts = []
+        for user in test_mo.users:
+            aux_sts.append(1)
+            sts_list.append([])
+
+        for user in users:
+            aux_pk = user.pk
+            aux_encryptor = CKKSEncryptor(params=params,
+                                          public_key=aux_pk)
+
+            for it in range(len(aux_sts)):
+                aux_encoded_sts = aux_evaluator.create_constant_plain(const=aux_sts[it])
+                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
+
         for user in users:
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=user.pk)

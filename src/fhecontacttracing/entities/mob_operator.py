@@ -659,9 +659,9 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             plain_location=self._curr_locations[user_index],
                             encr_location=loc_list[i][user_index])
 
-                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
-                                                                      division_factor=sts_list[
-                                                                                          i].modulus // dist_score.modulus)
+                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
+                                                                      division_factor=sts_list[i][
+                                                                                          user_index].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
