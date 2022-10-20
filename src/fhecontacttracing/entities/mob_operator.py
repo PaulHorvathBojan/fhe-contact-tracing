@@ -736,7 +736,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
                                               ciph2=diff_xs,
                                               relin_key=self._relin_key)
-        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._CKKSParams.scaling_factor)
 
         diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
                                             plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
@@ -744,7 +744,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                               ciph2=diff_ys,
                                               relin_key=self._relin_key)
         sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
-                                             division_factor=self._scaling_factor)
+                                             division_factor=self._CKKSParams.scaling_factor)
 
         sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
                                       ciph2=sq_diff_ys)
@@ -755,7 +755,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
                                                   plain=const)
         fraction = self._evaluator.rescale(ciph=fraction,
-                                           division_factor=self._scaling_factor)
+                                           division_factor=self._CKKSParams.scaling_factor)
 
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
@@ -765,6 +765,6 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                             ciph2=base,
                                             relin_key=self._relin_key)
             base = self._evaluator.rescale(ciph=base,
-                                           division_factor=self._scaling_factor)
+                                           division_factor=self._CKKSParams.scaling_factor)
 
         return base
