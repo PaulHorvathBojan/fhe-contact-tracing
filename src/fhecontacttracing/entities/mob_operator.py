@@ -627,15 +627,20 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
     def send_data_to_mo(self, other_mo):
         aux_locs = []
+
+        for i in range(self._usr_count):
+            aux_locs.append([])
+
         for i in range(other_mo.usr_count):
             aux_pk = other_mo.user_pks[i]
             aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                           public_key=aux_pk)
-            local_locs = []
-            for j in range(len(self._curr_locations)):
-                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[j][0]),
-                                   aux_encryptor.encrypt(plain=self._curr_locations[j][1])))
-            aux_locs.append(local_locs)
+
+            for j in range(self._usr_count):
+                encoded_x = self._evaluator.create_constant_plain(const=self._curr_locations[j][0])
+                encoded_y = self._evaluator.create_constant_plain(const=self._curr_locations[j][1])
+
+                aux_locs[j].append((aux_encryptor.encrypt(plain=encoded_x), aux_encryptor.encrypt(plain=encoded_y)))
 
         other_mo.rcv_data_from_mo(loc_list=aux_locs,
                                   area_list=self._curr_areas_by_user,
@@ -652,7 +657,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                     for user_index in curr_bucket:
                         dist_score = self.plain_encr_location_pair_contact_score(
                             plain_location=self._curr_locations[user_index],
-                            encr_location=loc_list[user_index][i])
+                            encr_location=loc_list[i][user_index])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
                                                                       division_factor=sts_list[
