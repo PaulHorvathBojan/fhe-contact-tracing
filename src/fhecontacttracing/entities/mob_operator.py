@@ -705,7 +705,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             add_val = self._evaluator.multiply_plain(ciph=self._status[i][user_index],
                                                                      plain=enco_score)
                             add_val = self._evaluator.rescale(ciph=add_val,
-                                                              division_factor=self._scaling_factor)
+                                                              division_factor=self._CKKSParams.scaling_factor)
 
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,

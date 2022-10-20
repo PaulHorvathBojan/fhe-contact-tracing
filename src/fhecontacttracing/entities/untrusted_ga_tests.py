@@ -971,15 +971,20 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
     def send_data_to_mo(self, other_mo):
         aux_locs = []
+
+        for i in range(self._usr_count):
+            aux_locs.append([])
+
         for i in range(other_mo.usr_count):
             aux_pk = other_mo.user_pks[i]
             aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                           public_key=aux_pk)
-            local_locs = []
-            for j in range(len(self._curr_locations)):
-                local_locs.append((aux_encryptor.encrypt(plain=self._curr_locations[j][0]),
-                                   aux_encryptor.encrypt(plain=self._curr_locations[j][1])))
-            aux_locs.append(local_locs)
+
+            for j in range(self._usr_count):
+                encoded_x = self._evaluator.create_constant_plain(const=self._curr_locations[j][0])
+                encoded_y = self._evaluator.create_constant_plain(const=self._curr_locations[j][1])
+
+                aux_locs[j].append((aux_encryptor.encrypt(plain=encoded_x), aux_encryptor.encrypt(plain=encoded_y)))
 
         other_mo.rcv_data_from_mo(loc_list=aux_locs,
                                   area_list=self._curr_areas_by_user,
@@ -996,7 +1001,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                     for user_index in curr_bucket:
                         dist_score = self.plain_encr_location_pair_contact_score(
                             plain_location=self._curr_locations[user_index],
-                            encr_location=loc_list[user_index][i])
+                            encr_location=loc_list[i][user_index])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i],
                                                                       division_factor=sts_list[
@@ -1044,7 +1049,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             add_val = self._evaluator.multiply_plain(ciph=self._status[i][user_index],
                                                                      plain=enco_score)
                             add_val = self._evaluator.rescale(ciph=add_val,
-                                                              division_factor=self._CKKSParams.scaling_factor)
+                                                              division_factor=self._scaling_factor)
 
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,
@@ -1075,7 +1080,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
                                               ciph2=diff_xs,
                                               relin_key=self._relin_key)
-        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._CKKSParams.scaling_factor)
+        sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._scaling_factor)
 
         diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
                                             plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
@@ -1083,7 +1088,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                               ciph2=diff_ys,
                                               relin_key=self._relin_key)
         sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
-                                             division_factor=self._CKKSParams.scaling_factor)
+                                             division_factor=self._scaling_factor)
 
         sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
                                       ciph2=sq_diff_ys)
@@ -1094,7 +1099,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
                                                   plain=const)
         fraction = self._evaluator.rescale(ciph=fraction,
-                                           division_factor=self._CKKSParams.scaling_factor)
+                                           division_factor=self._scaling_factor)
 
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
@@ -1104,7 +1109,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                             ciph2=base,
                                             relin_key=self._relin_key)
             base = self._evaluator.rescale(ciph=base,
-                                           division_factor=self._CKKSParams.scaling_factor)
+                                           division_factor=self._scaling_factor)
 
         return base
 
@@ -1968,7 +1973,7 @@ class MOTest(unittest.TestCase):
             iter += 1
 
     def test_rcvdatafrommo(self):
-        params = CKKSParameters(poly_degree=256,
+        params = CKKSParameters(poly_degree=4,
                                 ciph_modulus=1 << 500,
                                 big_modulus=1 << 625,
                                 scaling_factor=1 << 30
@@ -1998,14 +2003,14 @@ class MOTest(unittest.TestCase):
         aux_plain01 = aux_evaluator.create_constant_plain(const=0)
         aux_plain1 = aux_evaluator.create_constant_plain(const=1)
 
-        loc_list = []
+        loc_list = [[]]
         sts_list = []
         area_list = [(0, 0)]
         for user in users:
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=user.pk)
 
-            loc_list.append([(aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01))] )
+            loc_list[0].append((aux_encryptor.encrypt(plain=aux_plain00), aux_encryptor.encrypt(plain=aux_plain01)))
             sts_list.append(aux_encryptor.encrypt(plain=aux_plain1))
 
         test_mo.rcv_data_from_mo(loc_list=loc_list,
