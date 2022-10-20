@@ -298,14 +298,19 @@ class EncryptionUntrustedGA:
         #       In this construction, OUTER is PK, INNER is STATUS
         #       This way should be quicker because no persistent encryptor for users is kept inside GA class.
         sts_list = []
+        aux_sts = []
         for user in mo.users:
-            aux_encr = CKKSEncryptor(params=self._CKKSParams,
-                                     public_key=user.pk)
+            aux_sts.append(self._status[user.uID])
+            sts_list.append([])
 
-            aux_list = []
-            for sts in self._status:
-                aux_list.append(aux_encr.encrypt(sts))
-            sts_list.append(aux_list)
+        for user in self._users:
+            aux_pk = user.pk
+            aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
+                                          public_key=aux_pk)
+
+            for it in range(len(aux_sts)):
+                aux_encoded_sts = self._evaluator.create_constant_plain(const=aux_sts[it])
+                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts)
 
         mo.from_ga_comm(new_status=sts_list)
 
