@@ -8,6 +8,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/user.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/user.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -111,6 +112,10 @@
       <workItem from="1666195000853" duration="600000" />
       <workItem from="1666255930288" duration="4073000" />
       <workItem from="1666272681352" duration="5481000" />
+      <workItem from="1666280854385" duration="5904000" />
+      <workItem from="1666336714463" duration="1883000" />
+      <workItem from="1666353209158" duration="3892000" />
+      <workItem from="1666517658714" duration="4244000" />
     </task>
     <servers />
   </component>

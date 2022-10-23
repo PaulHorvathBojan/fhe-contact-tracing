@@ -295,6 +295,10 @@ class EncryptionUserUntrustedGA:
     def pk(self):
         return self._pk
 
+    @property
+    def relin_key(self):
+        return self._relin_key
+
     def move_to(self, new_x, new_y):
         self._x = new_x
         self._y = new_y

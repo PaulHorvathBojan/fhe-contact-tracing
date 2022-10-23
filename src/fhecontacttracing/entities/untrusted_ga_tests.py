@@ -577,7 +577,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 2048
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -811,7 +811,7 @@ class EncryptionMO(MobileOperator):
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
 
-        for i in range(10):
+        for i in range(11):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=self._relin_key)
@@ -1004,8 +1004,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             encr_location=loc_list[i][user_index])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
-                                                                      division_factor=sts_list[i][
-                                                                                          user_index].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[i][user_index].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -1016,12 +1015,10 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
                         if self._scores[user_index].modulus > add_val.modulus:
                             self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
-                                                                                     division_factor=self._scores[
-                                                                                                         user_index].modulus // add_val.modulus)
+                                                                                     division_factor=self._scores[user_index].modulus // add_val.modulus)
                         elif self._scores[user_index].modulus != add_val.modulus:
                             add_val = self._evaluator.lower_modulus(ciph=add_val,
-                                                                    division_factor=add_val.modulus // self._scores[
-                                                                        user_index].modulus)
+                                                                    division_factor=add_val.modulus // self._scores[user_index].modulus)
                         self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
                                                                        ciph2=add_val)
 
@@ -1104,7 +1101,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
 
-        for i in range(10):
+        for i in range(11):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=self._relin_key)
@@ -1112,7 +1109,6 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                            division_factor=self._CKKSParams.scaling_factor)
 
         return base
-
 
 
 class GovAgent:
@@ -1342,6 +1338,7 @@ class EncryptionGovAgent(GovAgent):
 
 class EncryptionUntrustedGA:
     risk_threshold = None
+
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
@@ -1362,7 +1359,6 @@ class EncryptionUntrustedGA:
         self._user_pks = []
         self._user_count = 0
         self._mo_count = 0
-
 
     @property
     def ckks_params(self):
@@ -1977,11 +1973,43 @@ class MOTest(unittest.TestCase):
                              "other MO user pks not updated upon MO addition")
             iter += 1
 
-    def test_rcvdatafrommo(self):
+    def test_plainencrlocationscore(self):
         params = CKKSParameters(poly_degree=4,
-                                ciph_modulus=1 << 500,
-                                big_modulus=1 << 625,
+                                ciph_modulus=1 << 600,
+                                big_modulus=1 << 1200,
                                 scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+        i = 14
+        j = 16
+
+        plain_score = test_mo.location_pair_contact_score(location1=(0, 0),
+                                                          location2=(i, j))
+        encri = test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=i))
+        encrj = test_mo._encryptor.encrypt(plain=test_mo._evaluator.create_constant_plain(const=j))
+
+        encr_score = test_mo.plain_encr_location_pair_contact_score(plain_location=(0, 0),
+                                                                    encr_location=(encri, encrj))
+        decr_score = test_mo._decryptor.decrypt(ciphertext=encr_score)
+        deco_score = test_mo._encoder.decode(plain=decr_score)
+
+        self.assertLessEqual(abs(plain_score - deco_score[0].real), 5e-6,
+                             "plain-encr score no work for " + str(i) + " " + str(j))
+
+    def test_rcvdatafrommo(self):
+        params = CKKSParameters(poly_degree=256,
+                                ciph_modulus=1 << 1618,
+                                big_modulus=1 << 2022,
+                                scaling_factor=1 << 67
                                 )
 
         dummy_ga = EncryptionUntrustedGA(encryption_params=params)
@@ -1995,7 +2023,7 @@ class MOTest(unittest.TestCase):
                                           encryption_params=params)
 
         users = []
-        for i in range(10):
+        for i in range(2):
             users.append(EncryptionUserUntrustedGA(x=0,
                                                    y=0,
                                                    mo=test_mo,
@@ -2003,26 +2031,55 @@ class MOTest(unittest.TestCase):
                                                    ga=dummy_ga,
                                                    encryption_params=params))
 
+        self.assertEqual(test_mo._users, users, "inconsistent user lists")
+
+        aux_enco_location = test_mo._evaluator.create_constant_plain(const=0), test_mo._evaluator.create_constant_plain(const=0)
+        aux_encryptor = CKKSEncryptor(params=params,
+                                      public_key=users[0].pk)
+        aux_encr_location = aux_encryptor.encrypt(plain=aux_enco_location[0]), aux_encryptor.encrypt(plain=aux_enco_location[1])
+        aux_enco_sts = test_mo._evaluator.create_constant_plain(const=1)
+        aux_encr_sts = aux_encryptor.encrypt(plain=aux_enco_sts)
+
+        dist_score = test_mo.plain_encr_location_pair_contact_score(plain_location=(0, 0),
+                                                                    encr_location=aux_encr_location)
+
+        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
+                                                      division_factor=sts_list[i][
+                                                                          user_index].modulus // dist_score.modulus)
+
+        add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
+                                           ciph2=dist_score,
+                                           relin_key=self._relin_key)
+
+        add_val = self._evaluator.rescale(ciph=add_val,
+                                          division_factor=self._CKKSParams.scaling_factor)
+
+        if self._scores[user_index].modulus > add_val.modulus:
+            self._scores[user_index] = self._evaluator.lower_modulus(ciph=self._scores[user_index],
+                                                                     division_factor=self._scores[
+                                                                                         user_index].modulus // add_val.modulus)
+        elif self._scores[user_index].modulus != add_val.modulus:
+            add_val = self._evaluator.lower_modulus(ciph=add_val,
+                                                    division_factor=add_val.modulus // self._scores[
+                                                        user_index].modulus)
+        self._scores[user_index] = self._evaluator.add(ciph1=self._scores[user_index],
+                                                       ciph2=add_val)
+
         aux_evaluator = CKKSEvaluator(params=params)
         aux_plain00 = aux_evaluator.create_constant_plain(const=0)
         aux_plain01 = aux_evaluator.create_constant_plain(const=0)
 
         area_list = [(0, 0)]
 
-        sts_list = []
-        aux_sts = []
-        for user in test_mo.users:
-            aux_sts.append(1)
-            sts_list.append([])
+        sts_list = [[]]
 
         for user in users:
             aux_pk = user.pk
             aux_encryptor = CKKSEncryptor(params=params,
                                           public_key=aux_pk)
 
-            for it in range(len(aux_sts)):
-                aux_encoded_sts = aux_evaluator.create_constant_plain(const=aux_sts[it])
-                sts_list[it].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
+            aux_encoded_sts = aux_evaluator.create_constant_plain(const=1)
+            sts_list[0].append(aux_encryptor.encrypt(plain=aux_encoded_sts))
 
         loc_list = [[]]
         for user in users:
@@ -2038,7 +2095,7 @@ class MOTest(unittest.TestCase):
         for i in range(len(test_mo._scores)):
             decr = test_mo._users[i]._decryptor.decrypt(ciphertext=test_mo._scores[i])
             deco = test_mo._users[i]._encoder.decode(plain=decr)
-            self.assertLessEqual(abs(deco[0].real - 1), 7.9e-9, "rcv data from mo no work")
+            self.assertLessEqual(abs(deco[0].real - 1), 0.1, "rcv data from mo no work")
 
 
 unittest.main()

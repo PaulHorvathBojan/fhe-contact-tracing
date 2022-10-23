@@ -581,6 +581,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         self._encoder = CKKSEncoder(params=self._CKKSParams)
 
         self._user_pks = []
+        self._user_relin_keys = []
 
         self._other_mo_user_pks = []
 
