@@ -665,7 +665,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             relin_key=self._user_relin_keys[user_index])
                         sts_selector_index = self._users[user_index].uID
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][sts_selector_index],
-                                                                      division_factor=sts_list[i][sts_selector_index].modulus // dist_score.modulus)
+                                                                      division_factor=sts_list[i][
+                                                                                          sts_selector_index].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
@@ -704,9 +705,11 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
 
+                            sts_selector = self._users[user_index].uID
+
                             enco_score = self._evaluator.create_constant_plain(const=contact_score)
 
-                            add_val = self._evaluator.multiply_plain(ciph=self._status[i][user_index],
+                            add_val = self._evaluator.multiply_plain(ciph=self._status[i][sts_selector],
                                                                      plain=enco_score)
                             add_val = self._evaluator.rescale(ciph=add_val,
                                                               division_factor=self._CKKSParams.scaling_factor)
@@ -714,8 +717,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             if add_val.modulus > self._scores[i].modulus:
                                 add_val = self._evaluator.lower_modulus(ciph=add_val,
                                                                         division_factor=add_val.modulus //
-                                                                                        self._scores[
-                                                                                            i].modulus)
+                                                                                        self._scores[i].modulus)
                             elif add_val.modulus < self._scores[i].modulus:
                                 self._scores[i] = self._evaluator.lower_modulus(ciph=self._scores[i],
                                                                                 division_factor=self._scores[

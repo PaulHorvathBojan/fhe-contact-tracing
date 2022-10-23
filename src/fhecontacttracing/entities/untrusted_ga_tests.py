@@ -359,10 +359,10 @@ class MOTest(unittest.TestCase):
                              "plain-encr score no work for " + str(i) + " " + str(j))
 
     def test_rcvdatafrommo(self):
-        params = CKKSParameters(poly_degree=256,
-                                ciph_modulus=1 << 1618,
-                                big_modulus=1 << 2022,
-                                scaling_factor=1 << 67
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
                                 )
 
         dummy_ga = EncryptionUntrustedGA(encryption_params=params)
@@ -418,10 +418,10 @@ class MOTest(unittest.TestCase):
             self.assertLessEqual(abs(deco[0].real - 1), 0.1, "rcv data from mo no work")
 
     def test_senddatatomo(self):
-        params = CKKSParameters(poly_degree=256,
-                                ciph_modulus=1 << 1618,
-                                big_modulus=1 << 2022,
-                                scaling_factor=1 << 67
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
                                 )
 
         dummy_ga = EncryptionUntrustedGA(encryption_params=params)
@@ -434,6 +434,84 @@ class MOTest(unittest.TestCase):
                                           max_y=3652,
                                           encryption_params=params)
 
-        dummy_mo =
+        dummy_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                           id=1,
+                                           area_side_x=50,
+                                           area_side_y=50,
+                                           max_x=3652,
+                                           max_y=3652,
+                                           encryption_params=params)
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=i * 50,
+                                                   y=i * 50,
+                                                   mo=test_mo,
+                                                   uid=i,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=i * 50,
+                                                   y=i * 50,
+                                                   mo=dummy_mo,
+                                                   uid=i + 10,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+
+        dummy_ga._status = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        dummy_ga.daily()# This low-key assumes uGA.daily() works, which in turn assumes ga.sts_to_mo works, which in turn assumes mo.from_ga_comm works
+
+        dummy_mo.send_data_to_mo(other_mo=test_mo)
+
+        for i in range(len(test_mo._scores)):
+            decr = test_mo._users[i]._decryptor.decrypt(ciphertext=test_mo._scores[i])
+            deco = test_mo._users[i]._encoder.decode(plain=decr)
+            self.assertLessEqual(abs(deco[0].real - 1), 0.1, "send data to mo no work")
+
+    def test_fromgacomm(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=i,
+                                                   y=i,
+                                                   mo=test_mo,
+                                                   uid=i,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+
+        sts_list = []
+        aux_sts = []
+        for user in users:
+            sts_list.append([])
+            aux_sts.append(user.uID ** 2)
+        aux_ev = CKKSEvaluator(params=params)
+        for user in users:
+            aux_encryptor = CKKSEncryptor(params=params,
+                                          public_key=user.pk)
+            for i in range(len(sts_list)):
+                aux_plain = aux_ev.create_constant_plain(const=aux_sts[i])
+                sts_list[i].append(aux_encryptor.encrypt(plain=aux_plain))
+
+        test_mo.from_ga_comm(new_status=sts_list)
+
+        for i in range(test_mo._usr_count):
+            decr_Sts = test_mo._users[i]._decryptor.decrypt(ciphertext=test_mo._status[i][i])
+            deco_sts = test_mo._encoder.decode(plain=decr_Sts)
+            self.assertLessEqual(abs(deco_sts[0].real - i ** 2), 8e-9, "improper decoded-decrypted status @ " + str(i))
 
 unittest.main()

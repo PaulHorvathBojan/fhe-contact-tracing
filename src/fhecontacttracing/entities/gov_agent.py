@@ -294,9 +294,6 @@ class EncryptionUntrustedGA:
         self._user_count += 1
 
     def sts_to_MO(self, mo):
-        # NB:   **either** index by status index, then by pk index **or** the other way around
-        #       In this construction, OUTER is PK, INNER is STATUS
-        #       This way should be quicker because no persistent encryptor for users is kept inside GA class.
         sts_list = []
         aux_sts = []
         for user in mo.users:
