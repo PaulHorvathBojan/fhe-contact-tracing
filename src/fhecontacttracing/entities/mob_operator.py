@@ -611,6 +611,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._user_pks.append(user.pk)  # alt version: uIDs added as (id, pk)
 
+        self._user_relin_keys.append(user.relin_key)
+
         aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                       public_key=self._user_pks[-1])
 
