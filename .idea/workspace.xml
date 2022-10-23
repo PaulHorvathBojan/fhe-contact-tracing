@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -112,7 +113,7 @@
       <workItem from="1666280854385" duration="5904000" />
       <workItem from="1666336714463" duration="1883000" />
       <workItem from="1666353209158" duration="3892000" />
-      <workItem from="1666517658714" duration="4365000" />
+      <workItem from="1666517658714" duration="6110000" />
     </task>
     <servers />
   </component>

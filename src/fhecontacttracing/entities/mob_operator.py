@@ -660,7 +660,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
                     for user_index in curr_bucket:
                         dist_score = self.plain_encr_location_pair_contact_score(
                             plain_location=self._curr_locations[user_index],
-                            encr_location=loc_list[i][user_index])
+                            encr_location=loc_list[i][user_index],
+                            relin_key=self._user_relin_keys[user_index])
 
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
                                                                       division_factor=sts_list[i][
@@ -668,7 +669,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,
-                                                           relin_key=self._relin_key)
+                                                           relin_key=self._user_relin_keys[user_index])
 
                         add_val = self._evaluator.rescale(ciph=add_val,
                                                           division_factor=self._CKKSParams.scaling_factor)
@@ -733,19 +734,19 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._other_mo_user_pks[mo_index].append(pk)
 
-    def plain_encr_location_pair_contact_score(self, plain_location, encr_location):
+    def plain_encr_location_pair_contact_score(self, plain_location, encr_location, relin_key):
         diff_xs = self._evaluator.add_plain(ciph=encr_location[0],
                                             plain=self._evaluator.create_constant_plain(const=-plain_location[0]))
         sq_diff_xs = self._evaluator.multiply(ciph1=diff_xs,
                                               ciph2=diff_xs,
-                                              relin_key=self._relin_key)
+                                              relin_key=relin_key)
         sq_diff_xs = self._evaluator.rescale(ciph=sq_diff_xs, division_factor=self._CKKSParams.scaling_factor)
 
         diff_ys = self._evaluator.add_plain(ciph=encr_location[1],
                                             plain=self._evaluator.create_constant_plain(const=-plain_location[1]))
         sq_diff_ys = self._evaluator.multiply(ciph1=diff_ys,
                                               ciph2=diff_ys,
-                                              relin_key=self._relin_key)
+                                              relin_key=relin_key)
         sq_diff_ys = self._evaluator.rescale(ciph=sq_diff_ys,
                                              division_factor=self._CKKSParams.scaling_factor)
 
@@ -766,7 +767,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         for i in range(10):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
-                                            relin_key=self._relin_key)
+                                            relin_key=relin_key)
             base = self._evaluator.rescale(ciph=base,
                                            division_factor=self._CKKSParams.scaling_factor)
 
