@@ -705,11 +705,11 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
 
-                            sts_selector = self._users[user_index].uID
+                            sts_selector = self._users[i].uID
 
                             enco_score = self._evaluator.create_constant_plain(const=contact_score)
 
-                            add_val = self._evaluator.multiply_plain(ciph=self._status[i][sts_selector],
+                            add_val = self._evaluator.multiply_plain(ciph=self._status[user_index][sts_selector],
                                                                      plain=enco_score)
                             add_val = self._evaluator.rescale(ciph=add_val,
                                                               division_factor=self._CKKSParams.scaling_factor)

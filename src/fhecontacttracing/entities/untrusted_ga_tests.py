@@ -514,4 +514,56 @@ class MOTest(unittest.TestCase):
             deco_sts = test_mo._encoder.decode(plain=decr_Sts)
             self.assertLessEqual(abs(deco_sts[0].real - i ** 2), 8e-9, "improper decoded-decrypted status @ " + str(i))
 
+    def test_insidescoring(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 600,
+                                big_modulus=1 << 800,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        test_mo = EncryptionMOUntrustedGA(ga=dummy_ga,
+                                          id=0,
+                                          area_side_x=50,
+                                          area_side_y=50,
+                                          max_x=3652,
+                                          max_y=3652,
+                                          encryption_params=params)
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=0,
+                                                   y=0,
+                                                   mo=test_mo,
+                                                   uid=i,
+                                                   ga=dummy_ga,
+                                                   encryption_params=params))
+
+        sts_list = []
+        aux_sts = []
+        for user in users:
+            sts_list.append([])
+            aux_sts.append(0)
+        aux_sts[-1] = 1
+        aux_ev = CKKSEvaluator(params=params)
+        for user in users:
+            aux_encryptor = CKKSEncryptor(params=params,
+                                          public_key=user.pk)
+            for i in range(len(sts_list)):
+                aux_plain = aux_ev.create_constant_plain(const=aux_sts[i])
+                sts_list[i].append(aux_encryptor.encrypt(plain=aux_plain))
+
+        test_mo.from_ga_comm(new_status=sts_list)
+        test_mo.inside_scoring()
+
+        for i in range(test_mo._usr_count - 1):
+            decr = test_mo._users[i]._decryptor.decrypt(ciphertext=test_mo._scores[i])
+            deco = test_mo._users[i]._encoder.decode(plain=decr)
+            self.assertLessEqual(abs(deco[0].real - 1), 0.1, "inside score improper @ " + str(i))
+        decr = test_mo._users[-1]._decryptor.decrypt(ciphertext=test_mo._scores[-1])
+        deco = test_mo._users[-1]._encoder.decode(plain=decr)
+        self.assertLessEqual(abs(deco[0].real), 0.1, "inside score improper @ 10")
+
+
 unittest.main()
