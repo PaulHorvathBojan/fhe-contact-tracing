@@ -459,7 +459,7 @@ class MOTest(unittest.TestCase):
                                                    encryption_params=params))
 
         dummy_ga._status = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-        dummy_ga.daily()# This low-key assumes uGA.daily() works, which in turn assumes ga.sts_to_mo works, which in turn assumes mo.from_ga_comm works
+        dummy_ga.daily()  # This low-key assumes uGA.daily() works, which in turn assumes ga.sts_to_mo works, which in turn assumes mo.from_ga_comm works
 
         dummy_mo.send_data_to_mo(other_mo=test_mo)
 
@@ -564,6 +564,35 @@ class MOTest(unittest.TestCase):
         decr = test_mo._users[-1]._decryptor.decrypt(ciphertext=test_mo._scores[-1])
         deco = test_mo._users[-1]._encoder.decode(plain=decr)
         self.assertLessEqual(abs(deco[0].real), 0.1, "inside score improper @ 10")
+
+    def test_adduserpk(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        mos = []
+        for i in range(10):
+            mos.append(EncryptionMOUntrustedGA(ga=dummy_ga,
+                                               id=i,
+                                               area_side_x=50,
+                                               area_side_y=50,
+                                               max_x=3652,
+                                               max_y=3652,
+                                               encryption_params=params))
+            for j in range(i):
+                mos[j].register_other_mo(new_mo=mos[i])
+                mos[i].register_other_mo(new_mo=mos[j])
+
+        for i in range(1, 10):
+            mos[i].add_user_pk(mo=mos[0],
+                               pk=i ** 2)
+
+        for i in range(1, 10):
+            self.assertEqual(mos[i]._other_mo_user_pks[0][0], i ** 2, "add MO pk no work @ " + str(i))
 
 
 unittest.main()

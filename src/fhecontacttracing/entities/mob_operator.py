@@ -1,3 +1,4 @@
+import copy
 import time
 import numpy as np
 import math
@@ -625,7 +626,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
         self._usr_count += 1
 
     def register_other_mo(self, new_mo):
-        self._other_mo_user_pks.append(new_mo.user_pks)
+        self._other_mo_user_pks.append(copy.deepcopy(new_mo.user_pks))
         super(EncryptionMOUntrustedGA, self).register_other_mo(new_mo=new_mo)
 
     def send_data_to_mo(self, other_mo):
@@ -704,8 +705,8 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             contact_score = self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
-
                             sts_selector = self._users[i].uID
+
 
                             enco_score = self._evaluator.create_constant_plain(const=contact_score)
 
