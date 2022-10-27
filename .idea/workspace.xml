@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -19,6 +19,17 @@
       <list>
         <option value="Python Script" />
       </list>
+    </option>
+  </component>
+  <component name="FlaskConsoleOptions" custom-start-script="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))">
+    <envs>
+      <env key="FLASK_APP" value="app" />
+    </envs>
+    <option name="myCustomStartScript" value="import sys&#10;sys.path.extend([WORKING_DIR_AND_PYTHON_PATHS])&#10;from flask.cli import ScriptInfo&#10;locals().update(ScriptInfo(create_app=None).load_app().make_shell_context())&#10;print(&quot;Python %s on %s\nApp: %s [%s]\nInstance: %s&quot; % (sys.version, sys.platform, app.import_name, app.env, app.instance_path))" />
+    <option name="myEnvs">
+      <map>
+        <entry key="FLASK_APP" value="app" />
+      </map>
     </option>
   </component>
   <component name="Git.Settings">
@@ -44,7 +55,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/xopbat/Projects/Master Thesis/fhe-contact-tracing&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;editor.preferences.fonts.default&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
   },
   &quot;keyToStringList&quot;: {
     &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
@@ -116,7 +127,14 @@
       <workItem from="1666353209158" duration="3892000" />
       <workItem from="1666517658714" duration="20305000" />
       <workItem from="1666615581440" duration="10085000" />
-      <workItem from="1666677841246" duration="4139000" />
+      <workItem from="1666677841246" duration="4745000" />
+      <workItem from="1666785843569" duration="2890000" />
+      <workItem from="1666790177898" duration="3408000" />
+      <workItem from="1666795579815" duration="3293000" />
+      <workItem from="1666815829297" duration="1781000" />
+      <workItem from="1666853932648" duration="1320000" />
+      <workItem from="1666856148199" duration="819000" />
+      <workItem from="1666893140337" duration="1743000" />
     </task>
     <servers />
   </component>

@@ -594,5 +594,208 @@ class MOTest(unittest.TestCase):
         for i in range(1, 10):
             self.assertEqual(mos[i]._other_mo_user_pks[0][0], i ** 2, "add MO pk no work @ " + str(i))
 
+    def test_transmitpk(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        mos = []
+        for i in range(10):
+            mos.append(EncryptionMOUntrustedGA(ga=dummy_ga,
+                                               id=i,
+                                               area_side_x=50,
+                                               area_side_y=50,
+                                               max_x=3652,
+                                               max_y=3652,
+                                               encryption_params=params))
+            for j in range(i):
+                mos[j].register_other_mo(new_mo=mos[i])
+                mos[i].register_other_mo(new_mo=mos[j])
+
+        for i in range(10):
+            mos[0].transmit_pk(pk=i ** 2)
+
+        for i in range(1, 10):
+            self.assertEqual(mos[i]._other_mo_user_pks[0], [0, 1, 4, 9, 16, 25, 36, 49, 64, 81],
+                             "pk transmission mehtod no work")
+
+
+class GATest(unittest.TestCase):
+    def test_getters(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        test_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        self.assertEqual(test_ga.ckks_params, params, "crypto params property no work")
+
+        self.assertIsNotNone(test_ga.pk, "pk property no work")
+
+    def test_addmo(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        test_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        mos = []
+        for i in range(10):
+            aux_mo = i ** 2
+            mos.append(aux_mo)
+            test_ga.add_mo(new_mo=aux_mo)
+
+        self.assertEqual(test_ga._mo_count, 10, "add mo method does not properly increment user count")
+
+        self.assertEqual(test_ga._mos, [0, 1, 4, 9, 16, 25, 36, 49, 64, 81],
+                         "add mo method does not properly append to mo list")
+
+        self.assertEqual(test_ga._mos, mos, "ga mo list not consistent with outer mo list")
+
+    def test_adduser(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        test_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        dummy_mo = EncryptionMOUntrustedGA(ga=test_ga,
+                                           id=0,
+                                           area_side_x=50,
+                                           area_side_y=50,
+                                           max_x=3652,
+                                           max_y=3652,
+                                           encryption_params=params)
+
+        users = []
+        for i in range(10):
+            users.append(EncryptionUserUntrustedGA(x=i,
+                                                   y=0,
+                                                   mo=dummy_mo,
+                                                   uid=i,
+                                                   ga=test_ga,
+                                                   encryption_params=params))
+
+        self.assertEqual(test_ga._user_count, 10, "user count improperly updated by add_user method")
+
+        for i in range(10):
+            self.assertEqual(test_ga._users[i], users[i], "user list improperly updated by add_user method")
+            self.assertEqual(test_ga._user_pks[i], users[i]._pk, "user pk list improperly updated by add_user method")
+
+    def test_ststomo(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        test_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        mos = []
+        for i in range(2):
+            mos.append(EncryptionMOUntrustedGA(ga=test_ga,
+                                               id=i,
+                                               area_side_x=50,
+                                               area_side_y=50,
+                                               max_x=3652,
+                                               max_y=3652,
+                                               encryption_params=params))
+
+        users = []
+        for i in range(4):
+            users.append(EncryptionUserUntrustedGA(x=i,
+                                                   y=0,
+                                                   mo=mos[i // 2],
+                                                   uid=i,
+                                                   ga=test_ga,
+                                                   encryption_params=params))
+
+        test_ga._status = [1, 2, 3, 4]
+
+        test_ga.sts_to_MO(mo=mos[0])
+
+        for i in range(2):
+            for j in range(4):
+                aux_encr = mos[0]._status[i][j]
+                aux_decr = users[j]._decryptor.decrypt(ciphertext=aux_encr)
+                aux_deco = users[j]._encoder.decode(plain=aux_decr)
+                self.assertLessEqual(abs(aux_deco[0].real - i - 1), 7.6e-9, "sts_to_mo no work")
+
+    def test_daily(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        test_ga = EncryptionUntrustedGA(encryption_params=params)
+
+        mos = []
+        for i in range(2):
+            mos.append(EncryptionMOUntrustedGA(ga=test_ga,
+                                               id=i,
+                                               area_side_x=50,
+                                               area_side_y=50,
+                                               max_x=3652,
+                                               max_y=3652,
+                                               encryption_params=params))
+
+        users = []
+        for i in range(4):
+            users.append(EncryptionUserUntrustedGA(x=i,
+                                                   y=0,
+                                                   mo=mos[i // 2],
+                                                   uid=i,
+                                                   ga=test_ga,
+                                                   encryption_params=params))
+
+        test_ga._status = [1, 2, 3, 4]
+
+        test_ga.daily()
+
+        for i in range(2):
+            for j in range(4):
+                aux_encr = mos[0]._status[i][j]
+                aux_decr = users[j]._decryptor.decrypt(ciphertext=aux_encr)
+                aux_deco = users[j]._encoder.decode(plain=aux_decr)
+                self.assertLessEqual(abs(aux_deco[0].real - i - 1), 7.6e-9, "daily no work")
+
+        for i in range(2):
+            for j in range(4):
+                aux_encr = mos[1]._status[i][j]
+                aux_decr = users[j]._decryptor.decrypt(ciphertext=aux_encr)
+                aux_deco = users[j]._encoder.decode(plain=aux_decr)
+                self.assertLessEqual(abs(aux_deco[0].real - i - 3), 7.6e-9, "daily no work")
+
+class STLTest(unittest.TestCase):
+    def test_getters(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
+                                            mo_count=10,
+                                            risk_thr=)
 
 unittest.main()

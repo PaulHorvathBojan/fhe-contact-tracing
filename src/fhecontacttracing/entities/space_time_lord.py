@@ -26,6 +26,9 @@ from util.public_key import PublicKey
 
 from pymobility.models.mobility import gauss_markov
 
+from user import *
+from mob_operator import *
+from gov_agent import *
 
 class SpaceTimeLord:
 
@@ -261,6 +264,7 @@ class SpaceTimeLordUntrustedGA:
         self._max_y = max_sizes[1]
         self._area_size_x = area_sizes[0]
         self._area_size_y = area_sizes[1]
+        self._CKKSParams = params
 
         self._usr_count = 0
         self._mo_count = 0
@@ -275,12 +279,11 @@ class SpaceTimeLordUntrustedGA:
 
         self._curr_time = 0
 
-        self._ga = EncryptionUntrustedGovAgent(risk_threshold=self._risk_threshold,
-                                               encryption_params=params)
+        self._ga = EncryptionUntrustedGA(encryption_params=params)
 
         while self._mo_count < mo_count:
             new_mo = EncryptionMOUntrustedGA(ga=self._ga,
-                                             mo_id=self._mo_count,
+                                             id=self._mo_count,
                                              area_side_x=self._area_size_x,
                                              area_side_y=self._area_size_y,
                                              max_x=self._max_x,
@@ -302,7 +305,7 @@ class SpaceTimeLordUntrustedGA:
                                              mo=self._mos[self._usr_count % self._mo_count],
                                              uid=self._usr_count,
                                              ga=self._ga,
-                                             encryption_params=params
+                                             encryption_params=self._CKKSParams
                                              )
 
         self._users.append(new_user)
