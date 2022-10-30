@@ -796,6 +796,66 @@ class STLTest(unittest.TestCase):
 
         test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
                                             mo_count=10,
-                                            risk_thr=)
+                                            area_sizes=(50, 50),
+                                            max_sizes=(3652, 3652),
+                                            params=params)
+
+        loc_check = next(dual_minute_gm)
+        mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+
+        self.assertEqual(test_stl.current_locations, mapmapcheck, "initial locations not proper")
+
+        self.assertEqual(test_stl.area_sizes,  (50, 50), "area size property not proper")
+
+        self.assertEqual(test_stl.user_count, 100, "user count property not proper")
+
+        self.assertEqual(test_stl.mo_count, 10, "mo count property not proper")
+
+        self.assertEqual(len(test_stl.mos), 10, "mo list property not proper length")
+        for i in range(10):
+            self.assertTrue(isinstance(test_stl.mos[i], EncryptionMOUntrustedGA),
+                            "mo list property wrong type @ " + str(i))
+
+        self.assertEqual(len(test_stl.users), 100, "user list property not proper length")
+        for i in range(100):
+            self.assertTrue(isinstance(test_stl.users[i], EncryptionUserUntrustedGA),
+                            "user list property not proper type @ " + str(i))
+
+        self.assertEqual(test_stl.current_time, 0, "time property not proper")
+
+        self.assertTrue(isinstance(test_stl.ga, EncryptionUntrustedGA), "ga property improper type")
+
+    def test_adduser(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 500,
+                                big_modulus=1 << 700,
+                                scaling_factor=1 << 30
+                                )
+
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
+                                            mo_count=10,
+                                            area_sizes=(50, 50),
+                                            max_sizes=(3652, 3652),
+                                            params=params)
+
+        self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
+        test_stl.add_user(location=(14, 14))
+        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improper class")
+        self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
+        for i in range(50):
+            test_stl.add_user(location=(i ** 2, i ** 2))
+            self.assertTrue(isinstance(test_stl._users[i + 2], EncryptedUser), "Additional user improper class")
+            self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
+            self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
+            self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
 
 unittest.main()

@@ -257,9 +257,8 @@ class EncryptionSTL:
 
 
 class SpaceTimeLordUntrustedGA:
-    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes, params):
+    def __init__(self, movements_iterable, mo_count, area_sizes, max_sizes, params):
         self._movements_iterable = movements_iterable
-        self._risk_threshold = risk_thr
         self._max_x = max_sizes[0]
         self._max_y = max_sizes[1]
         self._area_size_x = area_sizes[0]
