@@ -254,6 +254,7 @@ class EncryptionGovAgent(GovAgent):
 
 class EncryptionUntrustedGA:
     risk_threshold = None
+
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
         self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
@@ -291,6 +292,7 @@ class EncryptionUntrustedGA:
     def add_user(self, new_user):
         self._users.append(new_user)
         self._user_pks.append(new_user.pk)
+        self._status.append(0)
         self._user_count += 1
 
     def sts_to_MO(self, mo):

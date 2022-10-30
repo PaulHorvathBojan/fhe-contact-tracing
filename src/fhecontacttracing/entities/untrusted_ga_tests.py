@@ -841,21 +841,59 @@ class STLTest(unittest.TestCase):
         minute_gm = MinutelyMovement(movement_iter=dummy_gm)
         dual_minute_gm = DualIter(init_iter=minute_gm)
 
+        test_stl = SpaceTimeLordUntrustedGA(movements_iterable=iter([[[1, 2]]]),
+                                            mo_count=10,
+                                            area_sizes=(50, 50),
+                                            max_sizes=(3652, 3652),
+                                            params=params)
+
+        self.assertTrue(isinstance(test_stl._users[0], EncryptionUserUntrustedGA), "Add user improperly produces non-user")
+        test_stl.add_user(location=(14, 14))
+        self.assertTrue(isinstance(test_stl._users[1], EncryptionUserUntrustedGA), "Additional user improper class")
+        self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
+        for i in range(50):
+            test_stl.add_user(location=(i ** 2, i ** 2))
+            self.assertTrue(isinstance(test_stl._users[i + 2], EncryptionUserUntrustedGA), "Additional user improper class")
+            self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
+            self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
+            self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
+
+    def test_tick(self):
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 300,
+                                big_modulus=1 << 400,
+                                scaling_factor=1 << 10
+                                )
+
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
         test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
                                             mo_count=10,
                                             area_sizes=(50, 50),
                                             max_sizes=(3652, 3652),
                                             params=params)
 
-        self.assertTrue(isinstance(test_stl._users[0], EncryptedUser), "Add user improperly produces non-user")
-        test_stl.add_user(location=(14, 14))
-        self.assertTrue(isinstance(test_stl._users[1], EncryptedUser), "Additional user improper class")
-        self.assertEqual(test_stl._users[1]._uID, 1, "additional user improper id")
-        for i in range(50):
-            test_stl.add_user(location=(i ** 2, i ** 2))
-            self.assertTrue(isinstance(test_stl._users[i + 2], EncryptedUser), "Additional user improper class")
-            self.assertEqual(test_stl._users[i + 2]._uID, i + 2, "additional user improper id")
-            self.assertEqual(test_stl._users[i + 2]._x, i ** 2, "additional user improper x coord")
-            self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
+        loc_check = next(dual_minute_gm)
+        for itercount in range(10):
+            mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+            for i in range(test_stl._usr_count):  # probably more intuitive to use usr_count
+                self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
+                                 "user x coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
+                                 "user y coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+                                 "user x coordinate not consistent w/ STL location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+                                 "user y coordinate not consistent w/ STL location at " + str(i))
+            test_stl.tick()
+            loc_check = next(dual_minute_gm)
+
 
 unittest.main()

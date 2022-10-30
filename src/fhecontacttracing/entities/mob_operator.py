@@ -664,7 +664,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             plain_location=self._curr_locations[user_index],
                             encr_location=loc_list[i][user_index],
                             relin_key=self._user_relin_keys[user_index])
-                        sts_selector_index = self._users[user_index].uID
+                        sts_selector_index = self.search_user_db(self._users[user_index])
                         lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][sts_selector_index],
                                                                       division_factor=sts_list[i][
                                                                                           sts_selector_index].modulus // dist_score.modulus)
@@ -705,8 +705,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             contact_score = self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
-                            sts_selector = self._users[i].uID
-
+                            sts_selector = self.search_user_db(self._users[i])
 
                             enco_score = self._evaluator.create_constant_plain(const=contact_score)
 

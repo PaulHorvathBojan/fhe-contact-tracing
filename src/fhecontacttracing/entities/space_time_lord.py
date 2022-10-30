@@ -351,11 +351,12 @@ class SpaceTimeLordUntrustedGA:
     ga = property(fget=get_ga)
 
     def tick(self):
+        if self._curr_time % 1440 == 0:
+            self._ga.daily()
+
         for i in range(self._mo_count):
             self._mos[i].tick()
 
-        if self._curr_time % 1440 == 0:
-            self._ga.daily()
 
         self._current_locations = next(self._movements_iterable)
         self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
@@ -364,6 +365,5 @@ class SpaceTimeLordUntrustedGA:
         self._curr_time += 1
         for i in range(self._usr_count):
             self._users[i].move_to(new_x=self._current_locations[i][0],
-                                   new_y=self._current_locations[i][1],
-                                   update_time=self._curr_time
+                                   new_y=self._current_locations[i][1]
                                    )
