@@ -706,7 +706,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             contact_score = self.location_pair_contact_score(
                                 location1=self._curr_locations[i],
                                 location2=self._curr_locations[user_index])
-                            sts_selector = self.search_user_db(self._users[i])
+                            sts_selector = self._users[i].uID
 
                             enco_score = self._evaluator.create_constant_plain(const=contact_score)
 

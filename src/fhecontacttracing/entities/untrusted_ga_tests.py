@@ -862,10 +862,10 @@ class STLTest(unittest.TestCase):
             self.assertEqual(test_stl._users[i + 2]._y, i ** 2, "additional user improper y coord")
 
     def test_tick(self):
-        params = CKKSParameters(poly_degree=256,
-                                ciph_modulus=1 << 744,
-                                big_modulus=1 << 930,
-                                scaling_factor=1 << 49
+        params = CKKSParameters(poly_degree=4,
+                                ciph_modulus=1 << 600,
+                                big_modulus=1 << 800,
+                                scaling_factor=1 << 30
                                 )
 
         # dummy_gm = gauss_markov(nr_nodes=100,
@@ -911,6 +911,7 @@ class STLTest(unittest.TestCase):
             test_stl._ga._status[i] = 1
 
         for itercount in range(10):
+            test_stl.tick()
             for mo in test_stl._mos:
                 for i in range(len(mo._scores)):
                     aux_decryptor = mo._users[i]._decryptor
