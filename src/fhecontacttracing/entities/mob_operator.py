@@ -586,7 +586,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._other_mo_user_pks = []
 
-        super(EncryptionMOUntrustedGA, self).__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
+        super().__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
 
     @property
     def pk(self):
@@ -631,12 +631,13 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
     def send_data_to_mo(self, other_mo):
         aux_locs = []
+        mo_index = self.search_mo_db(mo=other_mo)
 
         for i in range(self._usr_count):
             aux_locs.append([])
 
-        for i in range(other_mo.usr_count):
-            aux_pk = other_mo.user_pks[i]
+        for i in range(len(self._other_mo_user_pks[mo_index])):
+            aux_pk = self._other_mo_user_pks[mo_index][i]
             aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                           public_key=aux_pk)
 
