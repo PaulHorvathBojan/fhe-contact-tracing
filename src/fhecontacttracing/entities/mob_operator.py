@@ -647,9 +647,20 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
                 aux_locs[j].append((aux_encryptor.encrypt(plain=encoded_x), aux_encryptor.encrypt(plain=encoded_y)))
 
+        other_mo_uids = []
+        for i in range(len(other_mo.users)):
+            other_mo_uids.append(other_mo.users[i].uID)
+
+        aux_sts = []
+        for i in range(self._usr_count):
+            aux_sts.append([])
+        for uid in other_mo_uids:
+            for i in range(self._usr_count):
+                aux_sts[i].append(self._status[i][uid])
+
         other_mo.rcv_data_from_mo(loc_list=aux_locs,
                                   area_list=self._curr_areas_by_user,
-                                  sts_list=self._status
+                                  sts_list=aux_sts
                                   )
 
     def rcv_data_from_mo(self, loc_list, area_list, sts_list):
@@ -665,10 +676,9 @@ class EncryptionMOUntrustedGA(MobileOperator):
                             plain_location=self._curr_locations[user_index],
                             encr_location=loc_list[i][user_index],
                             relin_key=self._user_relin_keys[user_index])
-                        sts_selector_index = self.search_user_db(self._users[user_index])
-                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][sts_selector_index],
+                        lower_mod_sts = self._evaluator.lower_modulus(ciph=sts_list[i][user_index],
                                                                       division_factor=sts_list[i][
-                                                                                          sts_selector_index].modulus // dist_score.modulus)
+                                                                                          user_index].modulus // dist_score.modulus)
 
                         add_val = self._evaluator.multiply(ciph1=lower_mod_sts,
                                                            ciph2=dist_score,

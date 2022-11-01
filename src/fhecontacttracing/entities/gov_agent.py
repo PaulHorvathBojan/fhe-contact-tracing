@@ -298,12 +298,12 @@ class EncryptionUntrustedGA:
     def sts_to_MO(self, mo):
         sts_list = []
         aux_sts = []
-        for user in mo.users:
-            aux_sts.append(self._status[user.uID])
+        for i in range(len(mo.users)):
+            aux_sts.append(self._status[mo.users[i].uID])
             sts_list.append([])
 
-        for user in self._users:
-            aux_pk = user.pk
+        for i in range(len(self._users)):
+            aux_pk = self._users[i].pk
             aux_encryptor = CKKSEncryptor(params=self._CKKSParams,
                                           public_key=aux_pk)
 

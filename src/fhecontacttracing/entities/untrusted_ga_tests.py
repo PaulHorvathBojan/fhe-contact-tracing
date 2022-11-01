@@ -868,35 +868,35 @@ class STLTest(unittest.TestCase):
                                 scaling_factor=1 << 30
                                 )
 
-        # dummy_gm = gauss_markov(nr_nodes=100,
-        #                         dimensions=(3652, 3652),
-        #                         velocity_mean=7.,
-        #                         alpha=.5,
-        #                         variance=7.)
-        #
-        # minute_gm = MinutelyMovement(movement_iter=dummy_gm)
-        # dual_minute_gm = DualIter(init_iter=minute_gm)
-        #
-        # test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
-        #                                     mo_count=10,
-        #                                     area_sizes=(50, 50),
-        #                                     max_sizes=(3652, 3652),
-        #                                     params=params)
-        #
-        # loc_check = next(dual_minute_gm)
-        # for itercount in range(10):
-        #     mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
-        #     for i in range(test_stl._usr_count):  # probably more intuitive to use usr_count
-        #         self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
-        #                          "user x coordinate not consistent w/ check location at " + str(i))
-        #         self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
-        #                          "user y coordinate not consistent w/ check location at " + str(i))
-        #         self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
-        #                          "user x coordinate not consistent w/ STL location at " + str(i))
-        #         self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
-        #                          "user y coordinate not consistent w/ STL location at " + str(i))
-        #     test_stl.tick()
-        #     loc_check = next(dual_minute_gm)
+        dummy_gm = gauss_markov(nr_nodes=100,
+                                dimensions=(3652, 3652),
+                                velocity_mean=7.,
+                                alpha=.5,
+                                variance=7.)
+
+        minute_gm = MinutelyMovement(movement_iter=dummy_gm)
+        dual_minute_gm = DualIter(init_iter=minute_gm)
+
+        test_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_minute_gm,
+                                            mo_count=10,
+                                            area_sizes=(50, 50),
+                                            max_sizes=(3652, 3652),
+                                            params=params)
+
+        loc_check = next(dual_minute_gm)
+        for itercount in range(10):
+            mapmapcheck = list(map(lambda y: list(map(lambda x: int(round(x)), loc_check[y])), range(len(loc_check))))
+            for i in range(test_stl._usr_count):  # probably more intuitive to use usr_count
+                self.assertEqual(test_stl._users[i]._x, mapmapcheck[i][0],
+                                 "user x coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, mapmapcheck[i][1],
+                                 "user y coordinate not consistent w/ check location at " + str(i))
+                self.assertEqual(test_stl._users[i]._x, test_stl._current_locations[i][0],
+                                 "user x coordinate not consistent w/ STL location at " + str(i))
+                self.assertEqual(test_stl._users[i]._y, test_stl._current_locations[i][1],
+                                 "user y coordinate not consistent w/ STL location at " + str(i))
+            test_stl.tick()
+            loc_check = next(dual_minute_gm)
 
         interiter = IntercalIter(batchsize=2,
                                  batchcount=10)
@@ -920,6 +920,29 @@ class STLTest(unittest.TestCase):
 
                     self.assertLessEqual(abs(deco_score[0].real - 9 * (itercount + 1)), 0.008670585601992187,
                                          "inside scoring no good at " + str(i) + " during iteration " + str(itercount))
+
+        sameloc = SameLocIter(loc_val=(1234, 1234),
+                              loc_ct=9)
+
+        test_stl = SpaceTimeLordUntrustedGA(movements_iterable=sameloc,
+                                            mo_count=3,
+                                            area_sizes=(50, 50),
+                                            max_sizes=(3652, 3652),
+                                            params=params)
+
+        test_stl._ga._status[0] = 1
+
+        for itercount in range(10):
+            test_stl.tick()
+            for j in range(len(test_stl._mos)):
+                for i in range(len(test_stl._mos[j]._scores)):
+                    if j + i != 0:
+                        aux_decryptor = test_stl._mos[j]._users[i]._decryptor
+                        decr_score = aux_decryptor.decrypt(ciphertext=test_stl._mos[j]._scores[i])
+                        deco_score = test_stl._mos[j]._users[i]._encoder.decode(plain=decr_score)
+
+                        self.assertLessEqual(abs(deco_score[0].real - (itercount + 1)), 0.008670585601992187,
+                                             "inside scoring no good at " + str(i) + " during iteration " + str(itercount))
 
 
 unittest.main()
