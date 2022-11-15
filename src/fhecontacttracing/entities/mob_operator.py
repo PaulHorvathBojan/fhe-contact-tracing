@@ -234,7 +234,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - (
-                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 1024
+                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 4096
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -569,16 +569,16 @@ class EncryptionMOUntrustedGA(MobileOperator):
     def __init__(self, ga, id, area_side_x, area_side_y, max_x, max_y, encryption_params):
 
         self._CKKSParams = encryption_params
-        self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
-        self._pk = self._keygen.public_key
-        self._sk = self._keygen.secret_key
-        self._relin_key = self._keygen.relin_key
+        # self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
+        # self._pk = self._keygen.public_key
+        # self._sk = self._keygen.secret_key
+        # self._relin_key = self._keygen.relin_key
         self._evaluator = CKKSEvaluator(params=self._CKKSParams)
-        self._encryptor = CKKSEncryptor(params=self._CKKSParams,
-                                        public_key=self._pk,
-                                        secret_key=self._sk)
-        self._decryptor = CKKSDecryptor(params=self._CKKSParams,
-                                        secret_key=self._sk)
+        # self._encryptor = CKKSEncryptor(params=self._CKKSParams,
+        #                                 public_key=self._pk,
+        #                                 secret_key=self._sk)
+        # self._decryptor = CKKSDecryptor(params=self._CKKSParams,
+        #                                 secret_key=self._sk)
         self._encoder = CKKSEncoder(params=self._CKKSParams)
 
         self._user_pks = []
@@ -587,6 +587,9 @@ class EncryptionMOUntrustedGA(MobileOperator):
         self._other_mo_user_pks = []
 
         super().__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
+
+        self._const = -1 / (self._L_max ** 2)
+        self._const = self._evaluator.create_constant_plain(const=self._const)
 
     @property
     def pk(self):
@@ -766,18 +769,15 @@ class EncryptionMOUntrustedGA(MobileOperator):
         sq_dist = self._evaluator.add(ciph1=sq_diff_xs,
                                       ciph2=sq_diff_ys)
 
-        const = -1 / (self._L_max ** 2)
-        const = self._evaluator.create_constant_plain(const=const)
-
         fraction = self._evaluator.multiply_plain(ciph=sq_dist,
-                                                  plain=const)
+                                                  plain=self._const)
         fraction = self._evaluator.rescale(ciph=fraction,
                                            division_factor=self._CKKSParams.scaling_factor)
 
         base = self._evaluator.add_plain(ciph=fraction,
                                          plain=self._evaluator.create_constant_plain(const=1))
 
-        for i in range(10):
+        for i in range(12):
             base = self._evaluator.multiply(ciph1=base,
                                             ciph2=base,
                                             relin_key=relin_key)
@@ -785,3 +785,6 @@ class EncryptionMOUntrustedGA(MobileOperator):
                                            division_factor=self._CKKSParams.scaling_factor)
 
         return base
+
+class SimpleContactMobileOperator(MobileOperator):
+

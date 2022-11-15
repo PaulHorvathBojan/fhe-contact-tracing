@@ -257,16 +257,16 @@ class EncryptionUntrustedGA:
 
     def __init__(self, encryption_params):
         self._CKKSParams = encryption_params
-        self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
-        self._pk = self._keygen.public_key
-        self._sk = self._keygen.secret_key
-        self._relin_key = self._keygen.relin_key
+        # self._keygen = CKKSKeyGenerator(params=self._CKKSParams)
+        # self._pk = self._keygen.public_key
+        # self._sk = self._keygen.secret_key
+        # self._relin_key = self._keygen.relin_key
         self._evaluator = CKKSEvaluator(params=self._CKKSParams)
-        self._encryptor = CKKSEncryptor(params=self._CKKSParams,
-                                        public_key=self._pk,
-                                        secret_key=self._sk)
-        self._decryptor = CKKSDecryptor(params=self._CKKSParams,
-                                        secret_key=self._sk)
+        # self._encryptor = CKKSEncryptor(params=self._CKKSParams,
+        #                                 public_key=self._pk,
+        #                                 secret_key=self._sk)
+        # self._decryptor = CKKSDecryptor(params=self._CKKSParams,
+        #                                 secret_key=self._sk)
 
         self._mos = []
         self._users = []
