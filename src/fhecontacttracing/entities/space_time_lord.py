@@ -30,6 +30,7 @@ from user import *
 from mob_operator import *
 from gov_agent import *
 
+
 class SpaceTimeLord:
 
     def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes):
@@ -357,7 +358,6 @@ class SpaceTimeLordUntrustedGA:
         for i in range(self._mo_count):
             self._mos[i].tick()
 
-
         self._current_locations = next(self._movements_iterable)
         self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
                                                               self._current_locations[y])),
@@ -367,3 +367,43 @@ class SpaceTimeLordUntrustedGA:
             self._users[i].move_to(new_x=self._current_locations[i][0],
                                    new_y=self._current_locations[i][1]
                                    )
+
+
+class SimpleSTL(SpaceTimeLord):
+    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes):
+        self._movements_iterable = movements_iterable
+        self._risk_threshold = risk_thr
+        self._max_x = max_sizes[0]
+        self._max_y = max_sizes[1]
+        self._area_size_x = area_sizes[0]
+        self._area_size_y = area_sizes[1]
+
+        self._usr_count = 0
+        self._mo_count = 0
+
+        self._mos = []
+        self._users = []
+        self._current_locations = next(movements_iterable)
+        self._current_locations = list(map(lambda y: list(map(lambda x: int(round(x)),
+                                                              self._current_locations[y])),
+                                           range(len(self._current_locations))))
+        self._curr_time = 0
+
+        self._ga = GovAgent(risk_threshold=self._risk_threshold)
+
+        while self._mo_count < mo_count:
+            new_mo = SimpleContactMobileOperator(ga=self._ga,
+                                                 mo_id=self._mo_count,
+                                                 area_side_x=self._area_size_x,
+                                                 area_side_y=self._area_size_y,
+                                                 max_x=self._max_x,
+                                                 max_y=self._max_y
+                                                 )
+            for prev_mo in self._mos:
+                new_mo.register_other_mo(new_mo=prev_mo)
+                prev_mo.register_other_mo(new_mo=new_mo)
+            self._mos.append(new_mo)
+            self._mo_count += 1
+
+        for i in range(len(self._current_locations)):
+            self.add_user(location=self._current_locations[i])

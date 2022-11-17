@@ -6,6 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mobility_data_visualiser.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mobility_data_visualiser.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/single_operation_simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/single_operation_simulation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/untrusted_ga_tests.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -17,6 +21,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="Jupyter Notebook" />
       </list>
     </option>
   </component>
@@ -54,7 +59,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;last_opened_file_path&quot;: &quot;/home/xopbat/Projects/Master Thesis/fhe-contact-tracing&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;
   },
   &quot;keyToStringList&quot;: {
     &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
@@ -62,7 +67,33 @@
     ]
   }
 }</component>
-  <component name="RunManager">
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings>
+        <option name="useSoftWraps" value="true" />
+      </console-settings>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.10u_encr_vs_plain_simulation">
+    <configuration name="10u_encr_vs_plain_simulation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="fhe-contact-tracing" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/fhecontacttracing/entities" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/fhecontacttracing/entities/10u_encr_vs_plain_simulation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
       <module name="fhe-contact-tracing" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -85,6 +116,77 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="contact_tru_vs_curve" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="fhe-contact-tracing" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/fhecontacttracing/entities" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/fhecontacttracing/entities/contact_tru_vs_curve.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scratch" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="fhe-contact-tracing" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="single_operation_simulation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="fhe-contact-tracing" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/fhecontacttracing/entities" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/fhecontacttracing/entities/single_operation_simulation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.10u_encr_vs_plain_simulation" />
+        <item itemvalue="Python.scratch" />
+        <item itemvalue="Python.contact_tru_vs_curve" />
+        <item itemvalue="Python.single_operation_simulation" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -138,6 +240,24 @@
       <workItem from="1667117593451" duration="13775000" />
       <workItem from="1667201124474" duration="17803000" />
       <workItem from="1667288073407" duration="13209000" />
+      <workItem from="1667744670253" duration="2720000" />
+      <workItem from="1667821739313" duration="440000" />
+      <workItem from="1667823345022" duration="4264000" />
+      <workItem from="1667839331784" duration="3918000" />
+      <workItem from="1667913562375" duration="4721000" />
+      <workItem from="1667928864288" duration="1520000" />
+      <workItem from="1667931599898" duration="782000" />
+      <workItem from="1667979574733" duration="5281000" />
+      <workItem from="1667998669256" duration="3445000" />
+      <workItem from="1668002715956" duration="1393000" />
+      <workItem from="1668009384473" duration="12640000" />
+      <workItem from="1668060719368" duration="19863000" />
+      <workItem from="1668155996688" duration="2923000" />
+      <workItem from="1668236837097" duration="21147000" />
+      <workItem from="1668407958408" duration="10196000" />
+      <workItem from="1668495951380" duration="17429000" />
+      <workItem from="1668582413059" duration="21074000" />
+      <workItem from="1668662608034" duration="7867000" />
     </task>
     <servers />
   </component>

@@ -7,6 +7,7 @@ import os
 import unittest
 import random
 import gmpy2
+import util.random_sample
 
 from scipy.stats import bernoulli
 from ckks.ckks_decryptor import CKKSDecryptor
@@ -94,14 +95,17 @@ class IntercalIter:
 # Not sure if assigning random seed would be best.
 # np.random.seed(1234)
 
+# Simulation parameters
+TICK_COUNT = 10
+
 # Mobility parameters
-POPSIZE = 1500
-TOTAL_AREA_SIZES = (500, 500)
+POPSIZE = 10  #7.5k/km**3
+TOTAL_AREA_SIZES = (100, 100)
 AREA_SIDES = (50, 50)
 
 # Network parameters (contact threshold not used in current version)
-RISK_THRESHOLD = 4  # more than RISK_THRESHOLD contact => at risk
-CONTACT_THRESHOLD = 2  # less than CONTACT_THRESHOLD distance away => in contact
+RISK_THRESHOLD = 10  # more than RISK_THRESHOLD contact => at risk
+CONTACT_THRESHOLD = 3  # less than CONTACT_THRESHOLD distance away => in contact
 MO_COUNT = 2
 
 # Encryption parameters
@@ -110,6 +114,9 @@ CIPHERTEXT_MODULUS = 1 << 744
 BIG_MODULUS = 1 << 930
 SCALING_FACTOR = 1 << 49
 
+# Infection param
+INFECTED_COUNT = 5
+
 # Movements iterable creation
 movements_iter = gauss_markov(nr_nodes=POPSIZE,
                               dimensions=TOTAL_AREA_SIZES,
@@ -117,81 +124,50 @@ movements_iter = gauss_markov(nr_nodes=POPSIZE,
                               velocity_mean=7,
                               variance=7)
 
+minutely_gm = MinutelyMovement(movements_iter)
+
+dual_gm = DualIter(minutely_gm)
+
 params = CKKSParameters(poly_degree=POLYNOMIAL_DEGREE,
                         ciph_modulus=CIPHERTEXT_MODULUS,
                         big_modulus=BIG_MODULUS,
                         scaling_factor=SCALING_FACTOR)
 
-keygen = CKKSKeyGenerator(params=params)
-pk = keygen.public_key
-sk = keygen.secret_key
-rk = keygen.relin_key
+pre_time = time.time()
+plain_stl = SpaceTimeLord(movements_iterable=dual_gm,
+                          mo_count=MO_COUNT,
+                          risk_thr=RISK_THRESHOLD,
+                          area_sizes=AREA_SIDES,
+                          max_sizes=TOTAL_AREA_SIZES)
+print("Plain STL setup: " + str(time.time() - pre_time))
 
-enco = CKKSEncoder(params=params)
+pre_time = time.time()
+fhe_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_gm,
+                                   mo_count=MO_COUNT,
+                                   area_sizes=AREA_SIDES,
+                                   max_sizes=TOTAL_AREA_SIZES,
+                                   params=params)
+print("Cipher STL setup time: " + str(time.time() - pre_time))
 
-encr = CKKSEncryptor(params=params,
-                     public_key=pk,
-                     secret_key=sk)
+infected_vect = util.random_sample.sample_hamming_weight_vector(length=POPSIZE, hamming_weight=INFECTED_COUNT)
+infected_vect = list(map(abs, infected_vect))
 
-ev = CKKSEvaluator(params=params)
+plain_stl._ga._status = infected_vect
+fhe_stl._ga._status = infected_vect.copy()
 
-decr = CKKSDecryptor(params=params,
-                     secret_key=sk)
-
-f = open("singletimeshighprecision.txt", 'a')
-for i in range(1000):
-    aux_vals = list(np.zeros(128, dtype=int))
-    aux_vals[0] = random.randint(0, 3652)
+tot_error = 0
+for i in range(TICK_COUNT):
     pre_time = time.time()
-    encod = enco.encode(values=aux_vals, scaling_factor=params.scaling_factor)
-    enco_time = time.time() - pre_time
-
+    fhe_stl.tick()
+    print("Cipher tick time: " + str(i) + " " + str(time.time() - pre_time))
     pre_time = time.time()
-    encry = encr.encrypt(plain=encod)
-    encr_time = time.time() - pre_time
+    plain_stl.tick()
+    print("Plain tick time: " + str(i) + " " + str(time.time() - pre_time))
 
-    aux_vals = np.zeros(128, dtype=int)
-    aux_vals[0] = random.randint(0, 3652)
-    pre_time = time.time()
-    aux_enco = enco.encode(values=aux_vals, scaling_factor=params.scaling_factor)
-    enco_time += (time.time() - pre_time)
-    pre_time = time.time()
-    aux_encr = encr.encrypt(plain=aux_enco)
-    encr_time += (time.time() - pre_time)
+for j in range(plain_stl.user_count):
+    plain_stl._users[j].ping_mo_for_score()
+    fhe_stl._users[j].ping_mo_for_score()
 
-    pre_time = time.time()
-    encr_prod = ev.multiply(ciph1=encry, ciph2=aux_encr, relin_key=rk)
-    cipher_mult_time = time.time() - pre_time
+    tot_error += abs(plain_stl._users[j]._score - fhe_stl._users[j]._score)
 
-    pre_time = time.time()
-    plain_encr_sum = ev.add_plain(ciph=encry, plain=encod)
-    plain_add_time = time.time() - pre_time
-
-    pre_time = time.time()
-    decry = decr.decrypt(ciphertext=encr_prod)
-    decr_time = time.time() - pre_time
-
-    pre_time = time.time()
-    resc = ev.rescale(ciph=encry, division_factor=params.scaling_factor)
-    rescale_time = time.time() - pre_time
-
-    pre_time = time.time()
-    ccadd = ev.add(ciph1=encry, ciph2=aux_encr)
-    cipher_add_time = time.time() - pre_time
-
-    pre_time = time.time()
-    plain_prod = ev.multiply_plain(ciph=encry, plain=encod)
-    plain_mult_time = time.time() - pre_time
-
-    pre_time = time.time()
-    mod_lower = ev.lower_modulus(ciph=encry, division_factor=params.scaling_factor)
-    lower_mod_time = time.time() - pre_time
-
-    enco_time /= 2
-    encr_time /= 2
-
-    f.write(str(enco_time) + "," + str(encr_time) + "," + str(cipher_mult_time) + "," + str(plain_add_time) + "," +
-            str(decr_time) + "," + str(rescale_time) + "," + str(cipher_add_time) + "," + str(plain_mult_time) + "," +
-            str(lower_mod_time) + '\n')
-
-f.close()
+print(tot_error / POPSIZE)
