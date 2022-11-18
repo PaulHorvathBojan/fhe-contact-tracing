@@ -138,7 +138,8 @@ plain_stl = SpaceTimeLord(movements_iterable=dual_gm,
                           mo_count=MO_COUNT,
                           risk_thr=RISK_THRESHOLD,
                           area_sizes=AREA_SIDES,
-                          max_sizes=TOTAL_AREA_SIZES)
+                          max_sizes=TOTAL_AREA_SIZES,
+                          exponent=12)
 print("Plain STL setup: " + str(time.time() - pre_time))
 
 pre_time = time.time()

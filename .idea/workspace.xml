@@ -6,8 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="db6fb056-0c50-44e5-8842-e65186fe8c4e" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/10u_encr_vs_plain_simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/10u_encr_vs_plain_simulation.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49multtimes.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49multtimes.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49tickerror.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49tickerror.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/threshold_vs_curve.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/threshold_vs_curve.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,7 +74,7 @@
       </console-settings>
     </option>
   </component>
-  <component name="RunManager" selected="Python.decreasing_cipher_size_sim">
+  <component name="RunManager" selected="Python.threshold_vs_curve">
     <configuration name="10u_encr_vs_plain_simulation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="fhe-contact-tracing" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -173,20 +176,17 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="single_operation_simulation" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="threshold_vs_curve" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="fhe-contact-tracing" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
       <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/fhecontacttracing/entities" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/fhecontacttracing/entities/single_operation_simulation.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/fhecontacttracing/entities/threshold_vs_curve.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="true" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -197,11 +197,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.decreasing_cipher_size_sim" />
+        <item itemvalue="Python.threshold_vs_curve" />
         <item itemvalue="Python.10u_encr_vs_plain_simulation" />
+        <item itemvalue="Python.decreasing_cipher_size_sim" />
         <item itemvalue="Python.scratch" />
         <item itemvalue="Python.contact_tru_vs_curve" />
-        <item itemvalue="Python.single_operation_simulation" />
       </list>
     </recent_temporary>
   </component>
@@ -274,7 +274,7 @@
       <workItem from="1668407958408" duration="10196000" />
       <workItem from="1668495951380" duration="17429000" />
       <workItem from="1668582413059" duration="21074000" />
-      <workItem from="1668662608034" duration="30087000" />
+      <workItem from="1668662608034" duration="31490000" />
     </task>
     <servers />
   </component>

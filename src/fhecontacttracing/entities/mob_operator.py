@@ -587,7 +587,7 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         self._other_mo_user_pks = []
 
-        super().__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
+        super().__init__(ga, id, area_side_x, area_side_y, max_x, max_y, exponent=12)
 
         self._const = -1 / (8 * self._L_max ** 2)
         self._const = self._evaluator.create_constant_plain(const=self._const)
@@ -793,7 +793,7 @@ class SimpleContactMobileOperator(MobileOperator):
     def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y, contact_thr):
         self._contact_thr = contact_thr
 
-        super().__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
+        super().__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y, exponent=12)
 
     def location_pair_contact_score(self, location1, location2):
         if (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2 <= self._contact_thr ** 2:
