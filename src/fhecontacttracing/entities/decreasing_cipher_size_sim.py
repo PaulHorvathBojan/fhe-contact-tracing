@@ -7,7 +7,6 @@ import os
 import unittest
 import random
 import gmpy2
-import util.random_sample
 
 from scipy.stats import bernoulli
 from ckks.ckks_decryptor import CKKSDecryptor
@@ -95,17 +94,14 @@ class IntercalIter:
 # Not sure if assigning random seed would be best.
 # np.random.seed(1234)
 
-# Simulation parameters
-TICK_COUNT = 10
-
 # Mobility parameters
-POPSIZE = 10  #7.5k/km**3
-TOTAL_AREA_SIZES = (100, 100)
+POPSIZE = 1500
+TOTAL_AREA_SIZES = (500, 500)
 AREA_SIDES = (50, 50)
 
 # Network parameters (contact threshold not used in current version)
-RISK_THRESHOLD = 10  # more than RISK_THRESHOLD contact => at risk
-CONTACT_THRESHOLD = 3  # less than CONTACT_THRESHOLD distance away => in contact
+RISK_THRESHOLD = 4  # more than RISK_THRESHOLD contact => at risk
+CONTACT_THRESHOLD = 2  # less than CONTACT_THRESHOLD distance away => in contact
 MO_COUNT = 2
 
 # Encryption parameters
@@ -114,9 +110,6 @@ CIPHERTEXT_MODULUS = 1 << 744
 BIG_MODULUS = 1 << 930
 SCALING_FACTOR = 1 << 49
 
-# Infection param
-INFECTED_COUNT = 5
-
 # Movements iterable creation
 movements_iter = gauss_markov(nr_nodes=POPSIZE,
                               dimensions=TOTAL_AREA_SIZES,
@@ -124,59 +117,46 @@ movements_iter = gauss_markov(nr_nodes=POPSIZE,
                               velocity_mean=7,
                               variance=7)
 
-minutely_gm = MinutelyMovement(movements_iter)
-
-dual_gm = DualIter(minutely_gm)
-
 params = CKKSParameters(poly_degree=POLYNOMIAL_DEGREE,
                         ciph_modulus=CIPHERTEXT_MODULUS,
                         big_modulus=BIG_MODULUS,
                         scaling_factor=SCALING_FACTOR)
 
-pre_time = time.time()
-plain_stl = SpaceTimeLord(movements_iterable=dual_gm,
-                          mo_count=MO_COUNT,
-                          risk_thr=RISK_THRESHOLD,
-                          area_sizes=AREA_SIDES,
-                          max_sizes=TOTAL_AREA_SIZES)
-print("Plain STL setup: " + str(time.time() - pre_time))
+keygen = CKKSKeyGenerator(params=params)
+pk = keygen.public_key
+sk = keygen.secret_key
+rk = keygen.relin_key
 
-pre_time = time.time()
-fhe_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_gm,
-                                   mo_count=MO_COUNT,
-                                   area_sizes=AREA_SIDES,
-                                   max_sizes=TOTAL_AREA_SIZES,
-                                   params=params)
-print("Cipher STL setup time: " + str(time.time() - pre_time))
+enco = CKKSEncoder(params=params)
 
-infected_vect = util.random_sample.sample_hamming_weight_vector(length=POPSIZE, hamming_weight=INFECTED_COUNT)
-infected_vect = list(map(abs, infected_vect))
+encr = CKKSEncryptor(params=params,
+                     public_key=pk,
+                     secret_key=sk)
 
-plain_stl._ga._status = infected_vect
-fhe_stl._ga._status = infected_vect.copy()
+ev = CKKSEvaluator(params=params)
 
-tot_error = 0
+decr = CKKSDecryptor(params=params,
+                     secret_key=sk)
 
-f = open("256-744-49firstticktime.txt", 'a')
-pre_time = time.time()
-fhe_stl.tick()
-f.write(str(time.time() - pre_time) + '\n')
-f.close()
+f = open("256-744-49multtimes.txt", 'a')
+for i in range(1000):
+    rnx1 = random.randint(0, 50)
+    rny1 = random.randint(0, 50)
+    rnx2 = random.randint(-50, 100)
+    rny2 = random.randint(-50, 100)
+    encod = ev.create_constant_plain(const=1 - ((rnx1 - rnx2) ** 2 + (rny1 - rny2) ** 2) / 20000)
+    encry = encr.encrypt(plain=encod)
 
-f = open("256-744-49avgticktime.txt", 'a')
-for i in range(TICK_COUNT):
-    pre_time = time.time()
-    fhe_stl.tick()
-    f.write(str(time.time() - pre_time) + '\n')
-    pre_time = time.time()
-    plain_stl.tick()
-    print("Plain tick time: " + str(i) + " " + str(time.time() - pre_time))
-f.close()
+    for j in range(15):
 
-f = open("256-744-49tickerror.txt", 'a')
-for j in range(plain_stl.user_count):
-    plain_stl._users[j].ping_mo_for_score()
-    fhe_stl._users[j].ping_mo_for_score()
+        pre_time = time.time()
+        encry = ev.multiply(ciph1=encry, ciph2=encry, relin_key=rk)
+        f.write(str(time.time() - pre_time) + ', ')
+        encry = ev.rescale(ciph=encry, division_factor=params.scaling_factor)
 
-    f.write(str(abs(plain_stl._users[j]._score - fhe_stl._users[j]._score)) + '\n')
+    dec = decr.decrypt(ciphertext=encry)
+    dcd = enco.decode(dec)
+    print(dcd[0])
+    f.write('\n')
+
 f.close()

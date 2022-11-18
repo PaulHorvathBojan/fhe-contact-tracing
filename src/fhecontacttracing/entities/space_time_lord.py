@@ -370,7 +370,7 @@ class SpaceTimeLordUntrustedGA:
 
 
 class SimpleSTL(SpaceTimeLord):
-    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes):
+    def __init__(self, movements_iterable, mo_count, risk_thr, area_sizes, max_sizes, contact_thr):
         self._movements_iterable = movements_iterable
         self._risk_threshold = risk_thr
         self._max_x = max_sizes[0]
@@ -397,7 +397,8 @@ class SimpleSTL(SpaceTimeLord):
                                                  area_side_x=self._area_size_x,
                                                  area_side_y=self._area_size_y,
                                                  max_x=self._max_x,
-                                                 max_y=self._max_y
+                                                 max_y=self._max_y,
+                                                 contact_thr=contact_thr
                                                  )
             for prev_mo in self._mos:
                 new_mo.register_other_mo(new_mo=prev_mo)
