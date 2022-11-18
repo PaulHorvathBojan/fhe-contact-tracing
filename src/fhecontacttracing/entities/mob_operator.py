@@ -52,14 +52,15 @@ class MobileOperator:
     #   - _area_sides keep the sizes of the considered tesselation area
     #   - _curr_time is 0
     #   - _area_array is a list of lists of empty sets
-    def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y):
+    def __init__(self, ga, mo_id, area_side_x, area_side_y, max_x, max_y, exponent):
         self._GA = ga
         self._id = mo_id
         self._area_side_x = area_side_x
         self._area_side_y = area_side_y
-        self._L_max = 2 * max(self._area_side_y, self._area_side_x)
+        self._L_max = max(self._area_side_y, self._area_side_x)
         self._area_count_x = int(max_x // area_side_x) + 1
         self._area_count_y = int(max_y // area_side_y) + 1
+        self._exponent = exponent
 
         self._usr_count = 0
         self._users = []
@@ -233,8 +234,8 @@ class MobileOperator:
     # location_pair_contacts generates contact approx score between 2 locations
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
-        return (1 - (
-                (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / self._L_max ** 2) ** 4096
+        return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / (
+                    2 * (self._L_max ** 2))) ** (2 ** self._exponent)
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -793,6 +794,7 @@ class SimpleContactMobileOperator(MobileOperator):
         self._contact_thr = contact_thr
 
         super().__init__(ga, mo_id, area_side_x, area_side_y, max_x, max_y)
+
     def location_pair_contact_score(self, location1, location2):
         if (location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2 <= self._contact_thr ** 2:
             return 1
