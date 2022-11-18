@@ -235,7 +235,7 @@ class MobileOperator:
     # For alternate formulae, create a class inheriting MobileOperator and overload this method.
     def location_pair_contact_score(self, location1, location2):
         return (1 - ((location1[0] - location2[0]) ** 2 + (location1[1] - location2[1]) ** 2) / (
-                    2 * (self._L_max ** 2))) ** (2 ** self._exponent)
+                    8 * (self._L_max ** 2))) ** (2 ** self._exponent)
 
     # search_mo_db is an aux function for binarily searching for MOs in the MO list
     # The first tiny assertion is that the MOs are added to the internal db in order of IDs.
@@ -589,12 +589,12 @@ class EncryptionMOUntrustedGA(MobileOperator):
 
         super().__init__(ga, id, area_side_x, area_side_y, max_x, max_y)
 
-        self._const = -1 / (self._L_max ** 2)
+        self._const = -1 / (8 * self._L_max ** 2)
         self._const = self._evaluator.create_constant_plain(const=self._const)
 
-    @property
-    def pk(self):
-        return self._pk
+    # @property
+    # def pk(self):
+    #     return self._pk
 
     @property
     def user_pks(self):

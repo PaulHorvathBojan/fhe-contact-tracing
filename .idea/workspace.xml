@@ -8,8 +8,6 @@
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49multtimes.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/256-744-49multtimes.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/mob_operator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/space_time_lord.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fhecontacttracing/entities/threshold_vs_curve.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/src/fhecontacttracing/entities/threshold_vs_curve.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -276,7 +274,7 @@
       <workItem from="1668407958408" duration="10196000" />
       <workItem from="1668495951380" duration="17429000" />
       <workItem from="1668582413059" duration="21074000" />
-      <workItem from="1668662608034" duration="28615000" />
+      <workItem from="1668662608034" duration="30087000" />
     </task>
     <servers />
   </component>
