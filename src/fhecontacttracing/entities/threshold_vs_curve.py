@@ -33,7 +33,7 @@ from gov_agent import *
 from mob_operator import *
 from user import *
 
-TICK_COUNT = 100
+TICK_COUNT = [200, 100, 100, 100, 50, 50, 35, 30, 25, 20]
 
 POPSIZE = 500  #7.5k/km**2 total, 5k/km**2 smartphone
 TOTAL_AREA_SIZES = (200, 200)
@@ -105,7 +105,7 @@ for iter_ct in range(len(CONTACT_TUPLES)):
     plain_stl._ga._status = infected_vect
     simple_stl._ga._status = infected_vect.copy()
 
-    for i in range(TICK_COUNT):
+    for i in range(TICK_COUNT[iter_ct]):
         plain_stl.tick()
         simple_stl.tick()
 
@@ -113,5 +113,5 @@ for iter_ct in range(len(CONTACT_TUPLES)):
     for i in range(plain_stl.user_count):
         plain_stl.users[i].ping_mo_for_score()
         simple_stl.users[i].ping_mo_for_score()
-        f.write(str(simple_stl.users[i]._score, plain_stl.users[i]._score) + "\n")
+        f.write(str(simple_stl.users[i]._score) + ", " + str(plain_stl.users[i]._score) + "\n")
     f.close()

@@ -49,6 +49,22 @@ class DualIter:
         return self._next_val.copy()
 
 
+class TripleIter:
+
+    def __init__(self, init_iter):
+        self._iterator = init_iter
+        self._change = 0
+        self._next_val = None
+
+    def __next__(self):
+        if self._change == 0:
+            self._next_val = next(self._iterator)
+            self._change = 2
+        self._change -= 1
+
+        return self._next_val.copy()
+
+
 class SameLocIter:
     def __init__(self, loc_val, loc_ct):
         self.vallist = []
@@ -99,13 +115,13 @@ class IntercalIter:
 TICK_COUNT = 10
 
 # Mobility parameters
-POPSIZE = 10  #7.5k/km**3
-TOTAL_AREA_SIZES = (100, 100)
+POPSIZE = 40  # 7.5k/km**2
+TOTAL_AREA_SIZES = (200, 200)
 AREA_SIDES = (50, 50)
 
 # Network parameters (contact threshold not used in current version)
 RISK_THRESHOLD = 10  # more than RISK_THRESHOLD contact => at risk
-CONTACT_THRESHOLD = 3  # less than CONTACT_THRESHOLD distance away => in contact
+CONTACT_THRESHOLD = 2  # less than CONTACT_THRESHOLD distance away => in contact
 MO_COUNT = 2
 
 # Encryption parameters
@@ -126,7 +142,7 @@ movements_iter = gauss_markov(nr_nodes=POPSIZE,
 
 minutely_gm = MinutelyMovement(movements_iter)
 
-dual_gm = DualIter(minutely_gm)
+triple_gm = TripleIter(minutely_gm)
 
 params = CKKSParameters(poly_degree=POLYNOMIAL_DEGREE,
                         ciph_modulus=CIPHERTEXT_MODULUS,
@@ -134,16 +150,22 @@ params = CKKSParameters(poly_degree=POLYNOMIAL_DEGREE,
                         scaling_factor=SCALING_FACTOR)
 
 pre_time = time.time()
-plain_stl = SpaceTimeLord(movements_iterable=dual_gm,
+simple_stl = SimpleSTL(movements_iterable=triple_gm,
+                       mo_count=MO_COUNT,
+                       risk_thr=RISK_THRESHOLD,
+                       area_sizes=AREA_SIDES,
+                       max_sizes=TOTAL_AREA_SIZES,
+                       contact_thr=CONTACT_THRESHOLD)
+
+plain_stl = SpaceTimeLord(movements_iterable=triple_gm,
                           mo_count=MO_COUNT,
                           risk_thr=RISK_THRESHOLD,
                           area_sizes=AREA_SIDES,
                           max_sizes=TOTAL_AREA_SIZES,
                           exponent=12)
-print("Plain STL setup: " + str(time.time() - pre_time))
 
 pre_time = time.time()
-fhe_stl = SpaceTimeLordUntrustedGA(movements_iterable=dual_gm,
+fhe_stl = SpaceTimeLordUntrustedGA(movements_iterable=triple_gm,
                                    mo_count=MO_COUNT,
                                    area_sizes=AREA_SIDES,
                                    max_sizes=TOTAL_AREA_SIZES,
@@ -153,31 +175,35 @@ print("Cipher STL setup time: " + str(time.time() - pre_time))
 infected_vect = util.random_sample.sample_hamming_weight_vector(length=POPSIZE, hamming_weight=INFECTED_COUNT)
 infected_vect = list(map(abs, infected_vect))
 
-plain_stl._ga._status = infected_vect
+simple_stl._ga._status = infected_vect
+plain_stl._ga._status = infected_vect.copy()
 fhe_stl._ga._status = infected_vect.copy()
 
 tot_error = 0
 
-f = open("256-744-49firstticktime.txt", 'a')
+f = open("usrcountsimfirsttick.txt", 'a')
 pre_time = time.time()
 fhe_stl.tick()
 f.write(str(time.time() - pre_time) + '\n')
 f.close()
 
-f = open("256-744-49avgticktime.txt", 'a')
+f = open("usrcountsimtick.txt", 'a')
 for i in range(TICK_COUNT):
     pre_time = time.time()
     fhe_stl.tick()
     f.write(str(time.time() - pre_time) + '\n')
-    pre_time = time.time()
+
     plain_stl.tick()
-    print("Plain tick time: " + str(i) + " " + str(time.time() - pre_time))
+    simple_stl.tick()
 f.close()
 
-f = open("256-744-49tickerror.txt", 'a')
+f = open("usercountsimerror.txt", 'a')
 for j in range(plain_stl.user_count):
+    simple_stl._users[j].ping_mo_for_score()
     plain_stl._users[j].ping_mo_for_score()
     fhe_stl._users[j].ping_mo_for_score()
 
-    f.write(str(abs(plain_stl._users[j]._score - fhe_stl._users[j]._score)) + '\n')
+    f.write(str(simple_stl._users[j]._score) + "," + str(plain_stl._users[j]._score) + "," +
+            str(fhe_stl._users[j]._score) + '\n')
 f.close()
+print("check result files")

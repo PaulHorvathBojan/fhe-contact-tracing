@@ -139,14 +139,14 @@ decr = CKKSDecryptor(params=params,
                      secret_key=sk)
 
 f = open("256-744-49multtimes.txt", 'a')
-for i in range(1000):
+for i in range(2):
     rnx1 = random.randint(0, 50)
     rny1 = random.randint(0, 50)
     rnx2 = random.randint(-50, 100)
     rny2 = random.randint(-50, 100)
     encod = ev.create_constant_plain(const=1 - ((rnx1 - rnx2) ** 2 + (rny1 - rny2) ** 2) / 20000)
     encry = encr.encrypt(plain=encod)
-
+    print(encry.modulus)
     for j in range(15):
 
         pre_time = time.time()
@@ -154,6 +154,7 @@ for i in range(1000):
         f.write(str(time.time() - pre_time) + ', ')
         encry = ev.rescale(ciph=encry, division_factor=params.scaling_factor)
 
+    print(encry.modulus)
     dec = decr.decrypt(ciphertext=encry)
     dcd = enco.decode(dec)
     print(dcd[0])
